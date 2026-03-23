@@ -32,3 +32,8 @@
 - src/services/pipelineOrchestrator.js는 safety 설정값을 읽어 전체 파이프라인 타임아웃(최대 60분)과 phase별 타임아웃(1:5분,2:5분,3:20분,4:3분 + 코드 하드리밋)을 적용한다.
 - debate 라운드는 src/services/debateEngine.js에서 하드리밋 10으로 강제하고, phase3 재생성은 src/services/pipelineOrchestrator.js에서 하드리밋 10으로 강제한다.
 - settings 기본값/스키마에 safety.maxApiCallsPerRun(200), safety.maxCostPerRunUsd(10), safety.pipelineTimeoutMinutes(30)를 추가했다.
+[codex] 2026-03-23 추가 메모 9
+- src/services/pipelineOrchestrator.js의 phase2는 생성된 레퍼런스 이미지 파일 존재 여부를 확인해 referenceSheets를 동적으로 저장하며, 파일이 없으면 빈 배열로 기록한다.
+- phase2에서 레퍼런스 이미지가 없을 때 WebSocket pipeline_error 이벤트로 "레퍼런스 이미지 파일 없음" 메시지를 발행해 UI가 원인을 안내할 수 있게 한다.
+- phase3 영상 생성 옵션은 존재하는 레퍼런스 이미지 경로만 referenceImages로 전달하고, 배열이 비어 있으면 referenceImages 옵션 자체를 생략한다.
+- public/run.html은 pipeline_error 수신 시 레퍼런스 이미지 누락 메시지를 사용자 친화 문구로 변환해 표시한다.
