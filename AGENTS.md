@@ -21,3 +21,5 @@
 - 프롬프트 편집기(public/prompts.html)는 @ 입력 시 /api/assets 목록 기반 태그 자동완성 드롭다운을 제공한다.
 [codex] 2026-03-23 추가 메모 5
 - Express 5 환경에서는 src/server.js의 catch-all 라우트에 "*"를 직접 사용할 수 없고 "/{*fallbackPath}" 형태를 사용해야 서버 부팅 시 path-to-regexp 오류가 발생하지 않는다.
+[codex] 2026-03-23 추가 메모 6
+- 사용자 요구로 public/index.html에 실행/프롬프트/에셋 화면을 탭 기반 통합 대시보드로 구성했고, /prompts·/assets는 iframe으로 메인에서 직접 전환해 사용하도록 반영했다.
