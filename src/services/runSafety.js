@@ -17,12 +17,16 @@ class ApiGuard {
 }
 
 class CostTracker {
-  constructor(maxCostUsd = 10) {
+  constructor(options = {}) {
+    const maximumCostUsd = typeof options.maxCostUsd === "number" ? options.maxCostUsd : 10;
+    const inputRatePerToken = typeof options.inputRatePerToken === "number" ? options.inputRatePerToken : 2.0 / 1_000_000;
+    const outputRatePerToken = typeof options.outputRatePerToken === "number" ? options.outputRatePerToken : 12.0 / 1_000_000;
+
     this.inputTokens = 0;
     this.outputTokens = 0;
-    this.maxCostUsd = maxCostUsd;
-    this.inputRate = 2.0 / 1_000_000;
-    this.outputRate = 12.0 / 1_000_000;
+    this.maxCostUsd = maximumCostUsd;
+    this.inputRate = inputRatePerToken;
+    this.outputRate = outputRatePerToken;
   }
 
   track(responsePayload = {}) {

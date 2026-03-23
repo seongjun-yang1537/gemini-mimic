@@ -1,5 +1,6 @@
 const path = require("node:path");
 const { createTaurusApi } = require("../../taurus/api");
+const { resolveGeminiTokenRates } = require("../config/pricingTable");
 const { ApiGuard, CostTracker } = require("./runSafety");
 const { PHASE_TIMEOUT_MAP, PIPELINE_TIMEOUT_MINUTES_HARD_LIMIT } = require("./pipeline/constants");
 const { runPhase1 } = require("./pipeline/phase1Runner");
@@ -16,6 +17,7 @@ class PipelineOrchestrator {
     this.wsHub = dependencies.wsHub;
     this.assetService = dependencies.assetService;
     this.settingsService = dependencies.settingsService;
+    this.costRateConfig = dependencies.costRateConfig || {};
     this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
   }
 
@@ -134,10 +136,19 @@ class PipelineOrchestrator {
     const configuredMaxCalls = runtimeConfig.safety?.maxApiCallsPerRun ?? 200;
     const configuredCostLimit = runtimeConfig.safety?.maxCostPerRunUsd ?? 10;
     const configuredPipelineTimeoutMinutes = runtimeConfig.safety?.pipelineTimeoutMinutes ?? 30;
+    const resolvedTokenRates = resolveGeminiTokenRates({
+      geminiModel: runtimeConfig.gemini?.model,
+      inputRatePerTokenOverride: this.costRateConfig.inputRatePerToken,
+      outputRatePerTokenOverride: this.costRateConfig.outputRatePerToken,
+    });
     const pipelineTimeoutMs = Math.min(configuredPipelineTimeoutMinutes, PIPELINE_TIMEOUT_MINUTES_HARD_LIMIT) * 60_000;
     const pipelineStartedAt = Date.now();
     const apiGuard = new ApiGuard(configuredMaxCalls);
-    const costTracker = new CostTracker(configuredCostLimit);
+    const costTracker = new CostTracker({
+      maxCostUsd: configuredCostLimit,
+      inputRatePerToken: resolvedTokenRates.inputRatePerToken,
+      outputRatePerToken: resolvedTokenRates.outputRatePerToken,
+    });
 
     const updateUsage = async () => {
       const usageSnapshot = costTracker.getUsage();

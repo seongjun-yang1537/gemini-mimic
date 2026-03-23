@@ -71,3 +71,7 @@
 - RunStore(src/store/runStore.js)와 PromptService(src/services/promptService.js)를 Promise 기반 비동기 API로 전환했다.
 - 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
 - RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.
+[codex] 2026-03-23 추가 메모 14
+- 비용 추적 단가는 src/config/environment.js의 COST_INPUT_RATE_PER_TOKEN, COST_OUTPUT_RATE_PER_TOKEN 로딩값을 우선 사용하고, 미설정/invalid 시 기존 fallback 단가를 유지한다.
+- 모델별 단가 선택 로직은 src/config/pricingTable.js(resolveGeminiTokenRates)로 분리했으며 pipelineOrchestrator가 gemini.model 기준으로 CostTracker 단가를 주입한다.
+- 서버 시작 단계(src/server.js)에서 단가 env 미설정/invalid 및 모델 단가 테이블 미존재 시 경고 로그를 남겨 fallback 적용 사실을 명시한다.
