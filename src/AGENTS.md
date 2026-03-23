@@ -18,3 +18,6 @@
 [codex] 2026-03-23 취소 제어 메모
 - src/routes/runRoutes.js에 POST /api/run/:id/cancel 엔드포인트를 추가해 실행 중 run 취소 요청을 처리한다.
 - src/services/pipelineOrchestrator.js에 cancelRequestedRuns 상태와 requestCancel/run 취소 분기 처리를 추가해 취소 시 run 상태를 cancelled로 저장하고 WebSocket pipeline_cancelled 이벤트를 발행한다.
+[codex] 2026-03-23 드라이브 API 메모
+- src/routes/driveRoutes.js를 추가해 에셋 저장소를 드라이브 형식으로 매핑하는 API(/api/drive/folders/:id/contents, /api/drive/search, /api/drive/files/:id/{thumbnail,preview,stream})를 제공한다.
+- createApp에서 driveRoutes를 마운트해 로컬 업로드(/api/upload)와 프롬프트 제출(/api/generate) 요청을 runStore/pipelineOrchestrator와 연결한다.
