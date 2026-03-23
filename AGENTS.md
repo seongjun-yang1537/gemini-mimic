@@ -48,3 +48,8 @@
 - Gemini 텍스트 기본 모델 기본값을 더 이상 존재하지 않는 gemini-3-pro에서 gemini-3.1-pro-preview로 변경했다.
 - 분할용 splitModel 기본값/선택지도 gemini-3.1-flash-lite-preview 중심으로 갱신해 모델 not found(404) 가능성을 낮췄다.
 - settings 스키마의 gemini.model 옵션에서 gemini-3-pro를 제거하고 현재 가격 문서에 노출된 유효 모델명을 반영했다.
+[codex] 2026-03-23 추가 메모 11
+- src/store/runStore.js를 Promise 기반 비동기 API로 전환하고 fileAccessQueue를 통한 in-process 직렬화로 동시 updateRun 덮어쓰기 충돌을 방지했다.
+- src/services/promptService.js를 Promise 기반 비동기 API로 전환해 프롬프트 목록/조회/수정/페이즈 로딩 호출을 await 패턴으로 통일했다.
+- src/server.js와 src/services/pipelineOrchestrator.js에서 runStore/promptService 호출부를 await 기반으로 변경해 파일 I/O 에러가 상위 핸들러로 일관 전파되도록 정리했다.
+- 비동기 전환 전 점검용 메서드 시그니처/호출 지점 추적 문서를 async-api-signatures.md에 기록했다.
