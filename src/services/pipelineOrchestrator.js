@@ -17,6 +17,7 @@ class PipelineOrchestrator {
     this.assetService = dependencies.assetService;
     this.settingsService = dependencies.settingsService;
     this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
+    this.cancelRequestedRuns = new Set();
   }
 
   async execute(runId) {
@@ -41,6 +42,7 @@ class PipelineOrchestrator {
     };
 
     try {
+      this.assertRunNotCancelled(runId);
       await this.executePhase({
         runId,
         phaseNumber: 1,
@@ -79,14 +81,29 @@ class PipelineOrchestrator {
         completedAt: new Date().toISOString(),
       });
       this.wsHub.publish(runId, { type: "pipeline_done", resultUrl: `/api/run/${runId}/result` });
+      this.cancelRequestedRuns.delete(runId);
       return runState;
     } catch (error) {
+      if (error?.isRunCancelled) {
+        this.cancelRequestedRuns.delete(runId);
+        const cancelledAt = new Date().toISOString();
+        const cancelledRunState = await this.runStore.updateRun(runId, {
+          status: "cancelled",
+          completedAt: cancelledAt,
+          cancelledAt,
+          errorMessage: "사용자 요청으로 실행이 취소되었습니다.",
+        });
+        this.wsHub.publish(runId, { type: "pipeline_cancelled", message: "사용자 요청으로 실행이 취소되었습니다." });
+        return cancelledRunState;
+      }
       await this.handlePipelineFailure(runId, error);
+      this.cancelRequestedRuns.delete(runId);
       throw error;
     }
   }
 
   async executePhase({ runId, phaseNumber, runner, runnerServices, runtimeConfig, runSafetyContext }) {
+    this.assertRunNotCancelled(runId);
     this.wsHub.publish(runId, { type: "phase_start", phase: phaseNumber });
 
     const phaseOutcome = await this.executeWithTimeout(
@@ -111,6 +128,7 @@ class PipelineOrchestrator {
       }
     }
 
+    this.assertRunNotCancelled(runId);
     this.wsHub.publish(runId, { type: "phase_done", phase: phaseNumber });
   }
 
@@ -207,6 +225,36 @@ class PipelineOrchestrator {
       if (phaseTimeoutHandle) {
         clearTimeout(phaseTimeoutHandle);
       }
+    }
+  }
+
+  async requestCancel(runId) {
+    const foundRun = await this.runStore.getRun(runId);
+    if (!foundRun) {
+      return null;
+    }
+
+    if (["completed", "failed", "cancelled"].includes(foundRun.status)) {
+      return foundRun;
+    }
+
+    this.cancelRequestedRuns.add(runId);
+    const cancelledAt = new Date().toISOString();
+    const cancelledRunState = await this.runStore.updateRun(runId, {
+      status: "cancelled",
+      completedAt: cancelledAt,
+      cancelledAt,
+      errorMessage: "사용자 요청으로 실행이 취소되었습니다.",
+    });
+    this.wsHub.publish(runId, { type: "pipeline_cancelled", message: "사용자 요청으로 실행이 취소되었습니다." });
+    return cancelledRunState;
+  }
+
+  assertRunNotCancelled(runId) {
+    if (this.cancelRequestedRuns.has(runId)) {
+      const cancellationError = new Error("사용자 요청으로 실행이 취소되었습니다.");
+      cancellationError.isRunCancelled = true;
+      throw cancellationError;
     }
   }
 }

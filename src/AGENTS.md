@@ -15,3 +15,6 @@
 - src/routes/runRoutes.js는 createRun 시 inputVideo/inputText/inputAssetId/selectedReferenceAssets를 함께 저장하도록 입력 분기를 확장했다.
 - src/store/runStore.js createRun은 문자열(기존 호환)과 객체 입력을 모두 허용하며 inputText/selectedReferenceAssets 필드를 run 레코드에 기록한다.
 - src/services/geminiClient.js는 영상 확장자 기반으로 inline_data mime_type(video/mp4, video/webm)을 동적으로 지정한다.
+[codex] 2026-03-23 취소 제어 메모
+- src/routes/runRoutes.js에 POST /api/run/:id/cancel 엔드포인트를 추가해 실행 중 run 취소 요청을 처리한다.
+- src/services/pipelineOrchestrator.js에 cancelRequestedRuns 상태와 requestCancel/run 취소 분기 처리를 추가해 취소 시 run 상태를 cancelled로 저장하고 WebSocket pipeline_cancelled 이벤트를 발행한다.
