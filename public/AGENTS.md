@@ -16,3 +16,7 @@
 - public/index.html을 Mimic 단일 컬럼 대시보드 레이아웃으로 재구성해 헤더/입력 컴포저/탭·상태 요약/태스크 리스트를 한 화면에서 동작하도록 구현했다.
 - 태스크 행에 phase ring(진행률 arc + 공전 dot), 전문가 pulse dot, 4단계 phase track, 비용/토큰 포맷, 상태 badge를 추가하고 640px 이하에서는 phase track/비용 영역을 숨기도록 반응형 처리했다.
 - 입력 컴포저는 Enter 전송·Shift+Enter 줄바꿈·최대 3개 첨부·파일 칩 제거·모델/토론 라운드 pill 토글을 지원하며 전송 시 running 상태 태스크를 목록 최상단에 추가한다.
+[codex] 2026-03-23 추가 메모 7
+- public/index.html 입력 컴포저를 첨부 프리뷰 카드(104x88), 동영상 썸네일 캡처, 타입별 @태그 자동 부여(@영상N/@이미지N), 제거 시 태그 재정렬 로직으로 확장했다.
+- textarea에서 @ 입력 시 현재 첨부 목록 기반 자동완성 드롭다운을 노출하고 방향키/엔터 선택으로 태그를 삽입하도록 반영했다.
+- 태스크 생성 시 attachments 메타데이터(tag/filename/type/thumbnailUrl)를 run 항목에 포함하도록 대시보드 상태 모델을 확장했다.
