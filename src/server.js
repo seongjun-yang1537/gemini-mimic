@@ -262,7 +262,7 @@ app.get("/assets", (_request, response) => {
   response.sendFile(path.resolve("public/assets.html"));
 });
 
-app.get("*", (_request, response) => {
+app.get("/{*fallbackPath}", (_request, response) => {
   response.sendFile(path.resolve("public/index.html"));
 });
 
