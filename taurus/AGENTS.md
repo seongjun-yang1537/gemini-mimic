@@ -10,3 +10,7 @@
 [codex] 2026-03-23 추가 메모 2
 - taurus/api.js의 polling 루프에 MAX_POLLS(60) 하드리밋을 추가해 무한 폴링을 방지했다.
 - taurus API 호출 경로(split/generate/poll/download)에 onApiCall 훅을 넣어 상위 파이프라인에서 글로벌 API 카운터를 적용할 수 있게 했다.
+[codex] 2026-03-23 추가 메모 3
+- taurus/api.js pollOperation은 pollIntervalMs/maxPollAttempts/maxPollMs 옵션을 받아 시도 횟수와 경과 시간을 동시에 제한한다.
+- poll timeout 에러 메시지에 operation 식별자와 누적 attempts/elapsedMs를 포함해 원인 추적성을 높였다.
+- generateInitialVideo/extendVideo/createTaurusApi.generateVideo에서 동일 폴링 제한값을 전달하도록 정렬했다.

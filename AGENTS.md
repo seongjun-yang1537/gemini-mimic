@@ -32,3 +32,7 @@
 - src/services/pipelineOrchestrator.js는 safety 설정값을 읽어 전체 파이프라인 타임아웃(최대 60분)과 phase별 타임아웃(1:5분,2:5분,3:20분,4:3분 + 코드 하드리밋)을 적용한다.
 - debate 라운드는 src/services/debateEngine.js에서 하드리밋 10으로 강제하고, phase3 재생성은 src/services/pipelineOrchestrator.js에서 하드리밋 10으로 강제한다.
 - settings 기본값/스키마에 safety.maxApiCallsPerRun(200), safety.maxCostPerRunUsd(10), safety.pipelineTimeoutMinutes(30)를 추가했다.
+[codex] 2026-03-23 추가 메모 9
+- video 설정에 pollTimeoutMs(기본 1800000ms), maxPollAttempts(기본 180)을 추가했고 settings 스키마/검증에 연결했다.
+- SettingsService 검증에 video.pollTimeoutMs >= video.pollInterval 제약을 추가했다.
+- 파이프라인의 taurusApi.generateVideo 호출은 pollIntervalMs/maxPollAttempts/maxPollMs를 runtimeConfig.video에서 전달해 폴링 제한값을 일관 적용한다.

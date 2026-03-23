@@ -12,8 +12,9 @@ const SPLIT_MODEL = "gemini-3-flash-preview";
 const EXTENSION_SECONDS = 7;
 const MAX_TOTAL_SECONDS = 148;
 const MAX_EXTENSIONS = 20;
-const MAX_POLLS = 60;
 const DEFAULT_POLL_INTERVAL_MS = 10_000;
+const DEFAULT_MAX_POLL_ATTEMPTS = 180;
+const DEFAULT_MAX_POLL_MS = 30 * 60 * 1000;
 
 function sleep(milliseconds) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
@@ -181,17 +182,24 @@ function validateAspectRatio(aspectRatio) {
 async function pollOperation(aiClient, operation, callbacks = {}) {
   const onPolling = callbacks.onPolling || (() => {});
   const onApiCall = callbacks.onApiCall || (() => {});
-  const pollInterval = callbacks.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
+  const pollIntervalMs = callbacks.pollIntervalMs ?? callbacks.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
+  const maxPollAttempts = callbacks.maxPollAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
+  const maxPollMs = callbacks.maxPollMs ?? DEFAULT_MAX_POLL_MS;
   let currentOperation = operation;
-  let pollCount = 0;
+  let attemptCount = 0;
+  const pollingStartedAtMs = Date.now();
+  const operationIdentifier = currentOperation?.name || currentOperation?.id || "unknown_operation";
 
   while (!currentOperation.done) {
-    pollCount += 1;
-    if (pollCount > MAX_POLLS) {
-      throw new Error(`Veo3 polling 타임아웃: ${MAX_POLLS}회 초과.`);
+    attemptCount += 1;
+    const elapsedMs = Date.now() - pollingStartedAtMs;
+    if (attemptCount > maxPollAttempts || elapsedMs > maxPollMs) {
+      throw new Error(
+        `Veo3 polling 타임아웃: operation=${operationIdentifier}, attempts=${attemptCount}/${maxPollAttempts}, elapsedMs=${elapsedMs}/${maxPollMs}`,
+      );
     }
     await onPolling(currentOperation);
-    await sleep(pollInterval);
+    await sleep(pollIntervalMs);
     await onApiCall();
     currentOperation = await aiClient.operations.getVideosOperation({ operation: currentOperation });
   }
@@ -226,7 +234,9 @@ async function generateInitialVideo(aiClient, options) {
   return pollOperation(aiClient, generationOperation, {
     onPolling: options.onPolling,
     onApiCall: options.onApiCall,
-    pollInterval: options.pollInterval,
+    pollIntervalMs: options.pollIntervalMs,
+    maxPollAttempts: options.maxPollAttempts,
+    maxPollMs: options.maxPollMs,
   });
 }
 
@@ -256,7 +266,9 @@ async function extendVideo(aiClient, options) {
   return pollOperation(aiClient, extensionOperation, {
     onPolling: options.onPolling,
     onApiCall: options.onApiCall,
-    pollInterval: options.pollInterval,
+    pollIntervalMs: options.pollIntervalMs,
+    maxPollAttempts: options.maxPollAttempts,
+    maxPollMs: options.maxPollMs,
   });
 }
 
@@ -317,7 +329,9 @@ function createTaurusApi(apiConfig = {}) {
     const totalSegments = 1 + segmentPlan.extensionCount;
     const onStatus = typeof options.onStatus === "function" ? options.onStatus : async () => {};
     const onApiCall = typeof options.onApiCall === "function" ? options.onApiCall : async () => {};
-    const pollInterval = options.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
+    const pollIntervalMs = options.pollIntervalMs ?? options.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
+    const maxPollAttempts = options.maxPollAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
+    const maxPollMs = options.maxPollMs ?? DEFAULT_MAX_POLL_MS;
     const postProcessingWait = options.postProcessingWait ?? 30_000;
 
     const segmentedPrompts =
@@ -344,7 +358,9 @@ function createTaurusApi(apiConfig = {}) {
       initialDuration: segmentPlan.initialDuration,
       referenceImages,
       onApiCall,
-      pollInterval,
+      pollIntervalMs,
+      maxPollAttempts,
+      maxPollMs,
       onPolling: async () => onStatus("polling", { segment: 1, totalSegments }),
     });
 
@@ -358,7 +374,9 @@ function createTaurusApi(apiConfig = {}) {
         prompt: segmentedPrompts[segmentNumber - 1],
         aspectRatio,
         onApiCall,
-        pollInterval,
+        pollIntervalMs,
+        maxPollAttempts,
+        maxPollMs,
         postProcessingWait,
         onStatus: async () => onStatus("extending", { segment: segmentNumber, totalSegments }),
         onPolling: async () => onStatus("polling", { segment: segmentNumber, totalSegments }),
@@ -392,7 +410,9 @@ function createTaurusApi(apiConfig = {}) {
         prompt,
         aspectRatio,
         onApiCall: options.onApiCall,
-        pollInterval: options.pollInterval,
+        pollIntervalMs: options.pollIntervalMs ?? options.pollInterval,
+        maxPollAttempts: options.maxPollAttempts,
+        maxPollMs: options.maxPollMs,
         postProcessingWait: options.postProcessingWait,
         onStatus: options.onStatus,
         onPolling: options.onPolling,
@@ -413,7 +433,8 @@ module.exports = {
   EXTENSION_SECONDS,
   MAX_TOTAL_SECONDS,
   MAX_EXTENSIONS,
-  MAX_POLLS,
+  DEFAULT_MAX_POLL_ATTEMPTS,
+  DEFAULT_MAX_POLL_MS,
   calculateSegments,
   splitScenario,
   pollOperation,
