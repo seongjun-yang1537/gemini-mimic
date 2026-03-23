@@ -12,3 +12,10 @@
 [codex] 2026-03-23 추가 메모 3
 - Gemini API 키 로딩은 src/config/environment.js에서 .env(프로젝트 루트) 기준으로 중앙 관리한다.
 - 서버 시작 시 GeminiClient 생성 전에 GEMINI_API_KEY 존재 여부를 검증하고, 누락 시 .env 설정 안내 오류를 반환한다.
+[codex] 2026-03-23 추가 메모 4
+- 에셋 메타데이터 저장소는 outputs/assets.json 파일을 사용하며 AssetStore(src/store/assetStore.js)에서 CRUD를 담당한다.
+- 에셋 실파일 루트는 assets/이며 category별 하위 폴더(inputs, references, generated/images, generated/videos, exports)를 AssetService에서 자동 생성·관리한다.
+- 에셋 API는 src/server.js에 /api/assets 계열 엔드포인트(GET 목록/상세/파일/썸네일, POST 업로드, PATCH 수정, DELETE 삭제, resolve 단건/프롬프트)를 제공한다.
+- 프롬프트 내 @태그는 AssetService.resolvePrompt/buildGeminiPartsFromPrompt와 GeminiClient 연동으로 inline_data 첨부 파트로 자동 변환된다.
+- 정적 에셋 관리 화면은 /assets 경로(public/assets.html)로 제공되고, 대시보드(public/index.html) 상단에서 바로 이동 가능하다.
+- 프롬프트 편집기(public/prompts.html)는 @ 입력 시 /api/assets 목록 기반 태그 자동완성 드롭다운을 제공한다.
