@@ -54,3 +54,9 @@
 - scripts/api-smoke.js는 임시 작업 디렉터리에서 서버를 실행해 /api/settings, /api/prompts, /api/run 핵심 라우트를 smoke 검증한다.
 - GitHub Actions CI(.github/workflows/ci.yml)는 npm ci 후 npm run lint && npm run test를 필수 게이트로 실행한다.
 - PR 템플릿(.github/pull_request_template.md)에 영향받는 API 엔드포인트/실행 확인 명령/롤백 포인트 체크리스트를 추가했다.
+- 공통 HTTP 에러 포맷을 src/http/errors/AppError.js로 분리해 status/message/code/details를 표준화했고, 응답에는 기존 호환 필드 error를 유지한다.
+- 요청 검증을 src/http/middlewares/validateRequest.js로 분리해 /api/settings, /api/prompts/*, /api/assets/upload 등 주요 라우트의 body/query/params 검증을 핸들러 이전 단계로 이동했다.
+- 라우트 비동기/예외 처리를 src/http/middlewares/errorHandler.js의 asyncRoute + 전역 errorHandler로 통합해 중복 try/catch를 줄이고 next(error) 경로로 일원화했다.
+- src/services/pipeline/ 디렉터리를 추가해 phase 실행기를 파일별로 분리했다(phase1Runner.js~phase4Runner.js).
+- src/services/pipeline/constants.js로 phase timeout map, pipeline timeout hard limit, phase3 반복 hard limit를 이동했다.
+- src/services/pipelineOrchestrator.js는 phase 순서 제어, executeWithTimeout, 공통 상태 업데이트, 공통 websocket 이벤트 발행, 실패 메타 기록 처리만 담당하도록 정리했다.
