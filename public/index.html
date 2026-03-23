@@ -3,45 +3,134 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles.css" />
     <title>Mimic</title>
+    <style>
+      .run-form {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .upload-dropzone {
+        border: 2px dashed var(--border);
+        border-radius: 12px;
+        padding: 48px;
+        text-align: center;
+        cursor: pointer;
+        transition: all 0.15s;
+      }
+
+      .upload-dropzone:hover,
+      .upload-dropzone.dragging {
+        border-color: var(--accent);
+        background: var(--accent-light);
+      }
+
+      .run-list {
+        margin: 0;
+        padding: 0;
+        list-style: none;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      .run-card {
+        border: 1px solid var(--border);
+        border-radius: 12px;
+        padding: 16px;
+        display: flex;
+        align-items: flex-start;
+        justify-content: space-between;
+        gap: 10px;
+      }
+
+      .run-preview {
+        color: var(--text-secondary);
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+        max-width: 520px;
+      }
+
+      .empty-state {
+        min-height: 240px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        text-align: center;
+      }
+
+      .tab-panel {
+        margin-top: 20px;
+      }
+
+      .frame-panel {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        width: 100%;
+        height: 78vh;
+        background: var(--bg-chat);
+      }
+    </style>
   </head>
-  <body class="bg-slate-950 text-slate-100">
-    <div class="max-w-7xl mx-auto p-6 space-y-6">
-      <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
-        <h1 class="text-2xl font-bold">Mimic 통합 대시보드</h1>
-        <div class="flex gap-2 text-sm">
-          <button data-tab-target="runs" class="tab-button bg-cyan-500 text-slate-950 px-3 py-2 rounded-lg font-semibold">실행 관리</button>
-          <button data-tab-target="prompts" class="tab-button bg-slate-800 px-3 py-2 rounded-lg">프롬프트 관리</button>
-          <button data-tab-target="assets" class="tab-button bg-slate-800 px-3 py-2 rounded-lg">에셋 관리</button>
-          <button data-tab-target="settings" class="tab-button bg-slate-800 px-3 py-2 rounded-lg">설정</button>
-        </div>
-      </header>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Mimic</div>
+        <button class="sidebar-item active" data-tab-target="runs">📋 대시보드</button>
+        <button class="sidebar-item" data-tab-target="prompts">📝 프롬프트</button>
+        <button class="sidebar-item" data-tab-target="assets">🗂️ 에셋</button>
+        <button class="sidebar-item" data-tab-target="settings">⚙️ 설정</button>
+        <div class="sidebar-divider"></div>
+        <div class="caption">최근 실행 목록</div>
+        <div id="sidebarRunList" class="sidebar-run-list"></div>
+      </aside>
 
-      <section id="tab-runs" class="tab-panel space-y-6">
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <form id="runForm" class="flex gap-3 items-center">
-            <input type="file" name="video" accept="video/mp4" class="text-sm" required />
-            <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">새 파이프라인 실행</button>
-          </form>
+      <main class="main-content page-enter page-enter-active">
+        <section id="tab-runs" class="tab-panel">
+          <header class="page-header">
+            <h1>Mimic</h1>
+            <button id="newRunButton" class="btn-primary" type="button">새 실행</button>
+          </header>
+
+          <section class="card" style="margin-bottom: 16px;">
+            <form id="runForm" class="run-form">
+              <label for="videoInput" class="caption">영상 파일 업로드</label>
+              <label class="upload-dropzone" id="dropzone" for="videoInput">
+                <div>📤</div>
+                <div>밈 영상을 업로드해 파이프라인을 실행하세요</div>
+                <div class="caption">MP4 파일만 지원됩니다</div>
+              </label>
+              <input id="videoInput" type="file" name="video" accept="video/mp4" required />
+              <div>
+                <button class="btn-primary" type="submit">파이프라인 실행</button>
+              </div>
+            </form>
+          </section>
+
+          <section class="card">
+            <h2 style="margin-bottom: 12px;">실행 리스트</h2>
+            <div id="emptyState" class="empty-state hidden">
+              <p>밈 영상을 업로드해서 첫 크리에이티브를 만들어보세요</p>
+            </div>
+            <ul id="runList" class="run-list"></ul>
+          </section>
         </section>
 
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-          <h2 class="font-semibold mb-3">실행 목록</h2>
-          <ul id="runList" class="space-y-2"></ul>
+        <section id="tab-prompts" class="tab-panel hidden">
+          <iframe title="prompts" src="/prompts" class="frame-panel"></iframe>
         </section>
-      </section>
-
-      <section id="tab-prompts" class="tab-panel hidden bg-slate-900 border border-slate-800 rounded-xl p-3">
-        <iframe title="prompts" src="/prompts" class="w-full h-[80vh] rounded-lg border border-slate-700 bg-slate-950"></iframe>
-      </section>
-
-      <section id="tab-assets" class="tab-panel hidden bg-slate-900 border border-slate-800 rounded-xl p-3">
-        <iframe title="assets" src="/assets" class="w-full h-[80vh] rounded-lg border border-slate-700 bg-slate-950"></iframe>
-      </section>
-      <section id="tab-settings" class="tab-panel hidden bg-slate-900 border border-slate-800 rounded-xl p-3">
-        <iframe title="settings" src="/settings" class="w-full h-[80vh] rounded-lg border border-slate-700 bg-slate-950"></iframe>
-      </section>
+        <section id="tab-assets" class="tab-panel hidden">
+          <iframe title="assets" src="/assets" class="frame-panel"></iframe>
+        </section>
+        <section id="tab-settings" class="tab-panel hidden">
+          <iframe title="settings" src="/settings" class="frame-panel"></iframe>
+        </section>
+      </main>
     </div>
 
     <script>
@@ -49,66 +138,87 @@
         if (!createdAtValue) {
           return '-';
         }
-
         const startTimestamp = new Date(createdAtValue).getTime();
         const endTimestamp = completedAtValue ? new Date(completedAtValue).getTime() : Date.now();
         const elapsedSeconds = Math.max(0, Math.floor((endTimestamp - startTimestamp) / 1000));
-
         const minutes = Math.floor(elapsedSeconds / 60);
         const seconds = elapsedSeconds % 60;
         return `${minutes}분 ${seconds}초`;
       }
 
+      function getStatusBadge(statusValue) {
+        if (statusValue === 'completed') {
+          return '<span class="badge badge-success">완료</span>';
+        }
+        if (statusValue === 'failed') {
+          return '<span class="badge badge-error">실패</span>';
+        }
+        return '<span class="badge badge-running">진행 중</span>';
+      }
+
       function renderRunItem(runItem) {
         const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
         const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
+        const scenarioPreviewText = (runItem.summary || runItem.scenario || '시나리오 생성 대기 중').replace(/\n/g, ' ');
         const failedMessageLine = runItem.status === 'failed' && runItem.errorMessage
-          ? `<p class="text-xs text-rose-300 mt-1 truncate" title="${runItem.errorMessage}">${runItem.errorMessage}</p>`
+          ? `<div class="caption" style="color: var(--error); margin-top: 4px;">${runItem.errorMessage}</div>`
           : '';
-
         return `
-          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center gap-3">
+          <li class="run-card">
             <div>
-              <p class="font-mono text-xs">${runItem.id}</p>
-              <p class="text-sm">${runItem.status} · 시작 ${startedText} · 소요 ${durationText}</p>
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
+                ${getStatusBadge(runItem.status)}
+                <span class="mono">${runItem.id}</span>
+              </div>
+              <div class="caption" style="margin-bottom: 4px;">생성 시간 ${startedText} · 소요 ${durationText}</div>
+              <div class="run-preview" title="${scenarioPreviewText}">${scenarioPreviewText}</div>
               ${failedMessageLine}
             </div>
-            <div class="flex items-center gap-4 text-sm whitespace-nowrap">
-              <a href="/run/${runItem.id}" class="text-cyan-300">모니터링</a>
-              <a href="/run/${runItem.id}/result" class="text-emerald-300">결과</a>
+            <div style="display: flex; gap: 8px;">
+              <a href="/run/${runItem.id}" class="btn-secondary">모니터링</a>
+              <a href="/run/${runItem.id}/result" class="btn-secondary">결과</a>
             </div>
           </li>
         `;
+      }
+
+      function renderSidebarRuns(runItems) {
+        const sidebarRunListElement = document.getElementById('sidebarRunList');
+        sidebarRunListElement.innerHTML = runItems.slice(0, 8).map((runItem) => {
+          const statusEmoji = runItem.status === 'completed' ? '✅' : runItem.status === 'failed' ? '❌' : '🔄';
+          return `<a class="sidebar-run-item" href="/run/${runItem.id}">• ${runItem.id} ${statusEmoji}</a>`;
+        }).join('');
       }
 
       async function loadRuns() {
         const response = await fetch('/api/run');
         const runs = await response.json();
         const runListElement = document.getElementById('runList');
+        const emptyStateElement = document.getElementById('emptyState');
         runListElement.innerHTML = runs.map(renderRunItem).join('');
+        renderSidebarRuns(runs);
+        emptyStateElement.classList.toggle('hidden', runs.length > 0);
       }
 
       function updateVisibleTab(targetTab) {
         document.querySelectorAll('.tab-panel').forEach((panelElement) => {
           panelElement.classList.add('hidden');
         });
-        document.querySelectorAll('.tab-button').forEach((buttonElement) => {
-          buttonElement.classList.remove('bg-cyan-500', 'text-slate-950', 'font-semibold');
-          buttonElement.classList.add('bg-slate-800');
+        document.querySelectorAll('[data-tab-target]').forEach((buttonElement) => {
+          buttonElement.classList.remove('active');
         });
-
-        const targetPanelElement = document.getElementById(`tab-${targetTab}`);
-        const targetButtonElement = document.querySelector(`button[data-tab-target="${targetTab}"]`);
-
-        targetPanelElement.classList.remove('hidden');
-        targetButtonElement.classList.remove('bg-slate-800');
-        targetButtonElement.classList.add('bg-cyan-500', 'text-slate-950', 'font-semibold');
+        document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
+        document.querySelector(`[data-tab-target="${targetTab}"]`).classList.add('active');
       }
 
-      document.querySelectorAll('.tab-button').forEach((buttonElement) => {
+      document.querySelectorAll('[data-tab-target]').forEach((buttonElement) => {
         buttonElement.addEventListener('click', () => {
           updateVisibleTab(buttonElement.dataset.tabTarget);
         });
+      });
+
+      document.getElementById('newRunButton').addEventListener('click', () => {
+        document.getElementById('videoInput').click();
       });
 
       document.getElementById('runForm').addEventListener('submit', async (event) => {
@@ -116,6 +226,23 @@
         const formData = new FormData(event.target);
         await fetch('/api/run', { method: 'POST', body: formData });
         await loadRuns();
+      });
+
+      const dropzoneElement = document.getElementById('dropzone');
+      const videoInputElement = document.getElementById('videoInput');
+      dropzoneElement.addEventListener('dragover', (event) => {
+        event.preventDefault();
+        dropzoneElement.classList.add('dragging');
+      });
+      dropzoneElement.addEventListener('dragleave', () => {
+        dropzoneElement.classList.remove('dragging');
+      });
+      dropzoneElement.addEventListener('drop', (event) => {
+        event.preventDefault();
+        dropzoneElement.classList.remove('dragging');
+        if (event.dataTransfer.files.length > 0) {
+          videoInputElement.files = event.dataTransfer.files;
+        }
       });
 
       loadRuns();

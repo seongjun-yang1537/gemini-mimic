@@ -3,35 +3,158 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="/styles.css" />
     <title>Mimic Prompts</title>
+    <style>
+      .prompt-layout {
+        display: grid;
+        grid-template-columns: 240px 1fr;
+        gap: 16px;
+      }
+
+      .prompt-list {
+        list-style: none;
+        margin: 0;
+        padding: 0;
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .phase-title {
+        font-size: 13px;
+        color: var(--text-secondary);
+        margin-bottom: 6px;
+      }
+
+      .phase-block {
+        border-bottom: 1px solid var(--border);
+        padding-bottom: 10px;
+      }
+
+      .phase-block:last-child {
+        border-bottom: none;
+      }
+
+      .editor-panel {
+        min-height: 70vh;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+      }
+
+      #editor {
+        min-height: 52vh;
+        font-family: 'SF Mono', 'Fira Code', monospace;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      #feedback {
+        min-height: 96px;
+      }
+
+      #suggestion {
+        margin: 0;
+        padding: 12px;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-chat);
+        white-space: pre-wrap;
+        min-height: 120px;
+      }
+
+      .top-row {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+      }
+
+      #tagSuggestion {
+        position: absolute;
+        top: calc(100% + 6px);
+        left: 0;
+        right: 0;
+        border: 1px solid var(--border);
+        border-radius: 8px;
+        background: var(--bg-chat);
+        max-height: 220px;
+        overflow-y: auto;
+      }
+
+      .tag-item {
+        width: 100%;
+        border: none;
+        border-bottom: 1px solid var(--border);
+        background: transparent;
+        text-align: left;
+        padding: 8px 12px;
+        cursor: pointer;
+      }
+
+      .tag-item:last-child {
+        border-bottom: none;
+      }
+
+      .tag-item:hover {
+        background: var(--bg-tertiary);
+      }
+
+      @media (max-width: 960px) {
+        .prompt-layout {
+          grid-template-columns: 1fr;
+        }
+      }
+    </style>
   </head>
-  <body class="bg-slate-950 text-slate-100">
-    <div class="max-w-6xl mx-auto p-6 space-y-6">
-      <a href="/" class="text-cyan-300 text-sm">← 대시보드</a>
-      <h1 class="text-2xl font-bold">프롬프트 관리</h1>
-      <div class="grid grid-cols-3 gap-4">
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-1">
-          <ul id="promptList" class="space-y-2 text-sm"></ul>
+  <body>
+    <div class="app-layout">
+      <aside class="sidebar">
+        <div class="sidebar-title">Mimic</div>
+        <a href="/" class="sidebar-item">📋 대시보드</a>
+        <a href="/prompts" class="sidebar-item active">📝 프롬프트</a>
+        <a href="/assets" class="sidebar-item">🗂️ 에셋</a>
+      </aside>
+
+      <main class="main-content page-enter page-enter-active">
+        <header class="page-header">
+          <h1>프롬프트 관리</h1>
+        </header>
+
+        <section class="prompt-layout">
+          <section class="card">
+            <ul id="promptList" class="prompt-list"></ul>
+          </section>
+
+          <section class="card editor-panel">
+            <div class="top-row">
+              <h2 id="title">선택된 프롬프트 없음</h2>
+              <span id="dirtyBadge" class="badge badge-warning hidden">수정됨</span>
+            </div>
+
+            <div style="position: relative;">
+              <textarea id="editor"></textarea>
+              <div id="tagSuggestion" class="hidden"></div>
+            </div>
+
+            <div>
+              <button id="save" class="btn-primary">저장</button>
+            </div>
+
+            <textarea id="feedback" placeholder="피드백 입력"></textarea>
+            <div>
+              <button id="update" class="btn-secondary">AI 업데이트 제안</button>
+            </div>
+            <pre id="suggestion"></pre>
+          </section>
         </section>
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-2 space-y-3 relative">
-          <h2 id="title" class="font-semibold">선택된 프롬프트 없음</h2>
-          <div class="relative">
-            <textarea id="editor" class="w-full min-h-[320px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
-            <div id="tagSuggestion" class="hidden absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-lg max-h-52 overflow-auto"></div>
-          </div>
-          <button id="save" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">저장</button>
-          <hr class="border-slate-800" />
-          <textarea id="feedback" placeholder="피드백 입력" class="w-full min-h-[100px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
-          <button id="update" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">AI 업데이트 제안</button>
-          <pre id="suggestion" class="bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs whitespace-pre-wrap"></pre>
-        </section>
-      </div>
+      </main>
     </div>
 
     <script>
-      let selected = null;
+      let selectedPrompt = null;
       let assetList = [];
+      let originalPromptContent = '';
 
       function getCurrentTagQuery() {
         const editorElement = document.getElementById('editor');
@@ -42,7 +165,6 @@
           return null;
         }
         return {
-          rawTag: matchResult[0].trim(),
           keyword: matchResult[1],
           cursorIndex,
         };
@@ -54,38 +176,40 @@
         suggestionElement.innerHTML = '';
       }
 
+      function refreshDirtyBadge() {
+        const dirtyBadgeElement = document.getElementById('dirtyBadge');
+        const editorValue = document.getElementById('editor').value;
+        const isDirty = selectedPrompt && editorValue !== originalPromptContent;
+        dirtyBadgeElement.classList.toggle('hidden', !isDirty);
+      }
+
       function showTagSuggestion(tagQuery) {
         const suggestionElement = document.getElementById('tagSuggestion');
-        const filteredAssets = assetList
-          .filter((assetItem) => assetItem.tagId.toLowerCase().includes(tagQuery.keyword.toLowerCase()))
-          .slice(0, 8);
+        const filteredAssets = assetList.filter((assetItem) => assetItem.tagId.toLowerCase().includes(tagQuery.keyword.toLowerCase())).slice(0, 8);
 
         if (!filteredAssets.length) {
           hideTagSuggestion();
           return;
         }
 
-        suggestionElement.innerHTML = filteredAssets
-          .map(
-            (assetItem) => `
-              <button data-tag-id="${assetItem.tagId}" class="w-full text-left p-2 hover:bg-slate-800 border-b border-slate-800 last:border-b-0">
-                <span class="text-cyan-300">@${assetItem.tagId}</span>
-                <span class="text-xs text-slate-400 ml-2">${assetItem.fileName} · ${assetItem.category}</span>
-              </button>
-            `,
-          )
-          .join('');
+        suggestionElement.innerHTML = filteredAssets.map((assetItem) => `
+          <button type="button" data-tag-id="${assetItem.tagId}" class="tag-item">
+            <span style="color: var(--accent);">@${assetItem.tagId}</span>
+            <span class="caption"> ${assetItem.fileName} · ${assetItem.category}</span>
+          </button>
+        `).join('');
         suggestionElement.classList.remove('hidden');
 
-        suggestionElement.querySelectorAll('button[data-tag-id]').forEach((button) => {
-          button.addEventListener('click', () => {
+        suggestionElement.querySelectorAll('[data-tag-id]').forEach((tagButtonElement) => {
+          tagButtonElement.addEventListener('click', () => {
             const editorElement = document.getElementById('editor');
             const textBeforeCursor = editorElement.value.slice(0, tagQuery.cursorIndex);
             const textAfterCursor = editorElement.value.slice(tagQuery.cursorIndex);
-            const replacedTextBeforeCursor = textBeforeCursor.replace(/@([a-zA-Z0-9_가-힣]*)$/, `@${button.dataset.tagId}`);
+            const replacedTextBeforeCursor = textBeforeCursor.replace(/@([a-zA-Z0-9_가-힣]*)$/, `@${tagButtonElement.dataset.tagId}`);
             editorElement.value = `${replacedTextBeforeCursor}${textAfterCursor}`;
             hideTagSuggestion();
             editorElement.focus();
+            refreshDirtyBadge();
           });
         });
       }
@@ -98,31 +222,37 @@
       async function loadPromptList() {
         const response = await fetch('/api/prompts');
         const prompts = await response.json();
-        const grouped = prompts.reduce((bucket, item) => {
-          bucket[item.phase] = bucket[item.phase] || [];
-          bucket[item.phase].push(item);
-          return bucket;
+        const groupedPrompts = prompts.reduce((bucketObject, promptItem) => {
+          bucketObject[promptItem.phase] = bucketObject[promptItem.phase] || [];
+          bucketObject[promptItem.phase].push(promptItem);
+          return bucketObject;
         }, {});
 
-        document.getElementById('promptList').innerHTML = Object.entries(grouped)
-          .map(([phase, items]) => `<li class="font-semibold">${phase}<ul class="pl-3 mt-2 space-y-1">${items
-            .map((item) => `<li><button data-phase="${item.phase}" data-expert="${item.expert}" class="text-cyan-300">${item.expert}</button></li>`)
-            .join('')}</ul></li>`)
-          .join('');
+        document.getElementById('promptList').innerHTML = Object.entries(groupedPrompts).map(([phaseName, promptItems]) => `
+          <li class="phase-block">
+            <div class="phase-title">${phaseName}</div>
+            ${promptItems.map((promptItem) => `
+              <button class="sidebar-item" data-phase="${promptItem.phase}" data-expert="${promptItem.expert}">${promptItem.expert}</button>
+            `).join('')}
+          </li>
+        `).join('');
 
-        document.querySelectorAll('button[data-phase]').forEach((button) => {
-          button.addEventListener('click', async () => {
-            selected = { phase: button.dataset.phase, expert: button.dataset.expert };
-            const promptResponse = await fetch(`/api/prompts/${selected.phase}/${selected.expert}`);
-            const payload = await promptResponse.json();
-            document.getElementById('title').textContent = `${selected.phase}/${selected.expert}`;
-            document.getElementById('editor').value = payload.content || '';
+        document.querySelectorAll('button[data-phase]').forEach((promptButtonElement) => {
+          promptButtonElement.addEventListener('click', async () => {
+            selectedPrompt = { phase: promptButtonElement.dataset.phase, expert: promptButtonElement.dataset.expert };
+            const promptResponse = await fetch(`/api/prompts/${selectedPrompt.phase}/${selectedPrompt.expert}`);
+            const promptPayload = await promptResponse.json();
+            originalPromptContent = promptPayload.content || '';
+            document.getElementById('title').textContent = `${selectedPrompt.phase}/${selectedPrompt.expert}`;
+            document.getElementById('editor').value = originalPromptContent;
+            refreshDirtyBadge();
           });
         });
       }
 
       document.getElementById('editor').addEventListener('input', () => {
         const tagQuery = getCurrentTagQuery();
+        refreshDirtyBadge();
         if (!tagQuery) {
           hideTagSuggestion();
           return;
@@ -140,12 +270,16 @@
       });
 
       document.getElementById('save').addEventListener('click', async () => {
-        if (!selected) return;
-        await fetch(`/api/prompts/${selected.phase}/${selected.expert}`, {
+        if (!selectedPrompt) {
+          return;
+        }
+        await fetch(`/api/prompts/${selectedPrompt.phase}/${selectedPrompt.expert}`, {
           method: 'PUT',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ content: document.getElementById('editor').value }),
         });
+        originalPromptContent = document.getElementById('editor').value;
+        refreshDirtyBadge();
         await loadPromptList();
       });
 
