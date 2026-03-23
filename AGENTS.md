@@ -60,3 +60,7 @@
 - src/services/pipeline/ 디렉터리를 추가해 phase 실행기를 파일별로 분리했다(phase1Runner.js~phase4Runner.js).
 - src/services/pipeline/constants.js로 phase timeout map, pipeline timeout hard limit, phase3 반복 hard limit를 이동했다.
 - src/services/pipelineOrchestrator.js는 phase 순서 제어, executeWithTimeout, 공통 상태 업데이트, 공통 websocket 이벤트 발행, 실패 메타 기록 처리만 담당하도록 정리했다.
+[codex] 2026-03-23 추가 메모 12
+- 서버 엔트리포인트를 경량화하기 위해 src/app/createApp.js를 도입해 공통 미들웨어와 라우터 조립을 분리했다.
+- API 라우터는 src/routes/runRoutes.js, promptRoutes.js, assetRoutes.js, settingsRoutes.js로 도메인 단위 분리했고, 모두 createXxxRoutes({ ...deps }) 형태의 의존성 주입 팩토리를 사용한다.
+- 정적 페이지 라우트는 src/routes/webRoutes.js로 분리해 /run/:id, /run/:id/result, /prompts, /assets, /settings, /{*fallbackPath}를 전담한다.
