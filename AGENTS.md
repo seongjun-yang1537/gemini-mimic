@@ -48,3 +48,7 @@
 - Gemini 텍스트 기본 모델 기본값을 더 이상 존재하지 않는 gemini-3-pro에서 gemini-3.1-pro-preview로 변경했다.
 - 분할용 splitModel 기본값/선택지도 gemini-3.1-flash-lite-preview 중심으로 갱신해 모델 not found(404) 가능성을 낮췄다.
 - settings 스키마의 gemini.model 옵션에서 gemini-3-pro를 제거하고 현재 가격 문서에 노출된 유효 모델명을 반영했다.
+[codex] 2026-03-23 추가 메모 11
+- src/services/pipeline/ 디렉터리를 추가해 phase 실행기를 파일별로 분리했다(phase1Runner.js~phase4Runner.js).
+- src/services/pipeline/constants.js로 phase timeout map, pipeline timeout hard limit, phase3 반복 hard limit를 이동했다.
+- src/services/pipelineOrchestrator.js는 phase 순서 제어, executeWithTimeout, 공통 상태 업데이트, 공통 websocket 이벤트 발행, 실패 메타 기록 처리만 담당하도록 정리했다.
