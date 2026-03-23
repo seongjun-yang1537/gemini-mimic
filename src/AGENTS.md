@@ -23,3 +23,6 @@
 - createApp에서 driveRoutes를 마운트해 로컬 업로드(/api/upload)와 프롬프트 제출(/api/generate) 요청을 runStore/pipelineOrchestrator와 연결한다.
 [codex] 2026-03-23 작업 메모 3
 - 사용자 요청으로 src 하위 .js 코드 파일을 제거해 서버 코드를 초기화했다.
+[codex] 2026-03-23 작업 메모 4
+- src/server.js를 재생성해 npm start(node src/server.js) 기준 진입점 누락 오류(MODULE_NOT_FOUND)를 해결했다.
+- 복구 서버는 public 정적 파일 제공과 /api/health 엔드포인트, Express 5 catch-all('/{*fallbackPath}')을 포함한다.
