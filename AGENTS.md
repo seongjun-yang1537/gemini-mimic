@@ -89,3 +89,6 @@
 [codex] 2026-03-23 추가 메모 16
 - 대시보드 입력 UX를 Prompt Input & File Browser 구조로 개편해 하단 고정 입력 바, 첨부 프리뷰 스트립, 📎 드롭다운, 서버 드라이브 모달(검색/정렬/그리드·리스트/브레드크럼)을 통합했다.
 - 서버 측에 src/routes/driveRoutes.js를 추가해 /api/drive/* 탐색·검색·썸네일·프리뷰·스트리밍, /api/upload, /api/generate 엔드포인트를 제공하도록 확장했다.
+[codex] 2026-03-23 추가 메모 17
+- 사용자 요청으로 public/index.html을 Hello World 단일 화면으로 단순화했다.
+- 사용자 요청으로 taurus/index.js를 제외한 .js 파일들을 정리해 초기 재구축 시작 상태로 맞췄다.

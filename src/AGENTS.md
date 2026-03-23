@@ -21,3 +21,5 @@
 [codex] 2026-03-23 드라이브 API 메모
 - src/routes/driveRoutes.js를 추가해 에셋 저장소를 드라이브 형식으로 매핑하는 API(/api/drive/folders/:id/contents, /api/drive/search, /api/drive/files/:id/{thumbnail,preview,stream})를 제공한다.
 - createApp에서 driveRoutes를 마운트해 로컬 업로드(/api/upload)와 프롬프트 제출(/api/generate) 요청을 runStore/pipelineOrchestrator와 연결한다.
+[codex] 2026-03-23 작업 메모 3
+- 사용자 요청으로 src 하위 .js 코드 파일을 제거해 서버 코드를 초기화했다.

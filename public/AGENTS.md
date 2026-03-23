@@ -10,3 +10,5 @@
 [codex] 2026-03-23 추가 메모 4
 - public/index.html 실행 목록 상태 뱃지 렌더링에 isRunActive(created/queued/running/cancelling) 판별을 추가해 진행 중 실행만 radial 애니메이션 클래스를 부여한다.
 - public/styles.css에 .badge-radial-progress와 radial-spin/radial-pulse 키프레임을 추가해 실행 중 상태 뱃지 주변에 원형 진행 애니메이션을 표시한다.
+[codex] 2026-03-23 추가 메모 5
+- 사용자 요청으로 public/index.html을 Hello World 단일 페이지로 교체했고, 나머지 public 정적 페이지/스타일 파일을 제거했다.
