@@ -1,65 +1,97 @@
 // Generated under Codex compliance with AGENTS.md (gemini-mimic)
-const fs = require("node:fs");
+const fs = require("node:fs/promises");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
 
 class RunStore {
   constructor(storagePath) {
     this.storagePath = path.resolve(storagePath || "./outputs/runs.json");
-    fs.mkdirSync(path.dirname(this.storagePath), { recursive: true });
-    if (!fs.existsSync(this.storagePath)) {
-      fs.writeFileSync(this.storagePath, JSON.stringify([], null, 2), "utf8");
+    this.fileAccessQueue = Promise.resolve();
+    this.readyPromise = this.ensureStorageReady();
+  }
+
+  async ensureStorageReady() {
+    await fs.mkdir(path.dirname(this.storagePath), { recursive: true });
+    try {
+      await fs.access(this.storagePath);
+    } catch {
+      await fs.writeFile(this.storagePath, JSON.stringify([], null, 2), "utf8");
     }
   }
 
-  readRuns() {
-    const jsonText = fs.readFileSync(this.storagePath, "utf8");
-    return JSON.parse(jsonText);
+  async runWithSerializedFileAccess(operation) {
+    const operationPromise = this.fileAccessQueue.then(operation, operation);
+    this.fileAccessQueue = operationPromise.catch(() => {});
+    return operationPromise;
   }
 
-  saveRuns(runList) {
-    fs.writeFileSync(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
+  async readRuns() {
+    await this.readyPromise;
+    return this.runWithSerializedFileAccess(async () => {
+      const runsJsonText = await fs.readFile(this.storagePath, "utf8");
+      return JSON.parse(runsJsonText);
+    });
   }
 
-  createRun(inputVideoPath, configSnapshot = null) {
-    const runList = this.readRuns();
-    const pipelineRun = {
-      id: randomUUID(),
-      status: "running",
-      createdAt: new Date().toISOString(),
-      inputVideo: inputVideoPath,
-      tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
-      apiCallUsage: { callCount: 0, maxCalls: 0 },
-      configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
-    };
-    runList.unshift(pipelineRun);
-    this.saveRuns(runList);
-    return pipelineRun;
+  async saveRuns(runList) {
+    await this.readyPromise;
+    return this.runWithSerializedFileAccess(async () => {
+      await fs.writeFile(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
+    });
   }
 
-  updateRun(runId, updates) {
-    const runList = this.readRuns();
-    const runIndex = runList.findIndex((run) => run.id === runId);
-    if (runIndex === -1) {
-      throw new Error("Run not found");
-    }
-    runList[runIndex] = { ...runList[runIndex], ...updates };
-    this.saveRuns(runList);
-    return runList[runIndex];
+  async createRun(inputVideoPath, configSnapshot = null) {
+    await this.readyPromise;
+    return this.runWithSerializedFileAccess(async () => {
+      const runsJsonText = await fs.readFile(this.storagePath, "utf8");
+      const runList = JSON.parse(runsJsonText);
+      const pipelineRun = {
+        id: randomUUID(),
+        status: "running",
+        createdAt: new Date().toISOString(),
+        inputVideo: inputVideoPath,
+        tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
+        apiCallUsage: { callCount: 0, maxCalls: 0 },
+        configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
+      };
+      runList.unshift(pipelineRun);
+      await fs.writeFile(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
+      return pipelineRun;
+    });
   }
 
-  getRun(runId) {
-    return this.readRuns().find((run) => run.id === runId);
+  async updateRun(runId, updates) {
+    await this.readyPromise;
+    return this.runWithSerializedFileAccess(async () => {
+      const runsJsonText = await fs.readFile(this.storagePath, "utf8");
+      const runList = JSON.parse(runsJsonText);
+      const runIndex = runList.findIndex((run) => run.id === runId);
+      if (runIndex === -1) {
+        throw new Error("Run not found");
+      }
+      runList[runIndex] = { ...runList[runIndex], ...updates };
+      await fs.writeFile(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
+      return runList[runIndex];
+    });
   }
 
-  listRuns() {
+  async getRun(runId) {
+    const runList = await this.readRuns();
+    return runList.find((run) => run.id === runId);
+  }
+
+  async listRuns() {
     return this.readRuns();
   }
 
-  deleteRun(runId) {
-    const runList = this.readRuns();
-    const filteredRuns = runList.filter((run) => run.id !== runId);
-    this.saveRuns(filteredRuns);
+  async deleteRun(runId) {
+    await this.readyPromise;
+    return this.runWithSerializedFileAccess(async () => {
+      const runsJsonText = await fs.readFile(this.storagePath, "utf8");
+      const runList = JSON.parse(runsJsonText);
+      const filteredRuns = runList.filter((run) => run.id !== runId);
+      await fs.writeFile(this.storagePath, JSON.stringify(filteredRuns, null, 2), "utf8");
+    });
   }
 }
 
