@@ -1,4 +1,5 @@
 // Generated under Codex compliance with AGENTS.md (gemini-mimic)
+const fs = require("node:fs");
 const path = require("node:path");
 const { createTaurusApi } = require("../../taurus/api");
 
@@ -9,6 +10,7 @@ class PipelineOrchestrator {
     this.debateEngine = dependencies.debateEngine;
     this.geminiClient = dependencies.geminiClient;
     this.wsHub = dependencies.wsHub;
+    this.assetService = dependencies.assetService;
     this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
     this.taurusApi = createTaurusApi({ apiKey: process.env.GEMINI_API_KEY });
   }
@@ -79,10 +81,22 @@ class PipelineOrchestrator {
     );
 
     const generatedReferencePath = path.join(this.outputsDirectory, `${runId}-reference-1.png`);
+    const generatedReferenceAssets = [];
+
+    if (this.assetService && fs.existsSync(generatedReferencePath)) {
+      const storedReferenceAsset = this.assetService.registerAssetFromFile(generatedReferencePath, {
+        category: "generated_image",
+        tagSeed: `${runId}_reference_1`,
+        sourceRunId: runId,
+        sourcePhase: 2,
+      });
+      generatedReferenceAssets.push(storedReferenceAsset);
+    }
 
     this.runStore.updateRun(runId, {
       phase2Result: {
         referenceSheets: [generatedReferencePath],
+        referenceAssetIds: generatedReferenceAssets.map((assetItem) => assetItem.id),
         assetList: assetListText,
       },
     });
@@ -119,6 +133,17 @@ class PipelineOrchestrator {
 
       this.wsHub.publish(runId, { type: "media_ready", mediaType: "video", url: taurusResult.outputPath });
 
+      let generatedVideoAsset = null;
+      if (this.assetService) {
+        generatedVideoAsset = this.assetService.registerAssetFromFile(taurusResult.outputPath, {
+          category: "generated_video",
+          tagSeed: `${runId}_iteration_${currentIteration}`,
+          sourceRunId: runId,
+          sourcePhase: 3,
+          iteration: currentIteration,
+        });
+      }
+
       const evaluatorDefinitions = [
         { name: "행동 묘사 평가", role: "action", prompt: phase3Prompts.action_eval_expert },
         { name: "캐릭터 평가", role: "character", prompt: phase3Prompts.character_eval_expert },
@@ -143,11 +168,18 @@ class PipelineOrchestrator {
         iteration: currentIteration,
       });
 
+      if (generatedVideoAsset) {
+        generatedVideoAsset = this.assetService.updateAsset(generatedVideoAsset.id, {
+          verdict: passDecision ? "pass" : "fail",
+        });
+      }
+
       iterationList.push({
         number: currentIteration,
         videoPath: taurusResult.outputPath,
         evaluation: evaluationDebate,
         verdict: passDecision ? "pass" : "fail",
+        assetId: generatedVideoAsset?.id,
         correctionNote: passDecision ? undefined : evaluationDebate.summary,
       });
 
@@ -177,10 +209,21 @@ class PipelineOrchestrator {
 
     const finalCreativePath = path.join(this.outputsDirectory, `${runId}-final-creative.mp4`);
 
+    let exportAsset = null;
+    if (this.assetService && fs.existsSync(finalCreativePath)) {
+      exportAsset = this.assetService.registerAssetFromFile(finalCreativePath, {
+        category: "export",
+        tagSeed: `${runId}_final_creative`,
+        sourceRunId: runId,
+        sourcePhase: 4,
+      });
+    }
+
     this.runStore.updateRun(runId, {
       phase4Result: {
         editSpec: editSpecText,
         finalCreative: finalCreativePath,
+        exportAssetId: exportAsset?.id,
       },
     });
 

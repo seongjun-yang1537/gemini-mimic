@@ -14,9 +14,12 @@
         <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-1">
           <ul id="promptList" class="space-y-2 text-sm"></ul>
         </section>
-        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-2 space-y-3">
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-2 space-y-3 relative">
           <h2 id="title" class="font-semibold">선택된 프롬프트 없음</h2>
-          <textarea id="editor" class="w-full min-h-[320px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
+          <div class="relative">
+            <textarea id="editor" class="w-full min-h-[320px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
+            <div id="tagSuggestion" class="hidden absolute z-20 left-0 right-0 mt-1 bg-slate-900 border border-slate-700 rounded-lg max-h-52 overflow-auto"></div>
+          </div>
           <button id="save" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">저장</button>
           <hr class="border-slate-800" />
           <textarea id="feedback" placeholder="피드백 입력" class="w-full min-h-[100px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
@@ -28,6 +31,69 @@
 
     <script>
       let selected = null;
+      let assetList = [];
+
+      function getCurrentTagQuery() {
+        const editorElement = document.getElementById('editor');
+        const cursorIndex = editorElement.selectionStart;
+        const leftText = editorElement.value.slice(0, cursorIndex);
+        const matchResult = leftText.match(/(?:^|\s)@([a-zA-Z0-9_가-힣]*)$/);
+        if (!matchResult) {
+          return null;
+        }
+        return {
+          rawTag: matchResult[0].trim(),
+          keyword: matchResult[1],
+          cursorIndex,
+        };
+      }
+
+      function hideTagSuggestion() {
+        const suggestionElement = document.getElementById('tagSuggestion');
+        suggestionElement.classList.add('hidden');
+        suggestionElement.innerHTML = '';
+      }
+
+      function showTagSuggestion(tagQuery) {
+        const suggestionElement = document.getElementById('tagSuggestion');
+        const filteredAssets = assetList
+          .filter((assetItem) => assetItem.tagId.toLowerCase().includes(tagQuery.keyword.toLowerCase()))
+          .slice(0, 8);
+
+        if (!filteredAssets.length) {
+          hideTagSuggestion();
+          return;
+        }
+
+        suggestionElement.innerHTML = filteredAssets
+          .map(
+            (assetItem) => `
+              <button data-tag-id="${assetItem.tagId}" class="w-full text-left p-2 hover:bg-slate-800 border-b border-slate-800 last:border-b-0">
+                <span class="text-cyan-300">@${assetItem.tagId}</span>
+                <span class="text-xs text-slate-400 ml-2">${assetItem.fileName} · ${assetItem.category}</span>
+              </button>
+            `,
+          )
+          .join('');
+        suggestionElement.classList.remove('hidden');
+
+        suggestionElement.querySelectorAll('button[data-tag-id]').forEach((button) => {
+          button.addEventListener('click', () => {
+            const editorElement = document.getElementById('editor');
+            const textBeforeCursor = editorElement.value.slice(0, tagQuery.cursorIndex);
+            const textAfterCursor = editorElement.value.slice(tagQuery.cursorIndex);
+            const replacedTextBeforeCursor = textBeforeCursor.replace(/@([a-zA-Z0-9_가-힣]*)$/, `@${button.dataset.tagId}`);
+            editorElement.value = `${replacedTextBeforeCursor}${textAfterCursor}`;
+            hideTagSuggestion();
+            editorElement.focus();
+          });
+        });
+      }
+
+      async function loadAssets() {
+        const response = await fetch('/api/assets');
+        assetList = await response.json();
+      }
 
       async function loadPromptList() {
         const response = await fetch('/api/prompts');
@@ -55,6 +121,24 @@
         });
       }
 
+      document.getElementById('editor').addEventListener('input', () => {
+        const tagQuery = getCurrentTagQuery();
+        if (!tagQuery) {
+          hideTagSuggestion();
+          return;
+        }
+        showTagSuggestion(tagQuery);
+      });
+
+      document.getElementById('editor').addEventListener('click', () => {
+        const tagQuery = getCurrentTagQuery();
+        if (!tagQuery) {
+          hideTagSuggestion();
+          return;
+        }
+        showTagSuggestion(tagQuery);
+      });
+
       document.getElementById('save').addEventListener('click', async () => {
         if (!selected) return;
         await fetch(`/api/prompts/${selected.phase}/${selected.expert}`, {
@@ -75,7 +159,7 @@
         document.getElementById('suggestion').textContent = payload.suggestion || '';
       });
 
-      loadPromptList();
+      Promise.all([loadAssets(), loadPromptList()]);
     </script>
   </body>
 </html>

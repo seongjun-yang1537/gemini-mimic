@@ -23,10 +23,24 @@ class GeminiClient {
   constructor(config = {}) {
     this.apiKey = config.apiKey || getRequiredGeminiApiKey();
     this.model = config.model || "gemini-3-pro";
+    this.assetService = config.assetService;
+  }
+
+  buildPartsFromContent(content) {
+    if (typeof content !== "string") {
+      return [buildTextPart(content)];
+    }
+
+    if (!this.assetService || !content.includes("@")) {
+      return [buildTextPart(content)];
+    }
+
+    const resolvedPromptPayload = this.assetService.buildGeminiPartsFromPrompt(content);
+    return resolvedPromptPayload.parts;
   }
 
   async callGemini(systemPrompt, content, options = {}) {
-    const parts = [buildTextPart(content)];
+    const parts = this.buildPartsFromContent(content);
     if (options.videoPath) {
       parts.push(buildVideoPart(options.videoPath));
     }
