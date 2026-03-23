@@ -6,25 +6,213 @@
     <link rel="stylesheet" href="/styles.css" />
     <title>Mimic</title>
     <style>
-      .run-form {
+      .tab-panel {
+        margin-top: 20px;
+      }
+
+      .frame-panel {
+        border-radius: 12px;
+        border: 1px solid var(--border);
+        width: 100%;
+        height: 78vh;
+        background: var(--bg-chat);
+      }
+
+      .workspace-shell {
+        border: 1px solid var(--border);
+        border-radius: 16px;
+        background: var(--bg-chat);
+        min-height: 76vh;
         display: flex;
         flex-direction: column;
-        gap: 12px;
+        overflow: hidden;
       }
 
-      .upload-dropzone {
-        border: 2px dashed var(--border);
-        border-radius: 12px;
-        padding: 48px;
-        text-align: center;
+      .workspace-main {
+        flex: 1;
+        padding: 24px;
+      }
+
+      .input-dock {
+        border-top: 1px solid var(--border);
+        padding: 12px 16px 16px;
+        background: #fcfcfa;
+      }
+
+      .attachment-strip {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px;
+        margin-bottom: 10px;
+      }
+
+      .attachment-chip {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        border: 1px solid var(--border);
+        border-radius: 999px;
+        padding: 6px 10px;
+        background: #fff;
+        max-width: 320px;
+      }
+
+      .attachment-name {
+        font-size: 13px;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .attachment-remove {
+        border: none;
+        background: transparent;
+        color: var(--text-secondary);
         cursor: pointer;
-        transition: all 0.15s;
+        font-size: 14px;
       }
 
-      .upload-dropzone:hover,
-      .upload-dropzone.dragging {
+      .prompt-input-row {
+        display: flex;
+        gap: 10px;
+        align-items: flex-end;
+      }
+
+      .attach-menu-shell {
+        position: relative;
+      }
+
+      .attach-button {
+        width: 38px;
+        height: 38px;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        background: #fff;
+        cursor: pointer;
+      }
+
+      .attach-menu {
+        position: absolute;
+        left: 0;
+        bottom: 46px;
+        background: #fff;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        min-width: 250px;
+        overflow: hidden;
+        z-index: 20;
+      }
+
+      .attach-menu button {
+        border: none;
+        width: 100%;
+        text-align: left;
+        background: #fff;
+        padding: 10px 12px;
+        cursor: pointer;
+      }
+
+      .attach-menu button:hover {
+        background: var(--bg-secondary);
+      }
+
+      .prompt-textarea {
+        min-height: 38px;
+        max-height: 180px;
+        resize: none;
+      }
+
+      .send-button {
+        min-width: 90px;
+        height: 38px;
+      }
+
+      .drop-highlight {
+        box-shadow: inset 0 0 0 2px var(--accent);
+        background: var(--accent-light);
+      }
+
+      .drive-modal {
+        position: fixed;
+        inset: 0;
+        background: rgba(12, 12, 12, 0.35);
+        z-index: 40;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .drive-card {
+        width: min(1100px, 70vw);
+        height: min(760px, 80vh);
+        background: #fff;
+        border-radius: 16px;
+        border: 1px solid var(--border);
+        display: flex;
+        flex-direction: column;
+      }
+
+      .drive-header,
+      .drive-toolbar,
+      .drive-footer {
+        padding: 12px 14px;
+        border-bottom: 1px solid var(--border);
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .drive-footer {
+        border-bottom: none;
+        border-top: 1px solid var(--border);
+        margin-top: auto;
+        justify-content: space-between;
+      }
+
+      .drive-breadcrumb {
+        padding: 10px 14px;
+        border-bottom: 1px solid var(--border);
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 6px;
+      }
+
+      .drive-content {
+        padding: 12px 14px;
+        overflow: auto;
+      }
+
+      .drive-grid {
+        display: grid;
+        grid-template-columns: repeat(6, minmax(0, 1fr));
+        gap: 10px;
+      }
+
+      .drive-item {
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        min-height: 92px;
+        cursor: pointer;
+      }
+
+      .drive-item.selected {
         border-color: var(--accent);
         background: var(--accent-light);
+      }
+
+      .drive-list-row {
+        display: grid;
+        grid-template-columns: 32px 1.2fr 120px 160px;
+        gap: 8px;
+        align-items: center;
+        border: 1px solid var(--border);
+        border-radius: 10px;
+        padding: 10px;
+        margin-bottom: 8px;
+        cursor: pointer;
       }
 
       .run-list {
@@ -54,26 +242,27 @@
         max-width: 520px;
       }
 
-      .empty-state {
-        min-height: 240px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        gap: 12px;
-        text-align: center;
+      @media (max-width: 1023px) {
+        .drive-card {
+          width: 85vw;
+          height: 85vh;
+        }
+
+        .drive-grid {
+          grid-template-columns: repeat(4, minmax(0, 1fr));
+        }
       }
 
-      .tab-panel {
-        margin-top: 20px;
-      }
+      @media (max-width: 767px) {
+        .drive-card {
+          width: 100vw;
+          height: 100vh;
+          border-radius: 0;
+        }
 
-      .frame-panel {
-        border-radius: 12px;
-        border: 1px solid var(--border);
-        width: 100%;
-        height: 78vh;
-        background: var(--bg-chat);
+        .drive-grid {
+          grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
       }
     </style>
   </head>
@@ -93,37 +282,30 @@
       <main class="main-content page-enter page-enter-active">
         <section id="tab-runs" class="tab-panel">
           <header class="page-header">
-            <h1>Mimic</h1>
-            <button id="newRunButton" class="btn-primary" type="button">새 실행</button>
+            <h1>Prompt Input & File Browser</h1>
           </header>
 
-          <section class="card" style="margin-bottom: 16px;">
-            <form id="runForm" class="run-form">
-              <label for="videoInput" class="caption">영상 파일 업로드 (선택)</label>
-              <label class="upload-dropzone" id="dropzone" for="videoInput">
-                <div>📤</div>
-                <div>밈 영상을 업로드하거나 기존 에셋을 선택해 실행하세요</div>
-                <div class="caption">MP4 / WEBM 지원</div>
-              </label>
-              <input id="videoInput" type="file" name="video" accept="video/mp4,video/webm" />
-              <label for="inputAssetId" class="caption">서버에 있는 영상 에셋 선택 (선택)</label>
-              <select id="inputAssetId" name="inputAssetId"></select>
-              <label for="referenceAssetIds" class="caption">레퍼런스 이미지 에셋 선택 (복수 선택 가능)</label>
-              <select id="referenceAssetIds" multiple size="5"></select>
-              <label for="inputText" class="caption">텍스트 입력 (선택)</label>
-              <textarea id="inputText" name="inputText" rows="4" placeholder="영상 없이 텍스트만으로도 실행할 수 있습니다."></textarea>
-              <div>
-                <button class="btn-primary" type="submit">파이프라인 실행</button>
-              </div>
-            </form>
-          </section>
-
-          <section class="card">
-            <h2 style="margin-bottom: 12px;">실행 리스트</h2>
-            <div id="emptyState" class="empty-state hidden">
-              <p>밈 영상을 업로드해서 첫 크리에이티브를 만들어보세요</p>
+          <section class="workspace-shell" id="promptDock">
+            <div class="workspace-main">
+              <h2 style="margin-bottom: 10px;">실행 리스트</h2>
+              <ul id="runList" class="run-list"></ul>
             </div>
-            <ul id="runList" class="run-list"></ul>
+            <div class="input-dock" id="dropZone">
+              <div id="attachmentStrip" class="attachment-strip hidden"></div>
+              <div class="prompt-input-row">
+                <div class="attach-menu-shell">
+                  <button type="button" class="attach-button" id="attachButton">📎</button>
+                  <div id="attachMenu" class="attach-menu hidden">
+                    <button type="button" data-mode="local-any">📁 로컬 파일 업로드</button>
+                    <button type="button" data-mode="server-any">☁️ 서버 드라이브에서 선택</button>
+                    <button type="button" data-mode="local-video">🎬 레퍼런스 영상 (로컬)</button>
+                    <button type="button" data-mode="local-image">🖼 레퍼런스 이미지 (로컬)</button>
+                  </div>
+                </div>
+                <textarea id="promptInput" class="prompt-textarea" placeholder="텍스트를 입력하세요..."></textarea>
+                <button type="button" class="btn-primary send-button" id="sendButton">Send ➤</button>
+              </div>
+            </div>
           </section>
         </section>
 
@@ -139,7 +321,69 @@
       </main>
     </div>
 
+    <div id="driveModal" class="drive-modal hidden">
+      <div class="drive-card">
+        <div class="drive-header">
+          <strong>☁️ 서버 드라이브</strong>
+          <input id="driveSearchInput" type="search" placeholder="검색..." />
+          <button type="button" class="btn-secondary" id="driveCloseButton">✕ 닫기</button>
+        </div>
+        <div id="driveBreadcrumb" class="drive-breadcrumb"></div>
+        <div class="drive-toolbar">
+          <select id="driveSortField">
+            <option value="name">이름</option>
+            <option value="modifiedAt">날짜</option>
+            <option value="size">크기</option>
+          </select>
+          <select id="driveSortOrder">
+            <option value="asc">오름차순</option>
+            <option value="desc">내림차순</option>
+          </select>
+          <select id="driveViewMode">
+            <option value="grid">그리드</option>
+            <option value="list">리스트</option>
+          </select>
+          <select id="driveFilterType">
+            <option value="all">전체</option>
+            <option value="image">이미지</option>
+            <option value="video">영상</option>
+            <option value="folder">폴더</option>
+          </select>
+        </div>
+        <div id="driveContent" class="drive-content"></div>
+        <div class="drive-footer">
+          <div id="driveSelectionCount">선택된 파일: 0개</div>
+          <div style="display: flex; gap: 8px;">
+            <button type="button" class="btn-secondary" id="driveCancelButton">취소</button>
+            <button type="button" class="btn-primary" id="driveConfirmButton">선택 ✓</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <input id="fileInputAny" type="file" class="hidden" multiple accept="image/png,image/jpeg,image/webp,video/mp4,video/webm,video/quicktime" />
+    <input id="fileInputVideo" type="file" class="hidden" accept="video/mp4,video/webm,video/quicktime" />
+    <input id="fileInputImage" type="file" class="hidden" multiple accept="image/png,image/jpeg,image/webp" />
+
     <script>
+      const promptState = {
+        promptText: '',
+        attachments: [],
+        isDriveModalOpen: false,
+      };
+      const driveState = {
+        mode: 'any',
+        folderId: 'root',
+        path: [{ id: null, name: '내 드라이브' }],
+        items: [],
+        selectedMap: new Map(),
+        searchText: '',
+        viewMode: 'grid',
+        sortField: 'name',
+        sortOrder: 'asc',
+        filterType: 'all',
+      };
+
       function formatDuration(createdAtValue, completedAtValue) {
         if (!createdAtValue) {
           return '-';
@@ -147,45 +391,7 @@
         const startTimestamp = new Date(createdAtValue).getTime();
         const endTimestamp = completedAtValue ? new Date(completedAtValue).getTime() : Date.now();
         const elapsedSeconds = Math.max(0, Math.floor((endTimestamp - startTimestamp) / 1000));
-        const minutes = Math.floor(elapsedSeconds / 60);
-        const seconds = elapsedSeconds % 60;
-        return `${minutes}분 ${seconds}초`;
-      }
-
-      function getStatusBadge(statusValue) {
-        if (statusValue === 'completed') {
-          return '<span class="badge badge-success">완료</span>';
-        }
-        if (statusValue === 'failed') {
-          return '<span class="badge badge-error">실패</span>';
-        }
-        return '<span class="badge badge-running">진행 중</span>';
-      }
-
-      function renderRunItem(runItem) {
-        const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
-        const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
-        const scenarioPreviewText = (runItem.summary || runItem.scenario || '시나리오 생성 대기 중').replace(/\n/g, ' ');
-        const failedMessageLine = runItem.status === 'failed' && runItem.errorMessage
-          ? `<div class="caption" style="color: var(--error); margin-top: 4px;">${runItem.errorMessage}</div>`
-          : '';
-        return `
-          <li class="run-card">
-            <div>
-              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 6px;">
-                ${getStatusBadge(runItem.status)}
-                <span class="mono">${runItem.id}</span>
-              </div>
-              <div class="caption" style="margin-bottom: 4px;">생성 시간 ${startedText} · 소요 ${durationText}</div>
-              <div class="run-preview" title="${scenarioPreviewText}">${scenarioPreviewText}</div>
-              ${failedMessageLine}
-            </div>
-            <div style="display: flex; gap: 8px;">
-              <a href="/run/${runItem.id}" class="btn-secondary">모니터링</a>
-              <a href="/run/${runItem.id}/result" class="btn-secondary">결과</a>
-            </div>
-          </li>
-        `;
+        return `${Math.floor(elapsedSeconds / 60)}분 ${elapsedSeconds % 60}초`;
       }
 
       function renderSidebarRuns(runItems) {
@@ -196,112 +402,431 @@
         }).join('');
       }
 
+      function renderRunItem(runItem) {
+        const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
+        const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
+        const previewText = (runItem.summary || runItem.scenario || '시나리오 생성 대기 중').replace(/\n/g, ' ');
+        return `
+          <li class="run-card">
+            <div>
+              <div style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center;">
+                <span class="badge ${runItem.status === 'completed' ? 'badge-success' : runItem.status === 'failed' ? 'badge-error' : 'badge-running'}">${runItem.status}</span>
+                <span class="mono">${runItem.id}</span>
+              </div>
+              <div class="caption">생성 시간 ${startedText} · 소요 ${durationText}</div>
+              <div class="run-preview" title="${previewText}">${previewText}</div>
+            </div>
+            <div style="display:flex; gap:8px;">
+              <a href="/run/${runItem.id}" class="btn-secondary">모니터링</a>
+              <a href="/run/${runItem.id}/result" class="btn-secondary">결과</a>
+            </div>
+          </li>
+        `;
+      }
+
       async function loadRuns() {
-        const response = await fetch('/api/run');
-        const runs = await response.json();
-        const runListElement = document.getElementById('runList');
-        const emptyStateElement = document.getElementById('emptyState');
-        runListElement.innerHTML = runs.map(renderRunItem).join('');
-        renderSidebarRuns(runs);
-        emptyStateElement.classList.toggle('hidden', runs.length > 0);
+        const runResponse = await fetch('/api/run');
+        const runItems = await runResponse.json();
+        document.getElementById('runList').innerHTML = runItems.map(renderRunItem).join('');
+        renderSidebarRuns(runItems);
       }
 
-      function buildAssetOption(valueText, labelText) {
-        const optionElement = document.createElement('option');
-        optionElement.value = valueText;
-        optionElement.textContent = labelText;
-        return optionElement;
+      function getAttachmentTypeByMimeType(mimeTypeValue) {
+        return mimeTypeValue.startsWith('video/') ? 'video' : 'image';
       }
 
-      async function loadRunInputAssets() {
-        const [inputResponse, generatedResponse] = await Promise.all([
-          fetch('/api/assets?category=input'),
-          fetch('/api/assets?category=generated_video'),
-        ]);
-        const inputAssetList = inputResponse.ok ? await inputResponse.json() : [];
-        const generatedAssetList = generatedResponse.ok ? await generatedResponse.json() : [];
-        const mergedVideoAssetList = [...inputAssetList, ...generatedAssetList]
-          .filter((assetItem) => assetItem?.mimeType?.startsWith('video/'));
+      function enforceAttachmentLimit(nextAttachment) {
+        if (nextAttachment.type === 'video') {
+          promptState.attachments = promptState.attachments.filter((attachmentItem) => attachmentItem.type !== 'video');
+        }
+      }
 
-        const inputAssetSelectElement = document.getElementById('inputAssetId');
-        inputAssetSelectElement.innerHTML = '';
-        inputAssetSelectElement.appendChild(buildAssetOption('', '선택 안 함'));
-        mergedVideoAssetList.forEach((assetItem) => {
-          inputAssetSelectElement.appendChild(
-            buildAssetOption(assetItem.id, `${assetItem.tagId} · ${assetItem.fileName}`),
-          );
+      function addAttachment(attachmentItem) {
+        enforceAttachmentLimit(attachmentItem);
+        promptState.attachments.push(attachmentItem);
+        renderAttachments();
+      }
+
+      function removeAttachment(attachmentId) {
+        promptState.attachments = promptState.attachments.filter((attachmentItem) => attachmentItem.id !== attachmentId);
+        renderAttachments();
+      }
+
+      function renderAttachments() {
+        const stripElement = document.getElementById('attachmentStrip');
+        if (promptState.attachments.length === 0) {
+          stripElement.classList.add('hidden');
+          stripElement.innerHTML = '';
+          return;
+        }
+
+        stripElement.classList.remove('hidden');
+        stripElement.innerHTML = promptState.attachments.map((attachmentItem) => {
+          const iconLabel = attachmentItem.type === 'video' ? '🎬' : '🖼';
+          return `
+            <div class="attachment-chip">
+              <span>${iconLabel}</span>
+              <span class="attachment-name" title="${attachmentItem.name}">${attachmentItem.name}</span>
+              <button type="button" class="attachment-remove" data-remove-id="${attachmentItem.id}">✕</button>
+            </div>
+          `;
+        }).join('');
+
+        stripElement.querySelectorAll('[data-remove-id]').forEach((removeButtonElement) => {
+          removeButtonElement.addEventListener('click', () => removeAttachment(removeButtonElement.dataset.removeId));
         });
       }
 
-      async function loadReferenceAssets() {
-        const [referenceResponse, generatedResponse] = await Promise.all([
-          fetch('/api/assets?category=reference'),
-          fetch('/api/assets?category=generated_image'),
-        ]);
-        const referenceAssetList = referenceResponse.ok ? await referenceResponse.json() : [];
-        const generatedAssetList = generatedResponse.ok ? await generatedResponse.json() : [];
-        const mergedImageAssetList = [...referenceAssetList, ...generatedAssetList]
-          .filter((assetItem) => assetItem?.mimeType?.startsWith('image/'));
+      function makeAttachmentItem(payload) {
+        return {
+          id: crypto.randomUUID(),
+          source: payload.source,
+          type: payload.type,
+          name: payload.name,
+          size: payload.size,
+          mimeType: payload.mimeType,
+          thumbnailUrl: payload.thumbnailUrl,
+          uploadId: payload.uploadId,
+          serverFileId: payload.serverFileId,
+          status: 'ready',
+        };
+      }
 
-        const referenceAssetSelectElement = document.getElementById('referenceAssetIds');
-        referenceAssetSelectElement.innerHTML = '';
-        mergedImageAssetList.forEach((assetItem) => {
-          referenceAssetSelectElement.appendChild(
-            buildAssetOption(assetItem.id, `${assetItem.tagId} · ${assetItem.fileName}`),
-          );
+      async function uploadLocalFile(fileItem) {
+        const fileType = getAttachmentTypeByMimeType(fileItem.type);
+        const formData = new FormData();
+        formData.append('file', fileItem);
+        formData.append('type', fileType);
+        const uploadResponse = await fetch('/api/upload', { method: 'POST', body: formData });
+        if (!uploadResponse.ok) {
+          throw new Error('upload failed');
+        }
+        const uploadResult = await uploadResponse.json();
+        addAttachment(makeAttachmentItem({
+          source: 'local',
+          type: fileType,
+          name: uploadResult.name,
+          size: uploadResult.size,
+          mimeType: uploadResult.mimeType,
+          thumbnailUrl: uploadResult.thumbnailUrl,
+          uploadId: uploadResult.id,
+        }));
+      }
+
+      async function handleLocalFiles(fileList) {
+        for (const fileItem of fileList) {
+          await uploadLocalFile(fileItem);
+        }
+      }
+
+      function setAttachMenuVisible(isVisible) {
+        document.getElementById('attachMenu').classList.toggle('hidden', !isVisible);
+      }
+
+      function getDriveAcceptedTypeByMode() {
+        if (driveState.mode === 'video') {
+          return 'video';
+        }
+        if (driveState.mode === 'image') {
+          return 'image';
+        }
+        return 'all';
+      }
+
+      async function loadDriveContents() {
+        const acceptedType = getDriveAcceptedTypeByMode();
+        const requestUrl = new URL(`/api/drive/folders/${driveState.folderId}/contents`, window.location.origin);
+        requestUrl.searchParams.set('sort', driveState.sortField);
+        requestUrl.searchParams.set('order', driveState.sortOrder);
+        requestUrl.searchParams.set('type', driveState.filterType === 'all' ? acceptedType : driveState.filterType);
+        const driveResponse = await fetch(requestUrl.toString());
+        const drivePayload = await driveResponse.json();
+        driveState.items = drivePayload.items || [];
+        driveState.path = drivePayload.path || [{ id: null, name: '내 드라이브' }];
+        renderDriveModal();
+      }
+
+      async function searchDriveContents(searchText) {
+        const acceptedType = getDriveAcceptedTypeByMode();
+        const requestUrl = new URL('/api/drive/search', window.location.origin);
+        requestUrl.searchParams.set('q', searchText);
+        requestUrl.searchParams.set('type', acceptedType);
+        const searchResponse = await fetch(requestUrl.toString());
+        const searchPayload = await searchResponse.json();
+        driveState.items = searchPayload.items || [];
+        driveState.path = [{ id: null, name: '검색 결과' }];
+        renderDriveModal();
+      }
+
+      function openDriveModal(modeValue) {
+        driveState.mode = modeValue;
+        driveState.folderId = 'root';
+        driveState.selectedMap.clear();
+        driveState.searchText = '';
+        document.getElementById('driveSearchInput').value = '';
+        document.getElementById('driveModal').classList.remove('hidden');
+        loadDriveContents();
+      }
+
+      function closeDriveModal() {
+        document.getElementById('driveModal').classList.add('hidden');
+      }
+
+      function renderDriveBreadcrumb() {
+        const breadcrumbElement = document.getElementById('driveBreadcrumb');
+        const displayedPath = driveState.path.length > 4
+          ? [{ id: '__ellipsis__', name: '...' }, ...driveState.path.slice(-3)]
+          : driveState.path;
+
+        breadcrumbElement.innerHTML = displayedPath.map((segmentItem) => {
+          if (segmentItem.id === '__ellipsis__') {
+            return `<span>${segmentItem.name}</span>`;
+          }
+          return `<button type="button" data-folder-id="${segmentItem.id === null ? 'root' : segmentItem.id}" class="btn-secondary" style="padding:4px 8px;">${segmentItem.name}</button>`;
+        }).join('<span>></span>');
+
+        breadcrumbElement.querySelectorAll('[data-folder-id]').forEach((buttonElement) => {
+          buttonElement.addEventListener('click', () => {
+            driveState.folderId = buttonElement.dataset.folderId;
+            loadDriveContents();
+          });
         });
+      }
+
+      function toggleDriveFileSelection(driveItem) {
+        if (driveItem.type !== 'file') {
+          return;
+        }
+
+        if (driveState.mode === 'video') {
+          driveState.selectedMap.clear();
+          driveState.selectedMap.set(driveItem.id, driveItem);
+        } else if (driveState.mode === 'image') {
+          if (driveState.selectedMap.has(driveItem.id)) {
+            driveState.selectedMap.delete(driveItem.id);
+          } else {
+            driveState.selectedMap.set(driveItem.id, driveItem);
+          }
+        } else {
+          if (driveItem.mimeType.startsWith('video/')) {
+            for (const [selectedId, selectedItem] of driveState.selectedMap.entries()) {
+              if (selectedItem.mimeType.startsWith('video/')) {
+                driveState.selectedMap.delete(selectedId);
+              }
+            }
+          }
+          if (driveState.selectedMap.has(driveItem.id)) {
+            driveState.selectedMap.delete(driveItem.id);
+          } else {
+            driveState.selectedMap.set(driveItem.id, driveItem);
+          }
+        }
+        renderDriveModal();
+      }
+
+      function renderDriveItems() {
+        const contentElement = document.getElementById('driveContent');
+        if (driveState.viewMode === 'grid') {
+          contentElement.innerHTML = `<div class="drive-grid">${driveState.items.map((driveItem) => `
+            <div class="drive-item ${driveState.selectedMap.has(driveItem.id) ? 'selected' : ''}" data-id="${driveItem.id}" data-type="${driveItem.type}">
+              <div style="font-size:26px;">${driveItem.type === 'folder' ? '📁' : driveItem.mimeType.startsWith('video/') ? '🎬' : '🖼'}</div>
+              <div class="caption" style="margin-top:6px; white-space:nowrap; overflow:hidden; text-overflow:ellipsis;">${driveItem.name}</div>
+            </div>
+          `).join('')}</div>`;
+        } else {
+          contentElement.innerHTML = driveState.items.map((driveItem) => `
+            <div class="drive-list-row ${driveState.selectedMap.has(driveItem.id) ? 'selected' : ''}" data-id="${driveItem.id}" data-type="${driveItem.type}">
+              <input type="checkbox" ${driveState.selectedMap.has(driveItem.id) ? 'checked' : ''} ${driveItem.type === 'folder' ? 'disabled' : ''} />
+              <div>${driveItem.type === 'folder' ? '📁' : driveItem.mimeType.startsWith('video/') ? '🎬' : '🖼'} ${driveItem.name}</div>
+              <div class="caption">${driveItem.size ? `${(driveItem.size / (1024 * 1024)).toFixed(1)}MB` : '폴더'}</div>
+              <div class="caption">${new Date(driveItem.modifiedAt).toLocaleDateString()}</div>
+            </div>
+          `).join('');
+        }
+
+        contentElement.querySelectorAll('[data-id]').forEach((itemElement) => {
+          const selectedItem = driveState.items.find((driveItem) => driveItem.id === itemElement.dataset.id);
+          itemElement.addEventListener('click', () => {
+            if (selectedItem.type === 'folder') {
+              driveState.folderId = selectedItem.id;
+              loadDriveContents();
+              return;
+            }
+            toggleDriveFileSelection(selectedItem);
+          });
+
+          itemElement.addEventListener('dblclick', async () => {
+            if (selectedItem.type === 'folder') {
+              return;
+            }
+            const previewResponse = await fetch(`/api/drive/files/${selectedItem.id}/preview`);
+            const previewPayload = await previewResponse.json();
+            window.open(previewPayload.previewUrl, '_blank');
+          });
+        });
+      }
+
+      function renderDriveModal() {
+        renderDriveBreadcrumb();
+        renderDriveItems();
+        document.getElementById('driveSelectionCount').textContent = `선택된 파일: ${driveState.selectedMap.size}개`;
+      }
+
+      async function submitPrompt() {
+        const submitPayload = {
+          prompt: document.getElementById('promptInput').value.trim(),
+          attachments: promptState.attachments.map((attachmentItem) => ({
+            type: attachmentItem.type,
+            source: attachmentItem.source,
+            uploadId: attachmentItem.uploadId,
+            fileId: attachmentItem.serverFileId,
+          })),
+        };
+
+        if (!submitPayload.prompt && submitPayload.attachments.length === 0) {
+          alert('프롬프트 또는 파일을 입력해주세요.');
+          return;
+        }
+
+        const generateResponse = await fetch('/api/generate', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(submitPayload),
+        });
+
+        if (!generateResponse.ok) {
+          const errorPayload = await generateResponse.json();
+          alert(errorPayload?.error?.message || '생성 요청에 실패했습니다.');
+          return;
+        }
+
+        document.getElementById('promptInput').value = '';
+        promptState.attachments = [];
+        renderAttachments();
+        await loadRuns();
       }
 
       function updateVisibleTab(targetTab) {
-        document.querySelectorAll('.tab-panel').forEach((panelElement) => {
-          panelElement.classList.add('hidden');
-        });
-        document.querySelectorAll('[data-tab-target]').forEach((buttonElement) => {
-          buttonElement.classList.remove('active');
-        });
+        document.querySelectorAll('.tab-panel').forEach((panelElement) => panelElement.classList.add('hidden'));
+        document.querySelectorAll('[data-tab-target]').forEach((buttonElement) => buttonElement.classList.remove('active'));
         document.getElementById(`tab-${targetTab}`).classList.remove('hidden');
         document.querySelector(`[data-tab-target="${targetTab}"]`).classList.add('active');
       }
 
       document.querySelectorAll('[data-tab-target]').forEach((buttonElement) => {
-        buttonElement.addEventListener('click', () => {
-          updateVisibleTab(buttonElement.dataset.tabTarget);
+        buttonElement.addEventListener('click', () => updateVisibleTab(buttonElement.dataset.tabTarget));
+      });
+
+      document.getElementById('attachButton').addEventListener('click', () => {
+        const menuElement = document.getElementById('attachMenu');
+        setAttachMenuVisible(menuElement.classList.contains('hidden'));
+      });
+
+      document.querySelectorAll('[data-mode]').forEach((menuItemElement) => {
+        menuItemElement.addEventListener('click', () => {
+          setAttachMenuVisible(false);
+          const modeValue = menuItemElement.dataset.mode;
+          if (modeValue === 'local-any') {
+            document.getElementById('fileInputAny').click();
+          }
+          if (modeValue === 'local-video') {
+            document.getElementById('fileInputVideo').click();
+          }
+          if (modeValue === 'local-image') {
+            document.getElementById('fileInputImage').click();
+          }
+          if (modeValue === 'server-any') {
+            openDriveModal('any');
+          }
         });
       });
 
-      document.getElementById('newRunButton').addEventListener('click', () => {
-        document.getElementById('videoInput').click();
+      document.getElementById('fileInputAny').addEventListener('change', async (event) => {
+        await handleLocalFiles(event.target.files);
+        event.target.value = '';
+      });
+      document.getElementById('fileInputVideo').addEventListener('change', async (event) => {
+        await handleLocalFiles(event.target.files);
+        event.target.value = '';
+      });
+      document.getElementById('fileInputImage').addEventListener('change', async (event) => {
+        await handleLocalFiles(event.target.files);
+        event.target.value = '';
       });
 
-      document.getElementById('runForm').addEventListener('submit', async (event) => {
-        event.preventDefault();
-        const formData = new FormData(event.target);
-        const selectedReferenceAssetIds = Array.from(document.getElementById('referenceAssetIds').selectedOptions)
-          .map((optionElement) => optionElement.value)
-          .filter(Boolean);
-        formData.set('referenceAssetIds', JSON.stringify(selectedReferenceAssetIds));
-        await fetch('/api/run', { method: 'POST', body: formData });
-        await loadRuns();
-      });
-
-      const dropzoneElement = document.getElementById('dropzone');
-      const videoInputElement = document.getElementById('videoInput');
-      dropzoneElement.addEventListener('dragover', (event) => {
-        event.preventDefault();
-        dropzoneElement.classList.add('dragging');
-      });
-      dropzoneElement.addEventListener('dragleave', () => {
-        dropzoneElement.classList.remove('dragging');
-      });
-      dropzoneElement.addEventListener('drop', (event) => {
-        event.preventDefault();
-        dropzoneElement.classList.remove('dragging');
-        if (event.dataTransfer.files.length > 0) {
-          videoInputElement.files = event.dataTransfer.files;
+      document.getElementById('sendButton').addEventListener('click', submitPrompt);
+      document.getElementById('promptInput').addEventListener('keydown', (keyboardEvent) => {
+        if (keyboardEvent.key === 'Enter' && !keyboardEvent.shiftKey) {
+          keyboardEvent.preventDefault();
+          submitPrompt();
         }
       });
 
-      Promise.all([loadRuns(), loadRunInputAssets(), loadReferenceAssets()]);
+      document.getElementById('driveCloseButton').addEventListener('click', closeDriveModal);
+      document.getElementById('driveCancelButton').addEventListener('click', closeDriveModal);
+      document.getElementById('driveConfirmButton').addEventListener('click', () => {
+        for (const selectedItem of driveState.selectedMap.values()) {
+          addAttachment(makeAttachmentItem({
+            source: 'server',
+            type: selectedItem.mimeType.startsWith('video/') ? 'video' : 'image',
+            name: selectedItem.name,
+            size: selectedItem.size,
+            mimeType: selectedItem.mimeType,
+            thumbnailUrl: selectedItem.thumbnailUrl,
+            serverFileId: selectedItem.id,
+          }));
+        }
+        closeDriveModal();
+      });
+
+      document.getElementById('driveSortField').addEventListener('change', (event) => {
+        driveState.sortField = event.target.value;
+        loadDriveContents();
+      });
+      document.getElementById('driveSortOrder').addEventListener('change', (event) => {
+        driveState.sortOrder = event.target.value;
+        loadDriveContents();
+      });
+      document.getElementById('driveViewMode').addEventListener('change', (event) => {
+        driveState.viewMode = event.target.value;
+        renderDriveModal();
+      });
+      document.getElementById('driveFilterType').addEventListener('change', (event) => {
+        driveState.filterType = event.target.value;
+        loadDriveContents();
+      });
+
+      let searchTimerHandle;
+      document.getElementById('driveSearchInput').addEventListener('input', (event) => {
+        clearTimeout(searchTimerHandle);
+        const nextSearchText = event.target.value.trim();
+        searchTimerHandle = setTimeout(() => {
+          if (!nextSearchText) {
+            loadDriveContents();
+            return;
+          }
+          searchDriveContents(nextSearchText);
+        }, 300);
+      });
+
+      const dropZoneElement = document.getElementById('dropZone');
+      ['dragenter', 'dragover'].forEach((eventName) => {
+        dropZoneElement.addEventListener(eventName, (dragEvent) => {
+          dragEvent.preventDefault();
+          dropZoneElement.classList.add('drop-highlight');
+        });
+      });
+      ['dragleave', 'drop'].forEach((eventName) => {
+        dropZoneElement.addEventListener(eventName, (dragEvent) => {
+          dragEvent.preventDefault();
+          dropZoneElement.classList.remove('drop-highlight');
+        });
+      });
+      dropZoneElement.addEventListener('drop', async (dropEvent) => {
+        await handleLocalFiles(dropEvent.dataTransfer.files);
+      });
+
+      loadRuns();
     </script>
   </body>
 </html>

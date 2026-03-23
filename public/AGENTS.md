@@ -4,3 +4,6 @@
 [codex] 2026-03-23 run 모니터링 개선 메모
 - run.html에 상태 탑바(스피너/펄스/상태 라벨)를 추가해 파이프라인 진행중 여부를 시각적으로 강조했다.
 - run.html의 실행 취소 버튼은 /api/run/:id/cancel 호출 후 UI 상태를 cancelling/cancelled로 전환하고 취소 메시지를 로그에도 남긴다.
+[codex] 2026-03-23 추가 메모 3
+- public/index.html 실행 입력 영역을 하단 고정 Prompt Input Bar 레이아웃으로 교체하고 첨부 스트립/드래그앤드롭/📎 드롭다운을 추가했다.
+- 서버 드라이브 선택 모달을 index에 포함해 헤더 검색(300ms debounce), 브레드크럼, 정렬/필터/뷰 전환, 파일 선택 후 첨부 반영 플로우를 구현했다.

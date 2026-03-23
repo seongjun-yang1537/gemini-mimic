@@ -7,6 +7,7 @@ const { createPromptRoutes } = require("../routes/promptRoutes");
 const { createAssetRoutes } = require("../routes/assetRoutes");
 const { createSettingsRoutes } = require("../routes/settingsRoutes");
 const { createWebRoutes } = require("../routes/webRoutes");
+const { createDriveRoutes } = require("../routes/driveRoutes");
 
 function createApp({ uploadsDirectory, outputsDirectory, promptService, geminiClient, runStore, settingsService, assetService, pipelineOrchestrator, uploadMiddleware }) {
   const app = express();
@@ -20,6 +21,7 @@ function createApp({ uploadsDirectory, outputsDirectory, promptService, geminiCl
   app.use(createRunRoutes({ runStore, settingsService, assetService, pipelineOrchestrator, uploadMiddleware }));
   app.use(createPromptRoutes({ promptService, geminiClient }));
   app.use(createAssetRoutes({ assetService, uploadMiddleware }));
+  app.use(createDriveRoutes({ assetService, uploadMiddleware, runStore, pipelineOrchestrator }));
   app.use(createWebRoutes());
 
   app.use((error, _request, _response, next) => {
