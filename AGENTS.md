@@ -33,6 +33,9 @@
 - debate 라운드는 src/services/debateEngine.js에서 하드리밋 10으로 강제하고, phase3 재생성은 src/services/pipelineOrchestrator.js에서 하드리밋 10으로 강제한다.
 - settings 기본값/스키마에 safety.maxApiCallsPerRun(200), safety.maxCostPerRunUsd(10), safety.pipelineTimeoutMinutes(30)를 추가했다.
 [codex] 2026-03-23 추가 메모 9
+- video 설정에 pollTimeoutMs(기본 1800000ms), maxPollAttempts(기본 180)을 추가했고 settings 스키마/검증에 연결했다.
+- SettingsService 검증에 video.pollTimeoutMs >= video.pollInterval 제약을 추가했다.
+- 파이프라인의 taurusApi.generateVideo 호출은 pollIntervalMs/maxPollAttempts/maxPollMs를 runtimeConfig.video에서 전달해 폴링 제한값을 일관 적용한다.
 - src/services/pipelineOrchestrator.js의 execute catch 블록에서 실패 시 status/failedAt/failedPhase/errorMessage를 run 레코드에 함께 저장한다.
 - executeWithTimeout은 예외에 failedPhase가 없으면 현재 phase 번호를 주입해 실패 원인 추적이 가능하다.
 - public/index.html 실행 목록은 failed 상태에서 errorMessage를 한 줄로 렌더링한다.

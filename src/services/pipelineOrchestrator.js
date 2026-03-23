@@ -267,7 +267,9 @@ class PipelineOrchestrator {
         duration: runtimeConfig.video.defaultDuration,
         aspectRatio: runtimeConfig.video.aspectRatio,
         splitModel: runtimeConfig.video.splitModel,
-        pollInterval: runtimeConfig.video.pollInterval,
+        pollIntervalMs: runtimeConfig.video.pollInterval,
+        maxPollAttempts: runtimeConfig.video.maxPollAttempts,
+        maxPollMs: runtimeConfig.video.pollTimeoutMs,
         postProcessingWait: runtimeConfig.video.postProcessingWait,
         outputPath: generatedVideoPath,
         onApiCall: () => {
