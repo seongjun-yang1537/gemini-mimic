@@ -12,7 +12,7 @@ const { AssetService } = require("./services/assetService");
 const { PipelineOrchestrator } = require("./services/pipelineOrchestrator");
 const { RunWebSocketHub } = require("./services/wsHub");
 const { SettingsService } = require("./services/settingsService");
-const { getLoadedGeminiApiKey } = require("./config/environment");
+const { getLoadedGeminiApiKey, getOperatorSettingsEnvOverrides } = require("./config/environment");
 
 const portNumber = Number(process.env.PORT || 3000);
 const uploadsDirectory = path.resolve(process.env.UPLOADS_DIR || "./uploads");
@@ -26,7 +26,10 @@ const uploadMiddleware = multer({ dest: uploadsDirectory });
 const runStore = new RunStore();
 const assetStore = new AssetStore();
 const assetService = new AssetService({ assetStore, assetsRootPath: assetsDirectory });
-const settingsService = new SettingsService({ envApiKey: getLoadedGeminiApiKey() });
+const settingsService = new SettingsService({
+  envApiKey: getLoadedGeminiApiKey(),
+  operatorEnvOverrides: getOperatorSettingsEnvOverrides(),
+});
 
 const activeSettings = settingsService.readConfig();
 if (!activeSettings.gemini.apiKey) {

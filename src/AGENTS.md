@@ -6,3 +6,8 @@
 - src/store/runStore.js는 fs/promises 기반으로 전환했고 readyPromise + fileAccessQueue 직렬화로 create/update/get/list/delete를 모두 async 메서드로 제공한다.
 - src/services/promptService.js는 list/get/update/loadPhasePrompts를 async로 전환해 프롬프트 파일 접근을 await 기반으로 통일했다.
 - src/routes/runRoutes.js, src/routes/promptRoutes.js, src/services/pipelineOrchestrator.js, src/services/pipeline/*.js 호출부를 await로 맞춰 예외가 asyncRoute/상위 catch로 일관 전파되도록 정리했다.
+[codex] 2026-03-23 설정 운영자 오버라이드 메모
+- src/config/environment.js에 운영자 전용 env 로더(getOperatorSettingsEnvOverrides)를 추가해 video/image/ffmpeg/safety 관련 운영 강제값을 객체 형태로 반환한다.
+- src/services/settingsService.js는 readConfig에서 코드 기본값 < config.json < env 오버라이드 순서로 병합하고 getDefaultConfig도 env 오버라이드를 반영한다.
+- src/config/settingsDefaults.js의 운영자 전용 항목(video.model, video.splitModel, image.model, ffmpeg.path, safety.*)에 readOnly + hidden 플래그를 부여했다.
+- src/routes/settingsRoutes.js는 /api/settings, /api/settings/defaults, PATCH/RESET 응답에서 hidden/sensitive 정책을 적용해 운영값 노출을 제한한다.
