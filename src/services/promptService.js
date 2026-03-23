@@ -7,54 +7,60 @@ class PromptService {
     this.promptsDirectory = path.resolve(promptsDirectory || process.env.PROMPTS_DIR || "./prompts");
   }
 
-  listPrompts() {
-    const phaseEntries = fs.readdirSync(this.promptsDirectory, { withFileTypes: true });
-    return phaseEntries
-      .filter((entry) => entry.isDirectory())
-      .flatMap((phaseEntry) => {
-        const phaseDirectoryPath = path.join(this.promptsDirectory, phaseEntry.name);
-        return fs
-          .readdirSync(phaseDirectoryPath, { withFileTypes: true })
-          .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
-          .map((promptEntry) => {
-            const filePath = path.join(phaseDirectoryPath, promptEntry.name);
-            const fileStats = fs.statSync(filePath);
-            return {
-              phase: phaseEntry.name,
-              expert: promptEntry.name.replace(".md", ""),
-              fileName: promptEntry.name,
-              updatedAt: fileStats.mtime.toISOString(),
-            };
-          });
-      });
+  async listPrompts() {
+    const phaseEntries = await fs.promises.readdir(this.promptsDirectory, { withFileTypes: true });
+    const promptGroups = await Promise.all(
+      phaseEntries
+        .filter((entry) => entry.isDirectory())
+        .map(async (phaseEntry) => {
+          const phaseDirectoryPath = path.join(this.promptsDirectory, phaseEntry.name);
+          const promptEntries = await fs.promises.readdir(phaseDirectoryPath, { withFileTypes: true });
+          const promptMetadataList = await Promise.all(
+            promptEntries
+              .filter((entry) => entry.isFile() && entry.name.endsWith(".md"))
+              .map(async (promptEntry) => {
+                const filePath = path.join(phaseDirectoryPath, promptEntry.name);
+                const fileStats = await fs.promises.stat(filePath);
+                return {
+                  phase: phaseEntry.name,
+                  expert: promptEntry.name.replace(".md", ""),
+                  fileName: promptEntry.name,
+                  updatedAt: fileStats.mtime.toISOString(),
+                };
+              }),
+          );
+          return promptMetadataList;
+        }),
+    );
+    return promptGroups.flat();
   }
 
-  getPrompt(phase, expert) {
+  async getPrompt(phase, expert) {
     const promptFilePath = path.join(this.promptsDirectory, phase, `${expert}.md`);
-    if (!fs.existsSync(promptFilePath)) {
+    try {
+      await fs.promises.access(promptFilePath, fs.constants.F_OK);
+    } catch (_error) {
       throw new Error("Prompt not found");
     }
-    return fs.readFileSync(promptFilePath, "utf8");
+    return fs.promises.readFile(promptFilePath, "utf8");
   }
 
-  updatePrompt(phase, expert, content) {
+  async updatePrompt(phase, expert, content) {
     const phaseDirectoryPath = path.join(this.promptsDirectory, phase);
-    fs.mkdirSync(phaseDirectoryPath, { recursive: true });
+    await fs.promises.mkdir(phaseDirectoryPath, { recursive: true });
     const promptFilePath = path.join(phaseDirectoryPath, `${expert}.md`);
-    fs.writeFileSync(promptFilePath, content, "utf8");
+    await fs.promises.writeFile(promptFilePath, content, "utf8");
     return { phase, expert };
   }
 
-  loadPhasePrompts(phase) {
+  async loadPhasePrompts(phase) {
     const phaseDirectoryPath = path.join(this.promptsDirectory, phase);
-    const promptFileNames = fs
-      .readdirSync(phaseDirectoryPath)
-      .filter((fileName) => fileName.endsWith(".md"));
+    const promptFileNames = (await fs.promises.readdir(phaseDirectoryPath)).filter((fileName) => fileName.endsWith(".md"));
 
     const phasePrompts = {};
     for (const promptFileName of promptFileNames) {
       const promptPath = path.join(phaseDirectoryPath, promptFileName);
-      phasePrompts[promptFileName.replace(".md", "")] = fs.readFileSync(promptPath, "utf8");
+      phasePrompts[promptFileName.replace(".md", "")] = await fs.promises.readFile(promptPath, "utf8");
     }
     return phasePrompts;
   }

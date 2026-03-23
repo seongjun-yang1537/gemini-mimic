@@ -3,8 +3,8 @@ const path = require("node:path");
 
 async function runPhase4({ runId, services, runSafetyContext }) {
   const { runStore, promptService, geminiClient, assetService, outputsDirectory } = services;
-  const runState = runStore.getRun(runId);
-  const phase4Prompts = promptService.loadPhasePrompts("phase4");
+  const runState = await runStore.getRun(runId);
+  const phase4Prompts = await promptService.loadPhasePrompts("phase4");
 
   const editSpecText = await geminiClient.callGemini(
     phase4Prompts.editor_expert,

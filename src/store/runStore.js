@@ -10,56 +10,69 @@ class RunStore {
     if (!fs.existsSync(this.storagePath)) {
       fs.writeFileSync(this.storagePath, JSON.stringify([], null, 2), "utf8");
     }
+    this.fileOperationQueue = Promise.resolve();
   }
 
-  readRuns() {
-    const jsonText = fs.readFileSync(this.storagePath, "utf8");
+  enqueueFileOperation(fileOperationTask) {
+    const queuedOperation = this.fileOperationQueue.then(() => fileOperationTask());
+    this.fileOperationQueue = queuedOperation.catch(() => {});
+    return queuedOperation;
+  }
+
+  async readRuns() {
+    const jsonText = await fs.promises.readFile(this.storagePath, "utf8");
     return JSON.parse(jsonText);
   }
 
-  saveRuns(runList) {
-    fs.writeFileSync(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
+  async saveRuns(runList) {
+    await fs.promises.writeFile(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
   }
 
-  createRun(inputVideoPath, configSnapshot = null) {
-    const runList = this.readRuns();
-    const pipelineRun = {
-      id: randomUUID(),
-      status: "running",
-      createdAt: new Date().toISOString(),
-      inputVideo: inputVideoPath,
-      tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
-      apiCallUsage: { callCount: 0, maxCalls: 0 },
-      configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
-    };
-    runList.unshift(pipelineRun);
-    this.saveRuns(runList);
-    return pipelineRun;
+  async createRun(inputVideoPath, configSnapshot = null) {
+    return this.enqueueFileOperation(async () => {
+      const runList = await this.readRuns();
+      const pipelineRun = {
+        id: randomUUID(),
+        status: "running",
+        createdAt: new Date().toISOString(),
+        inputVideo: inputVideoPath,
+        tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
+        apiCallUsage: { callCount: 0, maxCalls: 0 },
+        configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
+      };
+      runList.unshift(pipelineRun);
+      await this.saveRuns(runList);
+      return pipelineRun;
+    });
   }
 
-  updateRun(runId, updates) {
-    const runList = this.readRuns();
-    const runIndex = runList.findIndex((run) => run.id === runId);
-    if (runIndex === -1) {
-      throw new Error("Run not found");
-    }
-    runList[runIndex] = { ...runList[runIndex], ...updates };
-    this.saveRuns(runList);
-    return runList[runIndex];
+  async updateRun(runId, updates) {
+    return this.enqueueFileOperation(async () => {
+      const runList = await this.readRuns();
+      const runIndex = runList.findIndex((run) => run.id === runId);
+      if (runIndex === -1) {
+        throw new Error("Run not found");
+      }
+      runList[runIndex] = { ...runList[runIndex], ...updates };
+      await this.saveRuns(runList);
+      return runList[runIndex];
+    });
   }
 
-  getRun(runId) {
-    return this.readRuns().find((run) => run.id === runId);
+  async getRun(runId) {
+    return this.enqueueFileOperation(async () => (await this.readRuns()).find((run) => run.id === runId));
   }
 
-  listRuns() {
-    return this.readRuns();
+  async listRuns() {
+    return this.enqueueFileOperation(async () => this.readRuns());
   }
 
-  deleteRun(runId) {
-    const runList = this.readRuns();
-    const filteredRuns = runList.filter((run) => run.id !== runId);
-    this.saveRuns(filteredRuns);
+  async deleteRun(runId) {
+    return this.enqueueFileOperation(async () => {
+      const runList = await this.readRuns();
+      const filteredRuns = runList.filter((run) => run.id !== runId);
+      await this.saveRuns(filteredRuns);
+    });
   }
 }
 

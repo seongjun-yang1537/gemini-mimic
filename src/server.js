@@ -165,28 +165,28 @@ app.post(
       originalFileName: request.file.originalname,
     });
 
-    const createdRun = runStore.createRun(registeredInputAsset.filePath, currentConfig);
-    runStore.updateRun(createdRun.id, { inputAssetId: registeredInputAsset.id });
+    const createdRun = await runStore.createRun(registeredInputAsset.filePath, currentConfig);
+    await runStore.updateRun(createdRun.id, { inputAssetId: registeredInputAsset.id });
     pipelineOrchestrator.execute(createdRun.id).catch(() => {});
 
-    response.status(201).json(runStore.getRun(createdRun.id));
+    response.status(201).json(await runStore.getRun(createdRun.id));
   }),
 );
 
-app.get("/api/run", (_request, response) => {
-  response.json(runStore.listRuns());
-});
+app.get("/api/run", asyncRoute(async (_request, response) => {
+  response.json(await runStore.listRuns());
+}));
 
-app.get("/api/run/:id", (request, response) => {
-  const foundRun = runStore.getRun(request.params.id);
+app.get("/api/run/:id", asyncRoute(async (request, response) => {
+  const foundRun = await runStore.getRun(request.params.id);
   if (!foundRun) {
     throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
   response.json(foundRun);
-});
+}));
 
-app.get("/api/run/:id/logs", (request, response) => {
-  const foundRun = runStore.getRun(request.params.id);
+app.get("/api/run/:id/logs", asyncRoute(async (request, response) => {
+  const foundRun = await runStore.getRun(request.params.id);
   if (!foundRun) {
     throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
@@ -194,22 +194,22 @@ app.get("/api/run/:id/logs", (request, response) => {
     phase1: foundRun.phase1Result?.debateLog || null,
     phase3: foundRun.phase3Result?.iterations?.map((iteration) => iteration.evaluation) || [],
   });
-});
+}));
 
-app.delete("/api/run/:id", (request, response) => {
-  runStore.deleteRun(request.params.id);
+app.delete("/api/run/:id", asyncRoute(async (request, response) => {
+  await runStore.deleteRun(request.params.id);
   response.status(204).send();
-});
+}));
 
-app.get("/api/prompts", (_request, response) => {
-  response.json(promptService.listPrompts());
-});
+app.get("/api/prompts", asyncRoute(async (_request, response) => {
+  response.json(await promptService.listPrompts());
+}));
 
 app.get(
   "/api/prompts/:phase/:expert",
   validateRequest({ params: validatePromptParams }),
   asyncRoute(async (request, response) => {
-    const promptContent = promptService.getPrompt(request.params.phase, request.params.expert);
+    const promptContent = await promptService.getPrompt(request.params.phase, request.params.expert);
     response.json({ content: promptContent });
   }),
 );
@@ -225,10 +225,10 @@ app.put(
       return null;
     },
   }),
-  (request, response) => {
-    const updateResult = promptService.updatePrompt(request.params.phase, request.params.expert, request.body.content);
+  asyncRoute(async (request, response) => {
+    const updateResult = await promptService.updatePrompt(request.params.phase, request.params.expert, request.body.content);
     response.json(updateResult);
-  },
+  }),
 );
 
 app.post(
@@ -244,14 +244,16 @@ app.post(
   asyncRoute(async (request, response) => {
     const feedbackText = request.body.feedback;
 
-    const promptList = promptService.listPrompts();
-    const promptSnapshot = promptList.map((prompt) => ({
-      phase: prompt.phase,
-      expert: prompt.expert,
-      content: promptService.getPrompt(prompt.phase, prompt.expert),
-    }));
+    const promptList = await promptService.listPrompts();
+    const promptSnapshot = await Promise.all(
+      promptList.map(async (promptItem) => ({
+        phase: promptItem.phase,
+        expert: promptItem.expert,
+        content: await promptService.getPrompt(promptItem.phase, promptItem.expert),
+      })),
+    );
 
-    const updaterPrompt = promptService.getPrompt("meta", "prompt_updater");
+    const updaterPrompt = await promptService.getPrompt("meta", "prompt_updater");
     const updateSuggestion = await geminiClient.callGemini(updaterPrompt, {
       feedback: feedbackText,
       prompts: promptSnapshot,
@@ -262,13 +264,13 @@ app.post(
   }),
 );
 
-app.get("/api/run/:id/result", (request, response) => {
-  const foundRun = runStore.getRun(request.params.id);
+app.get("/api/run/:id/result", asyncRoute(async (request, response) => {
+  const foundRun = await runStore.getRun(request.params.id);
   if (!foundRun) {
     throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
   response.json(foundRun);
-});
+}));
 
 app.get(
   "/api/assets",
