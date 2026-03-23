@@ -11,15 +11,23 @@ class PipelineOrchestrator {
     this.geminiClient = dependencies.geminiClient;
     this.wsHub = dependencies.wsHub;
     this.assetService = dependencies.assetService;
+    this.settingsService = dependencies.settingsService;
     this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
-    this.taurusApi = createTaurusApi({ apiKey: process.env.GEMINI_API_KEY });
   }
 
   async execute(runId) {
+    const runtimeConfig = this.settingsService.readConfig();
+    this.geminiClient.setRuntimeConfig(runtimeConfig.gemini);
+    const taurusApi = createTaurusApi({ apiKey: runtimeConfig.gemini.apiKey });
+
+    this.runStore.updateRun(runId, {
+      configSnapshot: JSON.parse(JSON.stringify(runtimeConfig)),
+    });
+
     try {
-      await this.runPhase1(runId);
+      await this.runPhase1(runId, runtimeConfig);
       await this.runPhase2(runId);
-      await this.runPhase3(runId);
+      await this.runPhase3(runId, runtimeConfig, taurusApi);
       await this.runPhase4(runId);
 
       const runState = this.runStore.updateRun(runId, {
@@ -38,18 +46,25 @@ class PipelineOrchestrator {
     }
   }
 
-  async runPhase1(runId) {
+  async runPhase1(runId, runtimeConfig) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 1 });
     const runState = this.runStore.getRun(runId);
     const phasePrompts = this.promptService.loadPhasePrompts("phase1");
 
-    const expertDefinitions = [
-      { name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert },
-      { name: "스토리 전문가", role: "story", prompt: phasePrompts.story_expert },
-      { name: "CTA 전문가", role: "cta", prompt: phasePrompts.cta_expert },
-      { name: "행동 묘사 전문가", role: "action", prompt: phasePrompts.action_desc_expert },
-      { name: "캐릭터 묘사 전문가", role: "character", prompt: phasePrompts.character_desc_expert },
+    const candidateExperts = [
+      { name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert, settingKey: "hook" },
+      { name: "스토리 전문가", role: "story", prompt: phasePrompts.story_expert, settingKey: "story" },
+      { name: "CTA 전문가", role: "cta", prompt: phasePrompts.cta_expert, settingKey: "cta" },
+      { name: "행동 묘사 전문가", role: "action", prompt: phasePrompts.action_desc_expert, settingKey: "actionDesc" },
+      {
+        name: "캐릭터 묘사 전문가",
+        role: "character",
+        prompt: phasePrompts.character_desc_expert,
+        settingKey: "characterDesc",
+      },
     ];
+
+    const expertDefinitions = candidateExperts.filter((expertItem) => runtimeConfig.experts.phase1[expertItem.settingKey]);
 
     const phase1DebateResult = await this.debateEngine.runDebate({
       experts: expertDefinitions,
@@ -57,6 +72,8 @@ class PipelineOrchestrator {
       summarizerPrompt: phasePrompts.summarizer,
       context: "입력 밈 영상을 분석해서 마케팅 크리에이티브 시나리오를 확정해 주세요.",
       videoPath: runState.inputVideo,
+      rounds: runtimeConfig.debate.rounds,
+      parallelExperts: runtimeConfig.debate.parallelExperts,
       emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
     });
 
@@ -105,7 +122,7 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: 2 });
   }
 
-  async runPhase3(runId) {
+  async runPhase3(runId, runtimeConfig, taurusApi) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 3 });
     const runState = this.runStore.getRun(runId);
     const phase3Prompts = this.promptService.loadPhasePrompts("phase3");
@@ -115,11 +132,13 @@ class PipelineOrchestrator {
     let passDecision = false;
     let finalVideoPath = "";
 
-    while (!passDecision && currentIteration <= 3) {
+    while (!passDecision && currentIteration <= runtimeConfig.video.maxIterations) {
       const generatedVideoPath = path.join(this.outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
-      const taurusResult = await this.taurusApi.generateVideo(runState.phase1Result.scenario, {
+      const taurusResult = await taurusApi.generateVideo(runState.phase1Result.scenario, {
         referenceImages: runState.phase2Result.referenceSheets,
-        duration: 8,
+        duration: runtimeConfig.video.defaultDuration,
+        aspectRatio: runtimeConfig.video.aspectRatio,
+        splitModel: runtimeConfig.video.splitModel,
         outputPath: generatedVideoPath,
         onStatus: async (status, payload) => {
           this.wsHub.publish(runId, {
@@ -144,11 +163,30 @@ class PipelineOrchestrator {
         });
       }
 
-      const evaluatorDefinitions = [
-        { name: "행동 묘사 평가", role: "action", prompt: phase3Prompts.action_eval_expert },
-        { name: "캐릭터 평가", role: "character", prompt: phase3Prompts.character_eval_expert },
-        { name: "시나리오 정합성 평가", role: "scenario", prompt: phase3Prompts.scenario_eval_expert },
+      const candidateEvaluators = [
+        {
+          name: "행동 묘사 평가",
+          role: "action",
+          prompt: phase3Prompts.action_eval_expert,
+          settingKey: "actionEval",
+        },
+        {
+          name: "캐릭터 평가",
+          role: "character",
+          prompt: phase3Prompts.character_eval_expert,
+          settingKey: "characterEval",
+        },
+        {
+          name: "시나리오 정합성 평가",
+          role: "scenario",
+          prompt: phase3Prompts.scenario_eval_expert,
+          settingKey: "scenarioEval",
+        },
       ];
+
+      const evaluatorDefinitions = candidateEvaluators.filter(
+        (expertItem) => runtimeConfig.experts.phase3[expertItem.settingKey],
+      );
 
       const evaluationDebate = await this.debateEngine.runDebate({
         experts: evaluatorDefinitions,
@@ -156,6 +194,8 @@ class PipelineOrchestrator {
         summarizerPrompt: phase3Prompts.summarizer,
         context: runState.phase1Result.scenario,
         videoPath: taurusResult.outputPath,
+        rounds: runtimeConfig.debate.rounds,
+        parallelExperts: runtimeConfig.debate.parallelExperts,
         emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
       });
 

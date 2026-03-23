@@ -12,7 +12,8 @@ const { AssetStore } = require("./store/assetStore");
 const { AssetService } = require("./services/assetService");
 const { PipelineOrchestrator } = require("./services/pipelineOrchestrator");
 const { RunWebSocketHub } = require("./services/wsHub");
-const { getRequiredGeminiApiKey } = require("./config/environment");
+const { SettingsService } = require("./services/settingsService");
+const { getLoadedGeminiApiKey } = require("./config/environment");
 
 const portNumber = Number(process.env.PORT || 3000);
 const uploadsDirectory = path.resolve(process.env.UPLOADS_DIR || "./uploads");
@@ -31,7 +32,19 @@ app.use(express.static(path.resolve("public")));
 const runStore = new RunStore();
 const assetStore = new AssetStore();
 const assetService = new AssetService({ assetStore, assetsRootPath: assetsDirectory });
-const geminiClient = new GeminiClient({ apiKey: getRequiredGeminiApiKey(), assetService });
+const settingsService = new SettingsService({ envApiKey: getLoadedGeminiApiKey() });
+const activeSettings = settingsService.readConfig();
+if (!activeSettings.gemini.apiKey) {
+  throw new Error("Gemini API 키가 필요합니다. .env 또는 /settings에서 설정하세요.");
+}
+
+const geminiClient = new GeminiClient({
+  apiKey: activeSettings.gemini.apiKey,
+  model: activeSettings.gemini.model,
+  temperature: activeSettings.gemini.temperature,
+  maxOutputTokens: activeSettings.gemini.maxOutputTokens,
+  assetService,
+});
 const debateEngine = new DebateEngine({ geminiClient });
 const promptService = new PromptService(promptsDirectory);
 
@@ -44,10 +57,54 @@ const pipelineOrchestrator = new PipelineOrchestrator({
   geminiClient,
   wsHub,
   assetService,
+  settingsService,
+});
+
+app.get("/api/settings", (_request, response) => {
+  response.json({
+    settings: settingsService.getSettings(),
+    defaults: settingsService.getDefaults(),
+    schema: settingsService.getSchema(),
+  });
+});
+
+app.get("/api/settings/defaults", (_request, response) => {
+  response.json({ defaults: settingsService.getDefaults(), schema: settingsService.getSchema() });
+});
+
+app.patch("/api/settings", (request, response) => {
+  try {
+    const updatedConfig = settingsService.patchSettings(request.body || {});
+    response.json({
+      settings: settingsService.getSettings(),
+      savedAt: new Date().toISOString(),
+      hasApiKey: Boolean(updatedConfig.gemini.apiKey),
+    });
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
+});
+
+app.post("/api/settings/reset", (request, response) => {
+  try {
+    const resetConfig = settingsService.resetSettings(request.body?.category);
+    response.json({
+      settings: settingsService.getSettings(),
+      hasApiKey: Boolean(resetConfig.gemini.apiKey),
+    });
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
 });
 
 app.post("/api/run", uploadMiddleware.single("video"), async (request, response) => {
   try {
+    const currentConfig = settingsService.readConfig();
+    if (!currentConfig.gemini.apiKey) {
+      response.status(400).json({ error: "Gemini API 키를 먼저 설정하세요." });
+      return;
+    }
+
     const uploadedVideoPath = request.file?.path;
     if (!uploadedVideoPath) {
       response.status(400).json({ error: "video 파일이 필요합니다." });
@@ -60,7 +117,7 @@ app.post("/api/run", uploadMiddleware.single("video"), async (request, response)
       originalFileName: request.file.originalname,
     });
 
-    const createdRun = runStore.createRun(registeredInputAsset.filePath);
+    const createdRun = runStore.createRun(registeredInputAsset.filePath, currentConfig);
     runStore.updateRun(createdRun.id, { inputAssetId: registeredInputAsset.id });
     pipelineOrchestrator.execute(createdRun.id).catch(() => {});
 
@@ -260,6 +317,10 @@ app.get("/prompts", (_request, response) => {
 
 app.get("/assets", (_request, response) => {
   response.sendFile(path.resolve("public/assets.html"));
+});
+
+app.get("/settings", (_request, response) => {
+  response.sendFile(path.resolve("public/settings.html"));
 });
 
 app.get("/{*fallbackPath}", (_request, response) => {
