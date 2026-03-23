@@ -46,6 +46,11 @@ const SETTINGS_DEFAULTS = {
       scenarioEval: true,
     },
   },
+  safety: {
+    maxApiCallsPerRun: 200,
+    maxCostPerRunUsd: 10,
+    pipelineTimeoutMinutes: 30,
+  },
 };
 
 const SETTINGS_SCHEMA = {
@@ -94,8 +99,29 @@ const SETTINGS_SCHEMA = {
   "experts.phase3.actionEval": { category: "experts", type: "boolean", label: "Phase3 행동 평가" },
   "experts.phase3.characterEval": { category: "experts", type: "boolean", label: "Phase3 캐릭터 평가" },
   "experts.phase3.scenarioEval": { category: "experts", type: "boolean", label: "Phase3 시나리오 평가" },
+  "safety.maxApiCallsPerRun": {
+    category: "safety",
+    type: "number",
+    min: 50,
+    max: 500,
+    label: "Run당 최대 API 호출 수",
+  },
+  "safety.maxCostPerRunUsd": {
+    category: "safety",
+    type: "number",
+    min: 1,
+    max: 100,
+    label: "Run당 최대 비용(USD)",
+  },
+  "safety.pipelineTimeoutMinutes": {
+    category: "safety",
+    type: "number",
+    min: 10,
+    max: 60,
+    label: "파이프라인 타임아웃(분)",
+  },
 };
 
-const SETTINGS_CATEGORIES = ["gemini", "debate", "video", "image", "ffmpeg", "experts"];
+const SETTINGS_CATEGORIES = ["gemini", "debate", "video", "image", "ffmpeg", "experts", "safety"];
 
 module.exports = { SETTINGS_DEFAULTS, SETTINGS_SCHEMA, SETTINGS_CATEGORIES };

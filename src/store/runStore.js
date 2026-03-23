@@ -29,6 +29,7 @@ class RunStore {
       createdAt: new Date().toISOString(),
       inputVideo: inputVideoPath,
       tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
+      apiCallUsage: { callCount: 0, maxCalls: 0 },
       configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
     };
     runList.unshift(pipelineRun);
