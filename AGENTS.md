@@ -48,3 +48,7 @@
 - Gemini 텍스트 기본 모델 기본값을 더 이상 존재하지 않는 gemini-3-pro에서 gemini-3.1-pro-preview로 변경했다.
 - 분할용 splitModel 기본값/선택지도 gemini-3.1-flash-lite-preview 중심으로 갱신해 모델 not found(404) 가능성을 낮췄다.
 - settings 스키마의 gemini.model 옵션에서 gemini-3-pro를 제거하고 현재 가격 문서에 노출된 유효 모델명을 반영했다.
+[codex] 2026-03-23 추가 메모 11
+- 공통 HTTP 에러 포맷을 src/http/errors/AppError.js로 분리해 status/message/code/details를 표준화했고, 응답에는 기존 호환 필드 error를 유지한다.
+- 요청 검증을 src/http/middlewares/validateRequest.js로 분리해 /api/settings, /api/prompts/*, /api/assets/upload 등 주요 라우트의 body/query/params 검증을 핸들러 이전 단계로 이동했다.
+- 라우트 비동기/예외 처리를 src/http/middlewares/errorHandler.js의 asyncRoute + 전역 errorHandler로 통합해 중복 try/catch를 줄이고 next(error) 경로로 일원화했다.
