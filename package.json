@@ -1,0 +1,25 @@
+{
+  "dependencies": {
+    "node-fetch": "^3.3.2",
+    "sqlite3": "^6.0.1"
+  },
+  "name": "gemini-mimic",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/seongjun-yang1537/gemini-mimic.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "type": "commonjs",
+  "bugs": {
+    "url": "https://github.com/seongjun-yang1537/gemini-mimic/issues"
+  },
+  "homepage": "https://github.com/seongjun-yang1537/gemini-mimic#readme"
+}
