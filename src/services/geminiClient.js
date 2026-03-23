@@ -1,5 +1,6 @@
 // Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
+const { getRequiredGeminiApiKey } = require("../config/environment");
 
 function buildTextPart(content) {
   if (typeof content === "string") {
@@ -20,11 +21,8 @@ function buildVideoPart(videoPath) {
 
 class GeminiClient {
   constructor(config = {}) {
-    this.apiKey = config.apiKey || process.env.GEMINI_API_KEY;
+    this.apiKey = config.apiKey || getRequiredGeminiApiKey();
     this.model = config.model || "gemini-3-pro";
-    if (!this.apiKey) {
-      throw new Error("Missing GEMINI_API_KEY");
-    }
   }
 
   async callGemini(systemPrompt, content, options = {}) {

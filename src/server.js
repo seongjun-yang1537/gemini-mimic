@@ -4,14 +4,13 @@ const path = require("node:path");
 const http = require("node:http");
 const express = require("express");
 const multer = require("multer");
-require("dotenv").config();
-
 const { GeminiClient } = require("./services/geminiClient");
 const { DebateEngine } = require("./services/debateEngine");
 const { PromptService } = require("./services/promptService");
 const { RunStore } = require("./store/runStore");
 const { PipelineOrchestrator } = require("./services/pipelineOrchestrator");
 const { RunWebSocketHub } = require("./services/wsHub");
+const { getRequiredGeminiApiKey } = require("./config/environment");
 
 const portNumber = Number(process.env.PORT || 3000);
 const uploadsDirectory = path.resolve(process.env.UPLOADS_DIR || "./uploads");
@@ -26,7 +25,7 @@ app.use("/uploads", express.static(uploadsDirectory));
 app.use("/outputs", express.static(path.resolve(process.env.OUTPUTS_DIR || "./outputs")));
 app.use(express.static(path.resolve("public")));
 
-const geminiClient = new GeminiClient();
+const geminiClient = new GeminiClient({ apiKey: getRequiredGeminiApiKey() });
 const debateEngine = new DebateEngine({ geminiClient });
 const promptService = new PromptService(promptsDirectory);
 const runStore = new RunStore();
