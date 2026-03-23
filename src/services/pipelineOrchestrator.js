@@ -25,7 +25,7 @@ class PipelineOrchestrator {
     const taurusApi = createTaurusApi({ apiKey: runtimeConfig.gemini.apiKey });
     const runSafetyContext = this.createRunSafetyContext(runId, runtimeConfig);
 
-    this.runStore.updateRun(runId, {
+    await this.runStore.updateRun(runId, {
       configSnapshot: JSON.parse(JSON.stringify(runtimeConfig)),
     });
 
@@ -74,14 +74,14 @@ class PipelineOrchestrator {
         runSafetyContext,
       });
 
-      const runState = this.runStore.updateRun(runId, {
+      const runState = await this.runStore.updateRun(runId, {
         status: "completed",
         completedAt: new Date().toISOString(),
       });
       this.wsHub.publish(runId, { type: "pipeline_done", resultUrl: `/api/run/${runId}/result` });
       return runState;
     } catch (error) {
-      this.handlePipelineFailure(runId, error);
+      await this.handlePipelineFailure(runId, error);
       throw error;
     }
   }
@@ -104,7 +104,7 @@ class PipelineOrchestrator {
     if (phaseOutcome) {
       const { emittedEvents = [], ...phaseResultPatch } = phaseOutcome;
       if (Object.keys(phaseResultPatch).length > 0) {
-        this.runStore.updateRun(runId, phaseResultPatch);
+        await this.runStore.updateRun(runId, phaseResultPatch);
       }
       for (const eventPayload of emittedEvents) {
         this.wsHub.publish(runId, eventPayload);
@@ -114,13 +114,13 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: phaseNumber });
   }
 
-  handlePipelineFailure(runId, error) {
+  async handlePipelineFailure(runId, error) {
     console.error(`[pipeline:${runId}]`, error);
     const failureTimestamp = new Date().toISOString();
     const normalizedErrorMessage = error?.message || "알 수 없는 파이프라인 오류";
     const normalizedFailedPhase = typeof error?.failedPhase === "number" ? error.failedPhase : null;
 
-    this.runStore.updateRun(runId, {
+    await this.runStore.updateRun(runId, {
       status: "failed",
       completedAt: failureTimestamp,
       failedAt: failureTimestamp,
@@ -139,9 +139,9 @@ class PipelineOrchestrator {
     const apiGuard = new ApiGuard(configuredMaxCalls);
     const costTracker = new CostTracker(configuredCostLimit);
 
-    const updateUsage = () => {
+    const updateUsage = async () => {
       const usageSnapshot = costTracker.getUsage();
-      this.runStore.updateRun(runId, {
+      await this.runStore.updateRun(runId, {
         tokenUsage: {
           inputTokens: usageSnapshot.inputTokens,
           outputTokens: usageSnapshot.outputTokens,
@@ -171,7 +171,7 @@ class PipelineOrchestrator {
       apiGuard,
       costTracker,
       updateUsage,
-      onUsage: () => updateUsage(),
+      onUsage: async () => updateUsage(),
       getRemainingPipelineTimeMs: () => {
         const elapsedMs = Date.now() - pipelineStartedAt;
         const remainingMs = pipelineTimeoutMs - elapsedMs;

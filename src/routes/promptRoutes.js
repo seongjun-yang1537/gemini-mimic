@@ -17,15 +17,18 @@ function createPromptRoutes({ promptService, geminiClient }) {
     return validationErrors;
   };
 
-  promptRouter.get("/api/prompts", (_request, response) => {
-    response.json(promptService.listPrompts());
-  });
+  promptRouter.get(
+    "/api/prompts",
+    asyncRoute(async (_request, response) => {
+      response.json(await promptService.listPrompts());
+    }),
+  );
 
   promptRouter.get(
     "/api/prompts/:phase/:expert",
     validateRequest({ params: validatePromptParams }),
     asyncRoute(async (request, response) => {
-      const promptContent = promptService.getPrompt(request.params.phase, request.params.expert);
+      const promptContent = await promptService.getPrompt(request.params.phase, request.params.expert);
       response.json({ content: promptContent });
     }),
   );
@@ -41,10 +44,14 @@ function createPromptRoutes({ promptService, geminiClient }) {
         return null;
       },
     }),
-    (request, response) => {
-      const promptUpdateResult = promptService.updatePrompt(request.params.phase, request.params.expert, request.body.content);
+    asyncRoute(async (request, response) => {
+      const promptUpdateResult = await promptService.updatePrompt(
+        request.params.phase,
+        request.params.expert,
+        request.body.content,
+      );
       response.json(promptUpdateResult);
-    },
+    }),
   );
 
   promptRouter.post(
@@ -59,17 +66,24 @@ function createPromptRoutes({ promptService, geminiClient }) {
     }),
     asyncRoute(async (request, response) => {
       const feedbackText = request.body.feedback;
-      const promptMetadataList = promptService.listPrompts();
+      const promptMetadataList = await promptService.listPrompts();
       const promptSnapshot = promptMetadataList.map((promptMetadata) => ({
         phase: promptMetadata.phase,
         expert: promptMetadata.expert,
         content: promptService.getPrompt(promptMetadata.phase, promptMetadata.expert),
       }));
 
-      const updaterPrompt = promptService.getPrompt("meta", "prompt_updater");
+      const resolvedPromptSnapshot = await Promise.all(
+        promptSnapshot.map(async (snapshotItem) => ({
+          ...snapshotItem,
+          content: await snapshotItem.content,
+        })),
+      );
+
+      const updaterPrompt = await promptService.getPrompt("meta", "prompt_updater");
       const updateSuggestion = await geminiClient.callGemini(updaterPrompt, {
         feedback: feedbackText,
-        prompts: promptSnapshot,
+        prompts: resolvedPromptSnapshot,
         format: "JSON array: [{phase,expert,before,after,reason}]",
       });
 

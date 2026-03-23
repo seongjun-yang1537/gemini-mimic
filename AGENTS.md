@@ -67,3 +67,7 @@
 
 [codex] 2026-03-23 추가 메모 13
 - 사용자 요청으로 GitHub Actions CI 워크플로우 파일(.github/workflows/ci.yml)을 제거해 push/pull_request 자동 lint/test 실행을 비활성화했다.
+[codex] 2026-03-23 추가 메모 13
+- RunStore(src/store/runStore.js)와 PromptService(src/services/promptService.js)를 Promise 기반 비동기 API로 전환했다.
+- 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
+- RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.

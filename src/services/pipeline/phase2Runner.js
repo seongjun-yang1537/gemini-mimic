@@ -3,8 +3,8 @@ const path = require("node:path");
 
 async function runPhase2({ runId, services, runSafetyContext }) {
   const { runStore, promptService, geminiClient, assetService, outputsDirectory } = services;
-  const runState = runStore.getRun(runId);
-  const phase2Prompts = promptService.loadPhasePrompts("phase2");
+  const runState = await runStore.getRun(runId);
+  const phase2Prompts = await promptService.loadPhasePrompts("phase2");
 
   const assetListText = await geminiClient.callGemini(
     phase2Prompts.reference_expert,

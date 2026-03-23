@@ -1,7 +1,7 @@
 async function runPhase1({ runId, services, runtimeConfig, runSafetyContext }) {
   const { runStore, promptService, debateEngine, emitEvent } = services;
-  const runState = runStore.getRun(runId);
-  const phasePrompts = promptService.loadPhasePrompts("phase1");
+  const runState = await runStore.getRun(runId);
+  const phasePrompts = await promptService.loadPhasePrompts("phase1");
 
   const candidateExperts = [
     { name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert, settingKey: "hook" },
