@@ -43,3 +43,8 @@
 - phase2에서 레퍼런스 이미지가 없을 때 WebSocket pipeline_error 이벤트로 "레퍼런스 이미지 파일 없음" 메시지를 발행해 UI가 원인을 안내할 수 있게 한다.
 - phase3 영상 생성 옵션은 존재하는 레퍼런스 이미지 경로만 referenceImages로 전달하고, 배열이 비어 있으면 referenceImages 옵션 자체를 생략한다.
 - public/run.html은 pipeline_error 수신 시 레퍼런스 이미지 누락 메시지를 사용자 친화 문구로 변환해 표시한다.
+[codex] 2026-03-23 추가 메모 10
+- 사용자 요청으로 아키텍처 목표 구조를 백엔드(core/services/api/types 분리)와 프론트엔드(client React + pages/hooks/components 분리) 기준으로 문서화해 유지한다.
+- 사용자 커스텀 지침: 명시 지시 없이는 주석/메타 파일 생성 및 파일 삭제를 하지 않고, 변수명은 의미 있게 작성한다.
+- 사용자 커스텀 지침: 답변이 "[질문]"으로 시작하면 코드 변경 없이 설명만 제공하며, dotnet test는 실행하지 않는다.
+- 사용자 커스텀 지침: 작업 종료 시 변경한 파일 범위의 AGENTS.md에 [codex] 접두사 메모를 누적 추가하는 방식으로 컨텍스트를 확장한다.
