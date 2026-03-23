@@ -183,21 +183,50 @@
       position: relative;
     }
 
-    .composer textarea {
+    .prompt-editor {
       width: 100%;
       border: 0;
       outline: 0;
-      resize: none;
-      min-height: 58px;
+      min-height: 48px;
+      max-height: 200px;
+      overflow-y: auto;
       background: transparent;
       color: var(--color-text-primary);
       font-family: inherit;
       font-size: 15px;
       line-height: 1.6;
       padding: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
     }
 
-    .composer textarea::placeholder { color: var(--color-text-tertiary); }
+    .prompt-editor:empty::before {
+      content: attr(data-placeholder);
+      color: var(--color-text-tertiary);
+      pointer-events: none;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--purple-50);
+      color: var(--purple-800);
+      font-size: 12px;
+      font-weight: 500;
+      vertical-align: baseline;
+      cursor: default;
+      user-select: all;
+    }
+
+    .tag-chip-icon {
+      width: 8px;
+      height: 8px;
+      color: var(--purple-600);
+      flex-shrink: 0;
+    }
 
     .attachment-preview-list {
       display: flex;
@@ -745,6 +774,15 @@
         color: var(--purple-100);
       }
 
+      .tag-chip {
+        background: var(--purple-800);
+        color: var(--purple-100);
+      }
+
+      .tag-chip-icon {
+        color: var(--purple-200);
+      }
+
       .status-badge[data-status="running"],
       .phase-step.current,
       .tab-button.active .count-badge {
@@ -824,7 +862,7 @@
     <h1 class="hero-title">어떤 밈을 크리에이티브로 만들까요?</h1>
 
     <section class="composer" aria-label="입력 영역">
-      <textarea id="promptInput" rows="2" placeholder="밈 영상을 업로드하거나 설명해주세요"></textarea>
+      <div id="promptInput" class="prompt-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="밈 영상을 업로드하거나, 만들고 싶은 크리에이티브를 설명해주세요"></div>
       <div class="tag-autocomplete" id="tagAutocomplete"></div>
       <div class="attachment-preview-list" id="attachmentList"></div>
       <div class="composer-toolbar">
@@ -854,10 +892,11 @@
     const dashboardState = {
       selectedTab: 'tasks',
       attachments: [],
+      nextAttachmentId: 1,
       autocomplete: {
         isOpen: false,
         activeIndex: 0,
-        triggerIndex: -1,
+        triggerRange: null,
         queryText: ''
       },
       tasks: [
@@ -1048,21 +1087,157 @@
       return createImageThumbnail(fileObject);
     }
 
+    function normalizeEditableText(textValue) {
+      return textValue.replace(/ /g, ' ');
+    }
+
+    function getEditorSelectionRange() {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return null;
+      }
+      const selectedRange = selection.getRangeAt(0);
+      if (!promptInputElement.contains(selectedRange.startContainer) || !promptInputElement.contains(selectedRange.endContainer)) {
+        return null;
+      }
+      return selectedRange;
+    }
+
+    function getTextBeforeCaret() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange) {
+        return normalizeEditableText(promptInputElement.textContent || '');
+      }
+      const prefixRange = selectedRange.cloneRange();
+      prefixRange.selectNodeContents(promptInputElement);
+      prefixRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      return normalizeEditableText(prefixRange.toString());
+    }
+
+    function getEditorPlainText() {
+      return normalizeEditableText(promptInputElement.textContent || '');
+    }
+
+    function focusEditor() {
+      promptInputElement.focus();
+    }
+
+    function placeCaretAfterNode(node) {
+      const caretRange = document.createRange();
+      const selection = window.getSelection();
+      caretRange.setStartAfter(node);
+      caretRange.setEndAfter(node);
+      selection.removeAllRanges();
+      selection.addRange(caretRange);
+      focusEditor();
+    }
+
+    function createTagChipElement(attachmentItem) {
+      const chipElement = document.createElement('span');
+      chipElement.className = 'tag-chip';
+      chipElement.setAttribute('contenteditable', 'false');
+      chipElement.dataset.tag = attachmentItem.tag;
+      chipElement.dataset.type = attachmentItem.type;
+
+      const iconElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      iconElement.setAttribute('viewBox', '0 0 8 8');
+      iconElement.setAttribute('aria-hidden', 'true');
+      iconElement.classList.add('tag-chip-icon');
+
+      const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      if (attachmentItem.type === 'video') {
+        iconPath.setAttribute('d', 'M2 1.2 6.5 4 2 6.8V1.2Z');
+      } else {
+        iconPath.setAttribute('d', 'M1.2 1.2h5.6a.8.8 0 0 1 .8.8v4a.8.8 0 0 1-.8.8H1.2a.8.8 0 0 1-.8-.8V2a.8.8 0 0 1 .8-.8Zm.7 4h4.2L4.9 3.8a.45.45 0 0 0-.7 0l-.8 1-.5-.6a.45.45 0 0 0-.7 0l-.3.4Zm3.8-2.5a.55.55 0 1 0 0 1.1.55.55 0 0 0 0-1.1Z');
+      }
+      iconPath.setAttribute('fill', 'currentColor');
+      iconElement.append(iconPath);
+
+      const labelElement = document.createElement('span');
+      labelElement.textContent = attachmentItem.tag;
+
+      chipElement.append(iconElement, labelElement);
+      return chipElement;
+    }
+
+    function selectChipElement(chipElement) {
+      const selectionRange = document.createRange();
+      const selection = window.getSelection();
+      selectionRange.selectNode(chipElement);
+      selection.removeAllRanges();
+      selection.addRange(selectionRange);
+      focusEditor();
+    }
+
+    function removeChipNode(chipElement) {
+      const previousSibling = chipElement.previousSibling;
+      const nextSibling = chipElement.nextSibling;
+      chipElement.remove();
+
+      if (previousSibling && previousSibling.nodeType === Node.TEXT_NODE && nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+        previousSibling.textContent = `${previousSibling.textContent}${nextSibling.textContent}`;
+        nextSibling.remove();
+      }
+
+      if (previousSibling && previousSibling.nodeType === Node.TEXT_NODE && /\s$/.test(previousSibling.textContent) && nextSibling && nextSibling.nodeType === Node.TEXT_NODE && /^\s/.test(nextSibling.textContent || '')) {
+        nextSibling.textContent = (nextSibling.textContent || '').replace(/^\s+/, ' ');
+      }
+
+      if (nextSibling) {
+        placeCaretAfterNode(nextSibling);
+        return;
+      }
+      if (previousSibling) {
+        placeCaretAfterNode(previousSibling);
+        return;
+      }
+      promptInputElement.textContent = '';
+      focusEditor();
+    }
+
+    function removeChipByTag(tagText) {
+      promptInputElement.querySelectorAll('.tag-chip').forEach((chipElement) => {
+        if (chipElement.dataset.tag === tagText) {
+          removeChipNode(chipElement);
+        }
+      });
+    }
+
+    function updateChipTag(oldTag, newTag) {
+      promptInputElement.querySelectorAll('.tag-chip').forEach((chipElement) => {
+        if (chipElement.dataset.tag === oldTag) {
+          chipElement.dataset.tag = newTag;
+          const labelElement = chipElement.querySelector('span');
+          if (labelElement) {
+            labelElement.textContent = newTag;
+          }
+        }
+      });
+    }
+
+    function syncChipsWithAttachments(removedTags, changedTags) {
+      removedTags.forEach((removedTag) => {
+        removeChipByTag(removedTag);
+      });
+      changedTags.forEach((changedTagPair) => {
+        updateChipTag(changedTagPair.oldTag, changedTagPair.newTag);
+      });
+      refreshSendButtonState();
+    }
+
     function reindexAttachments() {
       let videoOrder = 0;
       let imageOrder = 0;
-      dashboardState.attachments = dashboardState.attachments.map((attachmentItem) => {
-        const nextAttachmentItem = { ...attachmentItem };
-        if (nextAttachmentItem.type === 'video') {
+      dashboardState.attachments.forEach((attachmentItem) => {
+        if (attachmentItem.type === 'video') {
           videoOrder += 1;
-          nextAttachmentItem.index = videoOrder;
-          nextAttachmentItem.tag = `@영상${videoOrder}`;
+          attachmentItem.index = videoOrder;
+          attachmentItem.tag = `@영상${videoOrder}`;
         } else {
           imageOrder += 1;
-          nextAttachmentItem.index = imageOrder;
-          nextAttachmentItem.tag = `@이미지${imageOrder}`;
+          attachmentItem.index = imageOrder;
+          attachmentItem.tag = `@이미지${imageOrder}`;
         }
-        return nextAttachmentItem;
       });
     }
 
@@ -1091,12 +1266,25 @@
       attachmentListElement.querySelectorAll('[data-remove-index]').forEach((removeButtonElement) => {
         removeButtonElement.addEventListener('click', () => {
           const removeIndexValue = Number(removeButtonElement.dataset.removeIndex);
+          const previousAttachmentState = dashboardState.attachments.map((attachmentItem) => ({ id: attachmentItem.id, tag: attachmentItem.tag }));
           const removedAttachment = dashboardState.attachments[removeIndexValue];
-          if (removedAttachment && removedAttachment.thumbnailUrl.startsWith('blob:')) {
+          if (!removedAttachment) {
+            return;
+          }
+          if (removedAttachment.thumbnailUrl.startsWith('blob:')) {
             URL.revokeObjectURL(removedAttachment.thumbnailUrl);
           }
           dashboardState.attachments.splice(removeIndexValue, 1);
           reindexAttachments();
+          const removedTags = [removedAttachment.tag];
+          const changedTags = [];
+          previousAttachmentState.forEach((previousAttachment) => {
+            const nextAttachment = dashboardState.attachments.find((attachmentItem) => attachmentItem.id === previousAttachment.id);
+            if (nextAttachment && nextAttachment.tag !== previousAttachment.tag) {
+              changedTags.push({ oldTag: previousAttachment.tag, newTag: nextAttachment.tag });
+            }
+          });
+          syncChipsWithAttachments(removedTags, changedTags);
           renderAttachmentList();
           updateAutocompleteForInput();
           refreshSendButtonState();
@@ -1107,8 +1295,8 @@
     function closeAutocomplete() {
       dashboardState.autocomplete.isOpen = false;
       dashboardState.autocomplete.activeIndex = 0;
-      dashboardState.autocomplete.triggerIndex = -1;
       dashboardState.autocomplete.queryText = '';
+      dashboardState.autocomplete.triggerRange = null;
       tagAutocompleteElement.classList.remove('visible');
       tagAutocompleteElement.innerHTML = '';
     }
@@ -1162,45 +1350,119 @@
     function selectAutocompleteCandidate(candidateIndex) {
       const candidates = getAutocompleteCandidates();
       const selectedAttachment = candidates[candidateIndex];
-      if (!selectedAttachment || dashboardState.autocomplete.triggerIndex < 0) {
+      const triggerRange = dashboardState.autocomplete.triggerRange;
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedAttachment || !triggerRange || !selectedRange) {
         closeAutocomplete();
         return;
       }
 
-      const currentInputText = promptInputElement.value;
-      const beforeAtText = currentInputText.slice(0, dashboardState.autocomplete.triggerIndex);
-      const trailingTextStart = dashboardState.autocomplete.triggerIndex + 1 + dashboardState.autocomplete.queryText.length;
-      const afterTagText = currentInputText.slice(trailingTextStart);
-      const nextTextValue = `${beforeAtText}${selectedAttachment.tag} ${afterTagText}`;
-      promptInputElement.value = nextTextValue;
-      const nextCaretPosition = beforeAtText.length + selectedAttachment.tag.length + 1;
-      promptInputElement.setSelectionRange(nextCaretPosition, nextCaretPosition);
+      const insertRange = document.createRange();
+      insertRange.setStart(triggerRange.startContainer, triggerRange.startOffset);
+      insertRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      insertRange.deleteContents();
+
+      const tagChipElement = createTagChipElement(selectedAttachment);
+      const trailingSpaceNode = document.createTextNode(' ');
+      insertRange.insertNode(trailingSpaceNode);
+      insertRange.insertNode(tagChipElement);
+      placeCaretAfterNode(trailingSpaceNode);
       closeAutocomplete();
       refreshSendButtonState();
-      promptInputElement.focus();
     }
 
     function updateAutocompleteForInput() {
-      const inputValue = promptInputElement.value;
-      const cursorPosition = promptInputElement.selectionStart;
-      const textUntilCursor = inputValue.slice(0, cursorPosition);
-      const atIndex = textUntilCursor.lastIndexOf('@');
-
+      const textBeforeCaret = getTextBeforeCaret();
+      const atIndex = textBeforeCaret.lastIndexOf('@');
       if (atIndex < 0 || dashboardState.attachments.length === 0) {
         closeAutocomplete();
         return;
       }
 
-      const rawQuery = textUntilCursor.slice(atIndex + 1);
+      const rawQuery = textBeforeCaret.slice(atIndex + 1);
       if (rawQuery.includes(' ') || rawQuery.includes('\n')) {
         closeAutocomplete();
         return;
       }
 
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange) {
+        closeAutocomplete();
+        return;
+      }
+
+      const triggerRange = selectedRange.cloneRange();
+      const prefixRange = selectedRange.cloneRange();
+      prefixRange.selectNodeContents(promptInputElement);
+      prefixRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      const textLengthBeforeCaret = normalizeEditableText(prefixRange.toString()).length;
+      const triggerOffsetFromCaret = rawQuery.length + 1;
+      const triggerCharacterOffset = textLengthBeforeCaret - triggerOffsetFromCaret;
+
+      const walker = document.createTreeWalker(promptInputElement, NodeFilter.SHOW_TEXT, null);
+      let traversedTextLength = 0;
+      let triggerNode = null;
+      let triggerNodeOffset = 0;
+      while (walker.nextNode()) {
+        const currentNode = walker.currentNode;
+        const nodeTextLength = normalizeEditableText(currentNode.textContent || '').length;
+        if (triggerCharacterOffset <= traversedTextLength + nodeTextLength) {
+          triggerNode = currentNode;
+          triggerNodeOffset = Math.max(0, triggerCharacterOffset - traversedTextLength);
+          break;
+        }
+        traversedTextLength += nodeTextLength;
+      }
+
+      if (!triggerNode) {
+        closeAutocomplete();
+        return;
+      }
+
+      triggerRange.setStart(triggerNode, triggerNodeOffset);
+      triggerRange.setEnd(triggerNode, triggerNodeOffset);
       dashboardState.autocomplete.isOpen = true;
-      dashboardState.autocomplete.triggerIndex = atIndex;
+      dashboardState.autocomplete.triggerRange = triggerRange;
       dashboardState.autocomplete.queryText = rawQuery;
       renderAutocomplete();
+    }
+    function removeSelectedChipFromSelection() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange || selectedRange.collapsed) {
+        return false;
+      }
+      if (selectedRange.startContainer === promptInputElement && selectedRange.endContainer === promptInputElement && selectedRange.endOffset === selectedRange.startOffset + 1) {
+        const selectedNode = promptInputElement.childNodes[selectedRange.startOffset];
+        if (selectedNode && selectedNode.classList && selectedNode.classList.contains('tag-chip')) {
+          removeChipNode(selectedNode);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function removeChipBeforeCaret() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange || !selectedRange.collapsed) {
+        return false;
+      }
+      let previousNode = null;
+      if (selectedRange.startContainer.nodeType === Node.TEXT_NODE && selectedRange.startOffset === 0) {
+        previousNode = selectedRange.startContainer.previousSibling;
+      } else if (selectedRange.startContainer === promptInputElement && selectedRange.startOffset > 0) {
+        previousNode = promptInputElement.childNodes[selectedRange.startOffset - 1];
+      }
+      if (previousNode && previousNode.classList && previousNode.classList.contains('tag-chip')) {
+        removeChipNode(previousNode);
+        return true;
+      }
+      return false;
+    }
+
+    function normalizeEditorIfEmpty() {
+      if (getEditorPlainText().trim().length === 0 && promptInputElement.querySelectorAll('.tag-chip').length === 0) {
+        promptInputElement.textContent = '';
+      }
     }
 
     function buildTaskRow(taskItem) {
@@ -1274,13 +1536,13 @@
     }
 
     function refreshSendButtonState() {
-      const hasTextInput = promptInputElement.value.trim().length > 0;
+      const hasTextInput = getEditorPlainText().trim().length > 0;
       const hasAttachments = dashboardState.attachments.length > 0;
       sendButtonElement.classList.toggle('active', hasTextInput || hasAttachments);
     }
 
     function createTaskFromInput() {
-      const trimmedInputText = promptInputElement.value.trim();
+      const trimmedInputText = getEditorPlainText().trim();
       if (!trimmedInputText && !dashboardState.attachments.length) {
         return;
       }
@@ -1310,7 +1572,7 @@
       };
 
       dashboardState.tasks.unshift(createdTask);
-      promptInputElement.value = '';
+      promptInputElement.textContent = '';
       dashboardState.attachments.forEach((attachmentItem) => {
         if (attachmentItem.thumbnailUrl.startsWith('blob:')) {
           URL.revokeObjectURL(attachmentItem.thumbnailUrl);
@@ -1330,10 +1592,11 @@
         return;
       }
 
-      const createdAttachmentItems = await Promise.all(filesToAdd.map(async (selectedFile) => {
+      const createdAttachmentItems = await Promise.all(filesToAdd.map(async (selectedFile, fileIndex) => {
         const attachmentType = detectAttachmentType(selectedFile);
         const thumbnailValue = await generateThumbnailForFile(selectedFile, attachmentType);
         return {
+          id: dashboardState.nextAttachmentId + fileIndex,
           file: selectedFile,
           tag: '',
           type: attachmentType,
@@ -1342,6 +1605,7 @@
         };
       }));
 
+      dashboardState.nextAttachmentId += createdAttachmentItems.length;
       dashboardState.attachments.push(...createdAttachmentItems);
       reindexAttachments();
       renderAttachmentList();
@@ -1351,11 +1615,24 @@
 
     function bindEvents() {
       promptInputElement.addEventListener('input', () => {
+        normalizeEditorIfEmpty();
         refreshSendButtonState();
         updateAutocompleteForInput();
       });
 
       promptInputElement.addEventListener('keydown', (event) => {
+        if (event.key === 'Backspace' && removeSelectedChipFromSelection()) {
+          event.preventDefault();
+          closeAutocomplete();
+          refreshSendButtonState();
+          return;
+        }
+        if (event.key === 'Backspace' && removeChipBeforeCaret()) {
+          event.preventDefault();
+          closeAutocomplete();
+          refreshSendButtonState();
+          return;
+        }
         if (event.key === 'ArrowDown' && dashboardState.autocomplete.isOpen) {
           event.preventDefault();
           const candidates = getAutocompleteCandidates();
@@ -1386,7 +1663,16 @@
         }
       });
 
-      promptInputElement.addEventListener('click', updateAutocompleteForInput);
+      promptInputElement.addEventListener('click', (event) => {
+        const clickedChipElement = event.target.closest('.tag-chip');
+        if (clickedChipElement) {
+          event.preventDefault();
+          selectChipElement(clickedChipElement);
+          closeAutocomplete();
+          return;
+        }
+        updateAutocompleteForInput();
+      });
       promptInputElement.addEventListener('keyup', updateAutocompleteForInput);
       promptInputElement.addEventListener('blur', () => {
         setTimeout(() => {

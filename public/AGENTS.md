@@ -23,3 +23,7 @@
 [codex] 2026-03-23 추가 메모 8
 - public/index.html 헤더 우측의 API/비용 요약을 제거해 상단 우측 영역을 비우고, 입력 컴포저 하단 툴바는 [+ 첨부]와 전송 버튼만 남기도록 단순화했다.
 - 탭 바를 작업/프롬프트/에셋/설정 4개로 고정하고 상태 요약 pill 영역을 제거했으며, 480px 이하에서 첨부 프리뷰 카드를 80x68로 축소하도록 반응형 규칙을 추가했다.
+[codex] 2026-03-23 추가 메모 9
+- public/index.html의 입력 textarea를 contentEditable 기반 prompt-editor로 교체하고, @자동완성 선택 시 inline 비편집 tag-chip(span[data-tag][data-type])을 삽입하도록 갱신했다.
+- 첨부 제거 시 해당 tag-chip 자동 삭제 및 남은 첨부의 @태그 재인덱싱에 맞춰 chip 라벨/데이터 동기화를 적용했다.
+- 전송 텍스트는 contentEditable DOM에서 chip의 data-tag를 포함한 플레인 텍스트로 복원(getEditorPlainText)해 run input으로 저장한다.
