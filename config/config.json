@@ -1,6 +1,5 @@
 {
   "gemini": {
-    "apiKey": "AIzaSyD3qSaYjK3mGK29WmpfEP3j3dE2O_MyiqY",
     "model": "gemini-3.1-pro-preview",
     "temperature": 0.7,
     "maxOutputTokens": 8192

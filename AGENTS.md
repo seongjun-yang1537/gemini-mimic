@@ -753,3 +753,6 @@ range slider에는 `step` 속성 필수:
 [codex] 2026-03-23 추가 메모 18
 - src/server.js 파일이 비어 있는 상태에서는 npm start가 MODULE_NOT_FOUND로 실패하므로, 최소 서버 엔트리포인트를 복구해 실행 가능 상태를 유지한다.
 - 복구 엔트리포인트는 Express 정적 서빙(public), /api/health 상태 확인, Express 5 호환 catch-all('/{*fallbackPath}') 라우트를 포함한다.
+
+[codex] 2026-03-23 추가 메모 19
+- config/config.json의 Gemini API 키 하드코딩 값을 제거했고, API 키는 .env의 GEMINI_API_KEY로만 관리한다.
