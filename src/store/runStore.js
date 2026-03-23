@@ -21,7 +21,7 @@ class RunStore {
     fs.writeFileSync(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
   }
 
-  createRun(inputVideoPath) {
+  createRun(inputVideoPath, configSnapshot = null) {
     const runList = this.readRuns();
     const pipelineRun = {
       id: randomUUID(),
@@ -29,6 +29,7 @@ class RunStore {
       createdAt: new Date().toISOString(),
       inputVideo: inputVideoPath,
       tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
+      configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,
     };
     runList.unshift(pipelineRun);
     this.saveRuns(runList);

@@ -4,8 +4,12 @@ const dotenv = require("dotenv");
 
 const dotenvResult = dotenv.config({ path: path.resolve(process.cwd(), ".env") });
 
+function getLoadedGeminiApiKey() {
+  return process.env.GEMINI_API_KEY?.trim() || "";
+}
+
 function getRequiredGeminiApiKey() {
-  const geminiApiKey = process.env.GEMINI_API_KEY?.trim();
+  const geminiApiKey = getLoadedGeminiApiKey();
   if (geminiApiKey) {
     return geminiApiKey;
   }
@@ -14,4 +18,4 @@ function getRequiredGeminiApiKey() {
   throw new Error(`GEMINI_API_KEY가 필요합니다. 프로젝트 루트의 .env 파일에 설정하세요${dotenvError}`);
 }
 
-module.exports = { getRequiredGeminiApiKey };
+module.exports = { getRequiredGeminiApiKey, getLoadedGeminiApiKey };

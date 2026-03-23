@@ -23,7 +23,24 @@ class GeminiClient {
   constructor(config = {}) {
     this.apiKey = config.apiKey || getRequiredGeminiApiKey();
     this.model = config.model || "gemini-3-pro";
+    this.temperature = config.temperature ?? 0.7;
+    this.maxOutputTokens = config.maxOutputTokens ?? 8192;
     this.assetService = config.assetService;
+  }
+
+  setRuntimeConfig(runtimeConfig = {}) {
+    if (typeof runtimeConfig.apiKey === "string" && runtimeConfig.apiKey.trim()) {
+      this.apiKey = runtimeConfig.apiKey.trim();
+    }
+    if (typeof runtimeConfig.model === "string" && runtimeConfig.model.trim()) {
+      this.model = runtimeConfig.model.trim();
+    }
+    if (typeof runtimeConfig.temperature === "number") {
+      this.temperature = runtimeConfig.temperature;
+    }
+    if (typeof runtimeConfig.maxOutputTokens === "number") {
+      this.maxOutputTokens = runtimeConfig.maxOutputTokens;
+    }
   }
 
   buildPartsFromContent(content) {
@@ -40,19 +57,27 @@ class GeminiClient {
   }
 
   async callGemini(systemPrompt, content, options = {}) {
+    const modelName = options.model || this.model;
+    const apiKey = options.apiKey || this.apiKey;
+    const temperatureValue = options.temperature ?? this.temperature;
+    const maxOutputTokensValue = options.maxOutputTokens ?? this.maxOutputTokens;
     const parts = this.buildPartsFromContent(content);
     if (options.videoPath) {
       parts.push(buildVideoPart(options.videoPath));
     }
 
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts }],
           systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: {
+            temperature: temperatureValue,
+            maxOutputTokens: maxOutputTokensValue,
+          },
         }),
       },
     );

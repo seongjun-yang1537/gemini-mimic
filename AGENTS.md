@@ -23,3 +23,7 @@
 - Express 5 환경에서는 src/server.js의 catch-all 라우트에 "*"를 직접 사용할 수 없고 "/{*fallbackPath}" 형태를 사용해야 서버 부팅 시 path-to-regexp 오류가 발생하지 않는다.
 [codex] 2026-03-23 추가 메모 6
 - 사용자 요구로 public/index.html에 실행/프롬프트/에셋 화면을 탭 기반 통합 대시보드로 구성했고, /prompts·/assets는 iframe으로 메인에서 직접 전환해 사용하도록 반영했다.
+[codex] 2026-03-23 추가 메모 7
+- 설정 시스템은 config/config.json 파일을 사용하며 src/services/settingsService.js에서 기본값 병합, 부분 업데이트, 카테고리/전체 초기화, 유효성 검증을 처리한다.
+- 설정 API는 src/server.js에 /api/settings(GET, PATCH), /api/settings/defaults(GET), /api/settings/reset(POST)로 추가되었고 /settings 정적 라우트(public/settings.html)를 제공한다.
+- 파이프라인 실행 시 src/store/runStore.js의 run 레코드에 configSnapshot을 저장하고 src/services/pipelineOrchestrator.js에서 설정 기반 라운드 수/전문가 활성화/반복 횟수/영상 파라미터를 반영한다.
