@@ -1,0 +1,35 @@
+# Node
+node_modules/
+
+# n8n
+.n8n/
+
+# Generated outputs
+outputs/
+*.mp4
+*.webm
+*.mov
+*.avi
+
+# Generated images
+*.png
+*.jpg
+*.jpeg
+!prompts/**/*.png
+!prompts/**/*.jpg
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# IDE
+.vscode/
+.idea/
+
+# Env
+.env
+.env.local
+
+# Logs
+*.log
