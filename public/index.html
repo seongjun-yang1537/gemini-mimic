@@ -397,20 +397,42 @@
       function renderSidebarRuns(runItems) {
         const sidebarRunListElement = document.getElementById('sidebarRunList');
         sidebarRunListElement.innerHTML = runItems.slice(0, 8).map((runItem) => {
-          const statusEmoji = runItem.status === 'completed' ? '✅' : runItem.status === 'failed' ? '❌' : '🔄';
+          const statusEmoji = runItem.status === 'completed'
+            ? '✅'
+            : runItem.status === 'failed'
+              ? '❌'
+              : runItem.status === 'running'
+                ? '🟠'
+                : '🔄';
           return `<a class="sidebar-run-item" href="/run/${runItem.id}">• ${runItem.id} ${statusEmoji}</a>`;
         }).join('');
+      }
+
+      function getRunBadgeClass(runStatusValue) {
+        if (runStatusValue === 'completed') {
+          return 'badge-success';
+        }
+        if (runStatusValue === 'failed') {
+          return 'badge-error';
+        }
+        return 'badge-running';
+      }
+
+      function isRunActive(runStatusValue) {
+        return ['created', 'queued', 'running', 'cancelling'].includes(runStatusValue);
       }
 
       function renderRunItem(runItem) {
         const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
         const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
         const previewText = (runItem.summary || runItem.scenario || '시나리오 생성 대기 중').replace(/\n/g, ' ');
+        const badgeClassName = getRunBadgeClass(runItem.status);
+        const animationClassName = isRunActive(runItem.status) ? 'badge-radial-progress' : '';
         return `
           <li class="run-card">
             <div>
               <div style="display: flex; gap: 8px; margin-bottom: 4px; align-items: center;">
-                <span class="badge ${runItem.status === 'completed' ? 'badge-success' : runItem.status === 'failed' ? 'badge-error' : 'badge-running'}">${runItem.status}</span>
+                <span class="badge ${badgeClassName} ${animationClassName}">${runItem.status}</span>
                 <span class="mono">${runItem.id}</span>
               </div>
               <div class="caption">생성 시간 ${startedText} · 소요 ${durationText}</div>

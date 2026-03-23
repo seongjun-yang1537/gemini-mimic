@@ -7,3 +7,6 @@
 [codex] 2026-03-23 추가 메모 3
 - public/index.html 실행 입력 영역을 하단 고정 Prompt Input Bar 레이아웃으로 교체하고 첨부 스트립/드래그앤드롭/📎 드롭다운을 추가했다.
 - 서버 드라이브 선택 모달을 index에 포함해 헤더 검색(300ms debounce), 브레드크럼, 정렬/필터/뷰 전환, 파일 선택 후 첨부 반영 플로우를 구현했다.
+[codex] 2026-03-23 추가 메모 4
+- public/index.html 실행 목록 상태 뱃지 렌더링에 isRunActive(created/queued/running/cancelling) 판별을 추가해 진행 중 실행만 radial 애니메이션 클래스를 부여한다.
+- public/styles.css에 .badge-radial-progress와 radial-spin/radial-pulse 키프레임을 추가해 실행 중 상태 뱃지 주변에 원형 진행 애니메이션을 표시한다.
