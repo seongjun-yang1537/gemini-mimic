@@ -7,22 +7,36 @@
     <title>Mimic</title>
   </head>
   <body class="bg-slate-950 text-slate-100">
-    <div class="max-w-6xl mx-auto p-6 space-y-6">
-      <header class="flex items-center justify-between">
-        <h1 class="text-2xl font-bold">Mimic Pipeline Dashboard</h1>
-        <div class="flex gap-4 text-sm"><a href="/prompts" class="text-cyan-300">프롬프트 관리</a><a href="/assets" class="text-emerald-300">에셋 관리</a></div>
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+      <header class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+        <h1 class="text-2xl font-bold">Mimic 통합 대시보드</h1>
+        <div class="flex gap-2 text-sm">
+          <button data-tab-target="runs" class="tab-button bg-cyan-500 text-slate-950 px-3 py-2 rounded-lg font-semibold">실행 관리</button>
+          <button data-tab-target="prompts" class="tab-button bg-slate-800 px-3 py-2 rounded-lg">프롬프트 관리</button>
+          <button data-tab-target="assets" class="tab-button bg-slate-800 px-3 py-2 rounded-lg">에셋 관리</button>
+        </div>
       </header>
 
-      <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-        <form id="runForm" class="flex gap-3 items-center">
-          <input type="file" name="video" accept="video/mp4" class="text-sm" required />
-          <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">새 파이프라인 실행</button>
-        </form>
+      <section id="tab-runs" class="tab-panel space-y-6">
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <form id="runForm" class="flex gap-3 items-center">
+            <input type="file" name="video" accept="video/mp4" class="text-sm" required />
+            <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">새 파이프라인 실행</button>
+          </form>
+        </section>
+
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 class="font-semibold mb-3">실행 목록</h2>
+          <ul id="runList" class="space-y-2"></ul>
+        </section>
       </section>
 
-      <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
-        <h2 class="font-semibold mb-3">실행 목록</h2>
-        <ul id="runList" class="space-y-2"></ul>
+      <section id="tab-prompts" class="tab-panel hidden bg-slate-900 border border-slate-800 rounded-xl p-3">
+        <iframe title="prompts" src="/prompts" class="w-full h-[80vh] rounded-lg border border-slate-700 bg-slate-950"></iframe>
+      </section>
+
+      <section id="tab-assets" class="tab-panel hidden bg-slate-900 border border-slate-800 rounded-xl p-3">
+        <iframe title="assets" src="/assets" class="w-full h-[80vh] rounded-lg border border-slate-700 bg-slate-950"></iframe>
       </section>
     </div>
 
@@ -46,12 +60,12 @@
         const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
 
         return `
-          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center">
+          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center gap-3">
             <div>
               <p class="font-mono text-xs">${runItem.id}</p>
               <p class="text-sm">${runItem.status} · 시작 ${startedText} · 소요 ${durationText}</p>
             </div>
-            <div class="flex items-center gap-4 text-sm">
+            <div class="flex items-center gap-4 text-sm whitespace-nowrap">
               <a href="/run/${runItem.id}" class="text-cyan-300">모니터링</a>
               <a href="/run/${runItem.id}/result" class="text-emerald-300">결과</a>
             </div>
@@ -65,6 +79,29 @@
         const runListElement = document.getElementById('runList');
         runListElement.innerHTML = runs.map(renderRunItem).join('');
       }
+
+      function updateVisibleTab(targetTab) {
+        document.querySelectorAll('.tab-panel').forEach((panelElement) => {
+          panelElement.classList.add('hidden');
+        });
+        document.querySelectorAll('.tab-button').forEach((buttonElement) => {
+          buttonElement.classList.remove('bg-cyan-500', 'text-slate-950', 'font-semibold');
+          buttonElement.classList.add('bg-slate-800');
+        });
+
+        const targetPanelElement = document.getElementById(`tab-${targetTab}`);
+        const targetButtonElement = document.querySelector(`button[data-tab-target="${targetTab}"]`);
+
+        targetPanelElement.classList.remove('hidden');
+        targetButtonElement.classList.remove('bg-slate-800');
+        targetButtonElement.classList.add('bg-cyan-500', 'text-slate-950', 'font-semibold');
+      }
+
+      document.querySelectorAll('.tab-button').forEach((buttonElement) => {
+        buttonElement.addEventListener('click', () => {
+          updateVisibleTab(buttonElement.dataset.tabTarget);
+        });
+      });
 
       document.getElementById('runForm').addEventListener('submit', async (event) => {
         event.preventDefault();
