@@ -144,6 +144,18 @@ app.get("/api/run/:id/result", (request, response) => {
   response.json(foundRun);
 });
 
+app.get("/run/:id", (_request, response) => {
+  response.sendFile(path.resolve("public/run.html"));
+});
+
+app.get("/run/:id/result", (_request, response) => {
+  response.sendFile(path.resolve("public/result.html"));
+});
+
+app.get("/prompts", (_request, response) => {
+  response.sendFile(path.resolve("public/prompts.html"));
+});
+
 app.get("*", (_request, response) => {
   response.sendFile(path.resolve("public/index.html"));
 });

@@ -10,7 +10,7 @@
     <div class="max-w-6xl mx-auto p-6 space-y-6">
       <header class="flex items-center justify-between">
         <h1 class="text-2xl font-bold">Mimic Pipeline Dashboard</h1>
-        <a href="/prompts.html" class="text-sm text-cyan-300">프롬프트 관리</a>
+        <a href="/prompts" class="text-sm text-cyan-300">프롬프트 관리</a>
       </header>
 
       <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
@@ -27,19 +27,43 @@
     </div>
 
     <script>
+      function formatDuration(createdAtValue, completedAtValue) {
+        if (!createdAtValue) {
+          return '-';
+        }
+
+        const startTimestamp = new Date(createdAtValue).getTime();
+        const endTimestamp = completedAtValue ? new Date(completedAtValue).getTime() : Date.now();
+        const elapsedSeconds = Math.max(0, Math.floor((endTimestamp - startTimestamp) / 1000));
+
+        const minutes = Math.floor(elapsedSeconds / 60);
+        const seconds = elapsedSeconds % 60;
+        return `${minutes}분 ${seconds}초`;
+      }
+
+      function renderRunItem(runItem) {
+        const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
+        const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
+
+        return `
+          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center">
+            <div>
+              <p class="font-mono text-xs">${runItem.id}</p>
+              <p class="text-sm">${runItem.status} · 시작 ${startedText} · 소요 ${durationText}</p>
+            </div>
+            <div class="flex items-center gap-4 text-sm">
+              <a href="/run/${runItem.id}" class="text-cyan-300">모니터링</a>
+              <a href="/run/${runItem.id}/result" class="text-emerald-300">결과</a>
+            </div>
+          </li>
+        `;
+      }
+
       async function loadRuns() {
         const response = await fetch('/api/run');
         const runs = await response.json();
         const runListElement = document.getElementById('runList');
-        runListElement.innerHTML = runs.map((run) => `
-          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center">
-            <div>
-              <p class="font-mono text-xs">${run.id}</p>
-              <p class="text-sm">${run.status} · ${new Date(run.createdAt).toLocaleString()}</p>
-            </div>
-            <a href="/run.html?id=${run.id}" class="text-cyan-300 text-sm">상세 보기</a>
-          </li>
-        `).join('');
+        runListElement.innerHTML = runs.map(renderRunItem).join('');
       }
 
       document.getElementById('runForm').addEventListener('submit', async (event) => {
