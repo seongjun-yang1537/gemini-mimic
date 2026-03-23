@@ -64,3 +64,6 @@
 - 서버 엔트리포인트를 경량화하기 위해 src/app/createApp.js를 도입해 공통 미들웨어와 라우터 조립을 분리했다.
 - API 라우터는 src/routes/runRoutes.js, promptRoutes.js, assetRoutes.js, settingsRoutes.js로 도메인 단위 분리했고, 모두 createXxxRoutes({ ...deps }) 형태의 의존성 주입 팩토리를 사용한다.
 - 정적 페이지 라우트는 src/routes/webRoutes.js로 분리해 /run/:id, /run/:id/result, /prompts, /assets, /settings, /{*fallbackPath}를 전담한다.
+
+[codex] 2026-03-23 추가 메모 13
+- 사용자 요청으로 GitHub Actions CI 워크플로우 파일(.github/workflows/ci.yml)을 제거해 push/pull_request 자동 lint/test 실행을 비활성화했다.
