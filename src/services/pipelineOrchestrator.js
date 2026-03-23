@@ -64,9 +64,13 @@ class PipelineOrchestrator {
       return runState;
     } catch (error) {
       console.error(`[pipeline:${runId}]`, error);
+      const failureTimestamp = new Date().toISOString();
       this.runStore.updateRun(runId, {
         status: "failed",
-        completedAt: new Date().toISOString(),
+        completedAt: failureTimestamp,
+        failedAt: failureTimestamp,
+        failedPhase: error.failedPhase ?? null,
+        errorMessage: error.message,
       });
       this.wsHub.publish(runId, { type: "pipeline_error", error: error.message });
       throw error;
@@ -141,6 +145,11 @@ class PipelineOrchestrator {
           }, phaseTimeoutMs);
         }),
       ]);
+    } catch (error) {
+      if (typeof error.failedPhase !== "number") {
+        error.failedPhase = phaseNumber;
+      }
+      throw error;
     } finally {
       if (phaseTimeoutHandle) {
         clearTimeout(phaseTimeoutHandle);

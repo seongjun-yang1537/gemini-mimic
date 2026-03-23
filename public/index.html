@@ -62,12 +62,16 @@
       function renderRunItem(runItem) {
         const startedText = runItem.createdAt ? new Date(runItem.createdAt).toLocaleString() : '-';
         const durationText = formatDuration(runItem.createdAt, runItem.completedAt);
+        const failedMessageLine = runItem.status === 'failed' && runItem.errorMessage
+          ? `<p class="text-xs text-rose-300 mt-1 truncate" title="${runItem.errorMessage}">${runItem.errorMessage}</p>`
+          : '';
 
         return `
           <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center gap-3">
             <div>
               <p class="font-mono text-xs">${runItem.id}</p>
               <p class="text-sm">${runItem.status} · 시작 ${startedText} · 소요 ${durationText}</p>
+              ${failedMessageLine}
             </div>
             <div class="flex items-center gap-4 text-sm whitespace-nowrap">
               <a href="/run/${runItem.id}" class="text-cyan-300">모니터링</a>
