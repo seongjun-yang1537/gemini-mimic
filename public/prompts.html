@@ -1,0 +1,81 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mimic Prompts</title>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="max-w-6xl mx-auto p-6 space-y-6">
+      <a href="/" class="text-cyan-300 text-sm">← 대시보드</a>
+      <h1 class="text-2xl font-bold">프롬프트 관리</h1>
+      <div class="grid grid-cols-3 gap-4">
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-1">
+          <ul id="promptList" class="space-y-2 text-sm"></ul>
+        </section>
+        <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 col-span-2 space-y-3">
+          <h2 id="title" class="font-semibold">선택된 프롬프트 없음</h2>
+          <textarea id="editor" class="w-full min-h-[320px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
+          <button id="save" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">저장</button>
+          <hr class="border-slate-800" />
+          <textarea id="feedback" placeholder="피드백 입력" class="w-full min-h-[100px] bg-slate-950 border border-slate-700 rounded-lg p-2"></textarea>
+          <button id="update" class="bg-emerald-500 hover:bg-emerald-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">AI 업데이트 제안</button>
+          <pre id="suggestion" class="bg-slate-950 border border-slate-800 rounded-lg p-2 text-xs whitespace-pre-wrap"></pre>
+        </section>
+      </div>
+    </div>
+
+    <script>
+      let selected = null;
+
+      async function loadPromptList() {
+        const response = await fetch('/api/prompts');
+        const prompts = await response.json();
+        const grouped = prompts.reduce((bucket, item) => {
+          bucket[item.phase] = bucket[item.phase] || [];
+          bucket[item.phase].push(item);
+          return bucket;
+        }, {});
+
+        document.getElementById('promptList').innerHTML = Object.entries(grouped)
+          .map(([phase, items]) => `<li class="font-semibold">${phase}<ul class="pl-3 mt-2 space-y-1">${items
+            .map((item) => `<li><button data-phase="${item.phase}" data-expert="${item.expert}" class="text-cyan-300">${item.expert}</button></li>`)
+            .join('')}</ul></li>`)
+          .join('');
+
+        document.querySelectorAll('button[data-phase]').forEach((button) => {
+          button.addEventListener('click', async () => {
+            selected = { phase: button.dataset.phase, expert: button.dataset.expert };
+            const promptResponse = await fetch(`/api/prompts/${selected.phase}/${selected.expert}`);
+            const payload = await promptResponse.json();
+            document.getElementById('title').textContent = `${selected.phase}/${selected.expert}`;
+            document.getElementById('editor').value = payload.content || '';
+          });
+        });
+      }
+
+      document.getElementById('save').addEventListener('click', async () => {
+        if (!selected) return;
+        await fetch(`/api/prompts/${selected.phase}/${selected.expert}`, {
+          method: 'PUT',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ content: document.getElementById('editor').value }),
+        });
+        await loadPromptList();
+      });
+
+      document.getElementById('update').addEventListener('click', async () => {
+        const response = await fetch('/api/prompts/ai-update', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ feedback: document.getElementById('feedback').value }),
+        });
+        const payload = await response.json();
+        document.getElementById('suggestion').textContent = payload.suggestion || '';
+      });
+
+      loadPromptList();
+    </script>
+  </body>
+</html>

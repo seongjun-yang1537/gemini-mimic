@@ -1,0 +1,192 @@
+// Generated under Codex compliance with AGENTS.md (gemini-mimic)
+const path = require("node:path");
+const { createTaurusApi } = require("../../taurus/api");
+
+class PipelineOrchestrator {
+  constructor(dependencies) {
+    this.runStore = dependencies.runStore;
+    this.promptService = dependencies.promptService;
+    this.debateEngine = dependencies.debateEngine;
+    this.geminiClient = dependencies.geminiClient;
+    this.wsHub = dependencies.wsHub;
+    this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
+    this.taurusApi = createTaurusApi({ apiKey: process.env.GEMINI_API_KEY });
+  }
+
+  async execute(runId) {
+    try {
+      await this.runPhase1(runId);
+      await this.runPhase2(runId);
+      await this.runPhase3(runId);
+      await this.runPhase4(runId);
+
+      const runState = this.runStore.updateRun(runId, {
+        status: "completed",
+        completedAt: new Date().toISOString(),
+      });
+      this.wsHub.publish(runId, { type: "pipeline_done", resultUrl: `/api/run/${runId}/result` });
+      return runState;
+    } catch (error) {
+      this.runStore.updateRun(runId, {
+        status: "failed",
+        completedAt: new Date().toISOString(),
+      });
+      this.wsHub.publish(runId, { type: "pipeline_error", error: error.message });
+      throw error;
+    }
+  }
+
+  async runPhase1(runId) {
+    this.wsHub.publish(runId, { type: "phase_start", phase: 1 });
+    const runState = this.runStore.getRun(runId);
+    const phasePrompts = this.promptService.loadPhasePrompts("phase1");
+
+    const expertDefinitions = [
+      { name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert },
+      { name: "스토리 전문가", role: "story", prompt: phasePrompts.story_expert },
+      { name: "CTA 전문가", role: "cta", prompt: phasePrompts.cta_expert },
+      { name: "행동 묘사 전문가", role: "action", prompt: phasePrompts.action_desc_expert },
+      { name: "캐릭터 묘사 전문가", role: "character", prompt: phasePrompts.character_desc_expert },
+    ];
+
+    const phase1DebateResult = await this.debateEngine.runDebate({
+      experts: expertDefinitions,
+      facilitatorPrompt: phasePrompts.facilitator,
+      summarizerPrompt: phasePrompts.summarizer,
+      context: "입력 밈 영상을 분석해서 마케팅 크리에이티브 시나리오를 확정해 주세요.",
+      videoPath: runState.inputVideo,
+      emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
+    });
+
+    this.runStore.updateRun(runId, {
+      phase1Result: {
+        scenario: phase1DebateResult.summary,
+        debateLog: phase1DebateResult,
+      },
+    });
+
+    this.wsHub.publish(runId, { type: "phase_done", phase: 1 });
+  }
+
+  async runPhase2(runId) {
+    this.wsHub.publish(runId, { type: "phase_start", phase: 2 });
+    const runState = this.runStore.getRun(runId);
+    const phase2Prompts = this.promptService.loadPhasePrompts("phase2");
+
+    const assetListText = await this.geminiClient.callGemini(
+      phase2Prompts.reference_expert,
+      runState.phase1Result.scenario,
+    );
+
+    const generatedReferencePath = path.join(this.outputsDirectory, `${runId}-reference-1.png`);
+
+    this.runStore.updateRun(runId, {
+      phase2Result: {
+        referenceSheets: [generatedReferencePath],
+        assetList: assetListText,
+      },
+    });
+
+    this.wsHub.publish(runId, { type: "media_ready", mediaType: "image", url: generatedReferencePath });
+    this.wsHub.publish(runId, { type: "phase_done", phase: 2 });
+  }
+
+  async runPhase3(runId) {
+    this.wsHub.publish(runId, { type: "phase_start", phase: 3 });
+    const runState = this.runStore.getRun(runId);
+    const phase3Prompts = this.promptService.loadPhasePrompts("phase3");
+
+    const iterationList = [];
+    let currentIteration = 1;
+    let passDecision = false;
+    let finalVideoPath = "";
+
+    while (!passDecision && currentIteration <= 3) {
+      const generatedVideoPath = path.join(this.outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
+      const taurusResult = await this.taurusApi.generateVideo(runState.phase1Result.scenario, {
+        referenceImages: runState.phase2Result.referenceSheets,
+        duration: 8,
+        outputPath: generatedVideoPath,
+        onStatus: async (status, payload) => {
+          this.wsHub.publish(runId, {
+            type: "video_generating",
+            segment: payload.segment,
+            totalSegments: payload.totalSegments,
+            status,
+          });
+        },
+      });
+
+      this.wsHub.publish(runId, { type: "media_ready", mediaType: "video", url: taurusResult.outputPath });
+
+      const evaluatorDefinitions = [
+        { name: "행동 묘사 평가", role: "action", prompt: phase3Prompts.action_eval_expert },
+        { name: "캐릭터 평가", role: "character", prompt: phase3Prompts.character_eval_expert },
+        { name: "시나리오 정합성 평가", role: "scenario", prompt: phase3Prompts.scenario_eval_expert },
+      ];
+
+      const evaluationDebate = await this.debateEngine.runDebate({
+        experts: evaluatorDefinitions,
+        facilitatorPrompt: phase3Prompts.facilitator,
+        summarizerPrompt: phase3Prompts.summarizer,
+        context: runState.phase1Result.scenario,
+        videoPath: taurusResult.outputPath,
+        emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
+      });
+
+      const verdictText = evaluationDebate.summary.toLowerCase();
+      passDecision = verdictText.includes("pass") || verdictText.includes("합격");
+
+      this.wsHub.publish(runId, {
+        type: "verdict",
+        result: passDecision ? "pass" : "fail",
+        iteration: currentIteration,
+      });
+
+      iterationList.push({
+        number: currentIteration,
+        videoPath: taurusResult.outputPath,
+        evaluation: evaluationDebate,
+        verdict: passDecision ? "pass" : "fail",
+        correctionNote: passDecision ? undefined : evaluationDebate.summary,
+      });
+
+      finalVideoPath = taurusResult.outputPath;
+      currentIteration += 1;
+    }
+
+    this.runStore.updateRun(runId, {
+      phase3Result: {
+        iterations: iterationList,
+        finalVideo: finalVideoPath,
+      },
+    });
+
+    this.wsHub.publish(runId, { type: "phase_done", phase: 3 });
+  }
+
+  async runPhase4(runId) {
+    this.wsHub.publish(runId, { type: "phase_start", phase: 4 });
+    const runState = this.runStore.getRun(runId);
+    const phase4Prompts = this.promptService.loadPhasePrompts("phase4");
+
+    const editSpecText = await this.geminiClient.callGemini(phase4Prompts.editor_expert, {
+      scenario: runState.phase1Result.scenario,
+      sourceVideo: runState.phase3Result.finalVideo,
+    });
+
+    const finalCreativePath = path.join(this.outputsDirectory, `${runId}-final-creative.mp4`);
+
+    this.runStore.updateRun(runId, {
+      phase4Result: {
+        editSpec: editSpecText,
+        finalCreative: finalCreativePath,
+      },
+    });
+
+    this.wsHub.publish(runId, { type: "media_ready", mediaType: "video", url: finalCreativePath });
+    this.wsHub.publish(runId, { type: "phase_done", phase: 4 });
+  }
+}
+
+module.exports = { PipelineOrchestrator };
