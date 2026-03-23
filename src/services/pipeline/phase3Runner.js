@@ -4,8 +4,8 @@ const { PHASE3_MAX_ITERATIONS_HARD_LIMIT } = require("./constants");
 
 async function runPhase3({ runId, services, runtimeConfig, runSafetyContext }) {
   const { runStore, promptService, debateEngine, assetService, outputsDirectory, taurusApi, emitEvent } = services;
-  const runState = runStore.getRun(runId);
-  const phase3Prompts = promptService.loadPhasePrompts("phase3");
+  const runState = await runStore.getRun(runId);
+  const phase3Prompts = await promptService.loadPhasePrompts("phase3");
 
   const iterationList = [];
   let currentIteration = 1;

@@ -64,3 +64,7 @@
 - 서버 엔트리포인트를 경량화하기 위해 src/app/createApp.js를 도입해 공통 미들웨어와 라우터 조립을 분리했다.
 - API 라우터는 src/routes/runRoutes.js, promptRoutes.js, assetRoutes.js, settingsRoutes.js로 도메인 단위 분리했고, 모두 createXxxRoutes({ ...deps }) 형태의 의존성 주입 팩토리를 사용한다.
 - 정적 페이지 라우트는 src/routes/webRoutes.js로 분리해 /run/:id, /run/:id/result, /prompts, /assets, /settings, /{*fallbackPath}를 전담한다.
+[codex] 2026-03-23 추가 메모 13
+- RunStore(src/store/runStore.js)와 PromptService(src/services/promptService.js)를 Promise 기반 비동기 API로 전환했다.
+- 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
+- RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.
