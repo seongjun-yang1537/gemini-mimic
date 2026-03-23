@@ -17,6 +17,7 @@
       <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
         <h2 class="font-semibold">입력 밈 영상</h2>
         <video id="inputVideo" controls class="w-full rounded-lg border border-slate-800"></video>
+        <pre id="inputText" class="bg-slate-950 border border-slate-800 rounded-lg p-3 text-xs whitespace-pre-wrap hidden"></pre>
       </section>
 
       <section class="bg-slate-900 border border-slate-800 rounded-xl p-4 space-y-2">
@@ -84,6 +85,14 @@
 
         if (runData.inputVideo) {
           document.getElementById('inputVideo').src = runData.inputVideo;
+        } else {
+          document.getElementById('inputVideo').classList.add('hidden');
+        }
+
+        if (runData.inputText) {
+          const inputTextElement = document.getElementById('inputText');
+          inputTextElement.textContent = runData.inputText;
+          inputTextElement.classList.remove('hidden');
         }
 
         document.getElementById('scenario').textContent = runData.phase1Result?.scenario || '';

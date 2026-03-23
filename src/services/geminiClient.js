@@ -1,5 +1,6 @@
 // Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
+const path = require("node:path");
 const { getRequiredGeminiApiKey } = require("../config/environment");
 
 function buildTextPart(content) {
@@ -10,10 +11,12 @@ function buildTextPart(content) {
 }
 
 function buildVideoPart(videoPath) {
+  const extensionName = path.extname(videoPath).toLowerCase();
+  const videoMimeType = extensionName === ".webm" ? "video/webm" : "video/mp4";
   const videoBytes = fs.readFileSync(videoPath).toString("base64");
   return {
     inline_data: {
-      mime_type: "video/mp4",
+      mime_type: videoMimeType,
       data: videoBytes,
     },
   };

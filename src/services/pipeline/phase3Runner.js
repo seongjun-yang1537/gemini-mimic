@@ -15,9 +15,15 @@ async function runPhase3({ runId, services, runtimeConfig, runSafetyContext }) {
 
   while (!passDecision && currentIteration <= maxIterations) {
     const generatedVideoPath = path.join(outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
-    const referenceImagePaths = Array.isArray(runState.phase2Result?.referenceSheets)
+    const generatedReferenceImagePaths = Array.isArray(runState.phase2Result?.referenceSheets)
       ? runState.phase2Result.referenceSheets.filter((referencePathItem) => fs.existsSync(referencePathItem))
       : [];
+    const selectedReferenceImagePaths = Array.isArray(runState.selectedReferenceAssets)
+      ? runState.selectedReferenceAssets
+        .map((referenceAssetItem) => referenceAssetItem.filePath)
+        .filter((referencePathItem) => typeof referencePathItem === "string" && fs.existsSync(referencePathItem))
+      : [];
+    const referenceImagePaths = [...new Set([...selectedReferenceImagePaths, ...generatedReferenceImagePaths])];
 
     const taurusGenerationOptions = {
       duration: runtimeConfig.video.defaultDuration,

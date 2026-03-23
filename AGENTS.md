@@ -81,5 +81,8 @@
 - SETTINGS_SCHEMA에 운영자 전용 필드(hidden/readOnly)를 표시했고 settings UI는 hidden 항목을 렌더링에서 제외하며 readOnly 배지를 노출한다.
 - /api/settings 응답은 hidden/sensitive 스키마 정책에 따라 운영자 전용 값은 제외하고 민감 스키마는 마스킹 정책을 반영해 전달한다.
 [codex] 2026-03-23 추가 메모 15
+- /api/run은 영상 업로드(video) 외에 기존 에셋 선택(inputAssetId)과 텍스트 입력(inputText) 기반 실행을 지원하며, 최소 1개 입력(영상 또는 텍스트)이 필요하다.
+- /api/run 요청에서 referenceAssetIds(JSON 배열/콤마 문자열)를 받아 이미지 에셋 유효성 검증 후 run 레코드(selectedReferenceAssets)에 저장한다.
+- public/index.html 실행 폼은 MP4/WEBM 업로드, 서버 저장 영상 에셋 선택, 다중 레퍼런스 이미지 선택, 텍스트 입력을 함께 제공한다.
 - run 모니터링 화면(public/run.html)에 상단 상태 탑바를 추가해 진행 상태 스피너/펄스 인디케이터를 노출하고, 실시간 실행/완료/실패/취소 상태를 명확히 표시하도록 갱신했다.
 - 실행 중 취소 버튼을 추가했고 POST /api/run/:id/cancel API와 연동해 사용자가 진행 중인 파이프라인을 중단할 수 있게 했다.
