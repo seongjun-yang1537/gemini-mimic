@@ -253,6 +253,27 @@ textarea {
   color: var(--accent);
 }
 
+.badge-radial-progress {
+  position: relative;
+  overflow: visible;
+}
+
+.badge-radial-progress::after {
+  content: '';
+  position: absolute;
+  inset: -5px;
+  border-radius: 999px;
+  background:
+    radial-gradient(circle, rgba(217, 119, 6, 0.08) 40%, rgba(217, 119, 6, 0) 74%),
+    conic-gradient(from 0deg, rgba(217, 119, 6, 0.9), rgba(217, 119, 6, 0.2), rgba(217, 119, 6, 0.9));
+  -webkit-mask:
+    radial-gradient(circle, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  mask: radial-gradient(circle, transparent calc(100% - 2px), #000 calc(100% - 1px));
+  opacity: 0.85;
+  animation: radial-spin 1.3s linear infinite, radial-pulse 1.8s ease-in-out infinite;
+  pointer-events: none;
+}
+
 .mono {
   font-family: 'SF Mono', 'Fira Code', monospace;
   font-size: 13px;
@@ -302,6 +323,24 @@ textarea {
 @keyframes spin {
   to {
     transform: rotate(360deg);
+  }
+}
+
+@keyframes radial-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes radial-pulse {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.96);
+  }
+  50% {
+    opacity: 0.9;
+    transform: scale(1.08);
   }
 }
 
