@@ -12,6 +12,57 @@
         gap: 16px;
       }
 
+      .status-topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 16px;
+      }
+
+      .status-running-indicator {
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        font-size: 13px;
+        color: var(--text-secondary);
+      }
+
+      .spinner-ring {
+        width: 14px;
+        height: 14px;
+        border-radius: 50%;
+        border: 2px solid rgba(17, 24, 39, 0.15);
+        border-top-color: var(--accent);
+        animation: spin 0.9s linear infinite;
+      }
+
+      .spinner-ring.hidden {
+        display: none;
+      }
+
+      .cancel-button {
+        min-width: 96px;
+        border: 1px solid #fca5a5;
+        background: #fef2f2;
+        color: #991b1b;
+        border-radius: 10px;
+        padding: 10px 14px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background 0.15s ease;
+      }
+
+      .cancel-button:hover {
+        background: #fee2e2;
+      }
+
+      .cancel-button:disabled {
+        opacity: 0.55;
+        cursor: default;
+      }
+
       .expert-card {
         padding: 12px 16px;
         border-radius: 10px;
@@ -137,6 +188,35 @@
         border: 1px solid var(--border);
       }
 
+      .pulse-dot {
+        width: 8px;
+        height: 8px;
+        border-radius: 999px;
+        background: var(--accent);
+        animation: pulse 1.2s ease-in-out infinite;
+      }
+
+      @keyframes spin {
+        0% {
+          transform: rotate(0deg);
+        }
+        100% {
+          transform: rotate(360deg);
+        }
+      }
+
+      @keyframes pulse {
+        0%,
+        100% {
+          opacity: 0.35;
+          transform: scale(0.9);
+        }
+        50% {
+          opacity: 1;
+          transform: scale(1.15);
+        }
+      }
+
       @media (max-width: 960px) {
         .monitor-layout {
           grid-template-columns: 1fr;
@@ -163,7 +243,14 @@
             <h1>파이프라인 모니터링</h1>
           </div>
         </header>
-        <div id="statusBar" class="status-bar">🔄 실행 준비 중...</div>
+        <div class="status-topbar">
+          <div id="statusBar" class="status-bar">🔄 실행 준비 중...</div>
+          <div class="status-running-indicator">
+            <span id="runningSpinner" class="spinner-ring"></span>
+            <span id="runningLabel"><span class="pulse-dot"></span> 실시간 진행 중</span>
+            <button id="cancelRunButton" type="button" class="btn-danger cancel-button">실행 취소</button>
+          </div>
+        </div>
 
         <section class="monitor-layout">
           <section class="card">
@@ -193,6 +280,7 @@
       const pathSegments = window.location.pathname.split('/').filter(Boolean);
       const runId = pathSegments[1];
       const expertStatusMap = new Map();
+      let runLifecycleStatus = 'running';
       const expertColorMap = {
         '훅 전문가': 'var(--expert-hook)',
         '스토리 전문가': 'var(--expert-story)',
@@ -205,6 +293,39 @@
 
       function updateStatusBar(messageText) {
         document.getElementById('statusBar').textContent = messageText;
+      }
+
+      function setRunLifecycle(nextStatus) {
+        runLifecycleStatus = nextStatus;
+        const spinnerElement = document.getElementById('runningSpinner');
+        const runningLabelElement = document.getElementById('runningLabel');
+        const cancelButtonElement = document.getElementById('cancelRunButton');
+        const runningStates = new Set(['running', 'cancelling']);
+        const isRunning = runningStates.has(nextStatus);
+        spinnerElement.classList.toggle('hidden', !isRunning);
+        cancelButtonElement.disabled = !isRunning;
+
+        if (nextStatus === 'cancelling') {
+          runningLabelElement.textContent = '취소 요청 처리 중';
+          return;
+        }
+
+        if (nextStatus === 'completed') {
+          runningLabelElement.textContent = '실행 완료';
+          return;
+        }
+
+        if (nextStatus === 'failed') {
+          runningLabelElement.textContent = '실행 실패';
+          return;
+        }
+
+        if (nextStatus === 'cancelled') {
+          runningLabelElement.textContent = '실행 취소됨';
+          return;
+        }
+
+        runningLabelElement.innerHTML = '<span class="pulse-dot"></span> 실시간 진행 중';
       }
 
       function getExpertColor(expertName) {
@@ -370,16 +491,48 @@
         }
 
         if (payload.type === 'pipeline_done') {
+          setRunLifecycle('completed');
           updateStatusBar('✅ 시나리오 확정 완료');
           appendDebateMessage({ speaker: '시스템', content: `결과: ${payload.resultUrl}` });
         }
 
         if (payload.type === 'pipeline_error') {
+          setRunLifecycle('failed');
           const pipelineErrorMessage = payload.error === '레퍼런스 이미지 파일 없음'
             ? '레퍼런스 이미지가 없어 기본 설정으로 다음 단계를 진행합니다.'
             : payload.error;
           updateStatusBar(`❌ ${pipelineErrorMessage}`);
           appendDebateMessage({ content: `❌ ${pipelineErrorMessage}`, isError: true });
+        }
+
+        if (payload.type === 'pipeline_cancelled') {
+          setRunLifecycle('cancelled');
+          updateStatusBar(`🛑 ${payload.message || '사용자 요청으로 실행이 취소되었습니다.'}`);
+          appendDebateMessage({ content: `🛑 ${payload.message || '사용자 요청으로 실행이 취소되었습니다.'}`, isError: true });
+        }
+      }
+
+      async function requestRunCancel() {
+        if (runLifecycleStatus !== 'running') {
+          return;
+        }
+        setRunLifecycle('cancelling');
+        updateStatusBar('🛑 취소 요청 전송 중...');
+        try {
+          const cancelResponse = await fetch(`/api/run/${runId}/cancel`, { method: 'POST' });
+          if (!cancelResponse.ok) {
+            throw new Error(`취소 실패 (${cancelResponse.status})`);
+          }
+          const cancelledRun = await cancelResponse.json();
+          setRunLifecycle('cancelled');
+          updateStatusBar('🛑 사용자 요청으로 실행이 취소되었습니다.');
+          if (cancelledRun?.errorMessage) {
+            appendDebateMessage({ content: `🛑 ${cancelledRun.errorMessage}`, isError: true });
+          }
+        } catch (cancelError) {
+          setRunLifecycle('running');
+          updateStatusBar('❌ 취소 요청에 실패했습니다.');
+          appendDebateMessage({ content: `❌ ${cancelError.message}`, isError: true });
         }
       }
 
@@ -390,6 +543,8 @@
           const payload = JSON.parse(event.data);
           handleWsEvent(payload);
         });
+        document.getElementById('cancelRunButton').addEventListener('click', requestRunCancel);
+        setRunLifecycle('running');
       }
 
       bootstrap();

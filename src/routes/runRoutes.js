@@ -72,6 +72,14 @@ function createRunRoutes({ runStore, settingsService, assetService, pipelineOrch
     response.status(204).send();
   }));
 
+  runRouter.post("/api/run/:id/cancel", asyncRoute(async (request, response) => {
+    const cancelledRun = await pipelineOrchestrator.requestCancel(request.params.id);
+    if (!cancelledRun) {
+      throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
+    }
+    response.json(cancelledRun);
+  }));
+
   return runRouter;
 }
 

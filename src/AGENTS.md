@@ -11,3 +11,6 @@
 - src/services/settingsService.js는 readConfig에서 코드 기본값 < config.json < env 오버라이드 순서로 병합하고 getDefaultConfig도 env 오버라이드를 반영한다.
 - src/config/settingsDefaults.js의 운영자 전용 항목(video.model, video.splitModel, image.model, ffmpeg.path, safety.*)에 readOnly + hidden 플래그를 부여했다.
 - src/routes/settingsRoutes.js는 /api/settings, /api/settings/defaults, PATCH/RESET 응답에서 hidden/sensitive 정책을 적용해 운영값 노출을 제한한다.
+[codex] 2026-03-23 취소 제어 메모
+- src/routes/runRoutes.js에 POST /api/run/:id/cancel 엔드포인트를 추가해 실행 중 run 취소 요청을 처리한다.
+- src/services/pipelineOrchestrator.js에 cancelRequestedRuns 상태와 requestCancel/run 취소 분기 처리를 추가해 취소 시 run 상태를 cancelled로 저장하고 WebSocket pipeline_cancelled 이벤트를 발행한다.

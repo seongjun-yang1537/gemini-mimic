@@ -80,3 +80,6 @@
 - SettingsService는 설정 우선순위를 코드 기본값 < config.json < 운영자 .env 오버라이드 순으로 적용하도록 readConfig/getDefaultConfig 병합 순서를 명시했다.
 - SETTINGS_SCHEMA에 운영자 전용 필드(hidden/readOnly)를 표시했고 settings UI는 hidden 항목을 렌더링에서 제외하며 readOnly 배지를 노출한다.
 - /api/settings 응답은 hidden/sensitive 스키마 정책에 따라 운영자 전용 값은 제외하고 민감 스키마는 마스킹 정책을 반영해 전달한다.
+[codex] 2026-03-23 추가 메모 15
+- run 모니터링 화면(public/run.html)에 상단 상태 탑바를 추가해 진행 상태 스피너/펄스 인디케이터를 노출하고, 실시간 실행/완료/실패/취소 상태를 명확히 표시하도록 갱신했다.
+- 실행 중 취소 버튼을 추가했고 POST /api/run/:id/cancel API와 연동해 사용자가 진행 중인 파이프라인을 중단할 수 있게 했다.
