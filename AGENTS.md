@@ -27,3 +27,7 @@
 - 설정 시스템은 config/config.json 파일을 사용하며 src/services/settingsService.js에서 기본값 병합, 부분 업데이트, 카테고리/전체 초기화, 유효성 검증을 처리한다.
 - 설정 API는 src/server.js에 /api/settings(GET, PATCH), /api/settings/defaults(GET), /api/settings/reset(POST)로 추가되었고 /settings 정적 라우트(public/settings.html)를 제공한다.
 - 파이프라인 실행 시 src/store/runStore.js의 run 레코드에 configSnapshot을 저장하고 src/services/pipelineOrchestrator.js에서 설정 기반 라운드 수/전문가 활성화/반복 횟수/영상 파라미터를 반영한다.
+[codex] 2026-03-23 추가 메모 8
+- taurus/api.js의 pollOperation은 maxPollAttempts, maxPollMs, pollIntervalMs 제한 옵션을 지원하며 한도 초과 시 operation 식별자·시도 횟수·경과 시간을 포함한 에러를 발생시킨다.
+- 설정 기본값/스키마에 video.pollTimeoutMs, video.maxPollAttempts가 추가되었고 settingsService에서 pollTimeoutMs >= pollInterval 제약을 검증한다.
+- 파이프라인 phase3에서 taurusApi.generateVideo 호출 시 pollIntervalMs/maxPollMs/maxPollAttempts를 runtimeConfig.video에서 전달한다.

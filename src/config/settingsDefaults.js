@@ -20,6 +20,8 @@ const SETTINGS_DEFAULTS = {
     maxTotalSeconds: 148,
     postProcessingWait: 30000,
     pollInterval: 10000,
+    pollTimeoutMs: 1800000,
+    maxPollAttempts: 180,
     splitModel: "gemini-3-flash-preview",
   },
   image: {
@@ -69,6 +71,8 @@ const SETTINGS_SCHEMA = {
   "video.maxTotalSeconds": { category: "video", type: "number", min: 148, max: 148, readOnly: true, label: "최대 총 길이(초)" },
   "video.postProcessingWait": { category: "video", type: "number", min: 1000, max: 120000, label: "Extension 전 대기(ms)" },
   "video.pollInterval": { category: "video", type: "number", min: 1000, max: 60000, label: "폴링 간격(ms)" },
+  "video.pollTimeoutMs": { category: "video", type: "number", min: 60000, max: 7200000, label: "폴링 타임아웃(ms)" },
+  "video.maxPollAttempts": { category: "video", type: "number", min: 1, max: 2000, label: "최대 폴링 시도 횟수" },
   "video.splitModel": {
     category: "video",
     type: "select",

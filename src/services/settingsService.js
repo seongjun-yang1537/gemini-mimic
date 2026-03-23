@@ -187,6 +187,10 @@ class SettingsService {
       throw new Error("전문가는 최소 1명 이상 활성화되어야 합니다.");
     }
 
+    if (configObject.video.pollTimeoutMs < configObject.video.pollInterval) {
+      throw new Error("video.pollTimeoutMs는 video.pollInterval 이상이어야 합니다.");
+    }
+
     for (const [keyPath, schemaItem] of Object.entries(SETTINGS_SCHEMA)) {
       const settingValue = getValueByPath(configObject, keyPath);
       if (schemaItem.type === "number" || schemaItem.type === "slider") {

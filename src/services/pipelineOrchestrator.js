@@ -138,6 +138,9 @@ class PipelineOrchestrator {
         referenceImages: runState.phase2Result.referenceSheets,
         duration: runtimeConfig.video.defaultDuration,
         aspectRatio: runtimeConfig.video.aspectRatio,
+        pollIntervalMs: runtimeConfig.video.pollInterval,
+        maxPollMs: runtimeConfig.video.pollTimeoutMs,
+        maxPollAttempts: runtimeConfig.video.maxPollAttempts,
         splitModel: runtimeConfig.video.splitModel,
         outputPath: generatedVideoPath,
         onStatus: async (status, payload) => {

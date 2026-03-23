@@ -12,6 +12,9 @@ const SPLIT_MODEL = "gemini-3-flash-preview";
 const EXTENSION_SECONDS = 7;
 const MAX_TOTAL_SECONDS = 148;
 const MAX_EXTENSIONS = 20;
+const DEFAULT_POLL_INTERVAL_MS = 10_000;
+const DEFAULT_MAX_POLL_ATTEMPTS = 180;
+const DEFAULT_MAX_POLL_MS = 30 * 60 * 1000;
 
 function sleep(milliseconds) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
@@ -176,13 +179,47 @@ function validateAspectRatio(aspectRatio) {
   }
 }
 
-async function pollOperation(aiClient, operation, callbacks = {}) {
+function validatePositivePollingValue(value, fieldName) {
+  if (!Number.isInteger(value) || value < 1) {
+    throw new Error(`${fieldName} must be an integer greater than 0.`);
+  }
+}
+
+function resolvePollConfig(pollConfig = {}) {
+  const pollIntervalMs = pollConfig.pollIntervalMs ?? DEFAULT_POLL_INTERVAL_MS;
+  const maxPollAttempts = pollConfig.maxPollAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
+  const maxPollMs = pollConfig.maxPollMs ?? DEFAULT_MAX_POLL_MS;
+
+  validatePositivePollingValue(pollIntervalMs, "pollIntervalMs");
+  validatePositivePollingValue(maxPollAttempts, "maxPollAttempts");
+  validatePositivePollingValue(maxPollMs, "maxPollMs");
+
+  return { pollIntervalMs, maxPollAttempts, maxPollMs };
+}
+
+function getOperationIdentifier(operation) {
+  return operation?.name || operation?.id || operation?.operation?.name || "unknown-operation";
+}
+
+async function pollOperation(aiClient, operation, callbacks = {}, pollConfig = {}) {
   const onPolling = callbacks.onPolling || (() => {});
+  const resolvedPollConfig = resolvePollConfig(pollConfig);
+  const operationIdentifier = getOperationIdentifier(operation);
   let currentOperation = operation;
+  let attemptCount = 0;
+  const startedAt = Date.now();
 
   while (!currentOperation.done) {
+    attemptCount += 1;
+    const elapsedMs = Date.now() - startedAt;
+    if (attemptCount > resolvedPollConfig.maxPollAttempts || elapsedMs > resolvedPollConfig.maxPollMs) {
+      throw new Error(
+        `Polling limit exceeded for operation ${operationIdentifier}: attempts=${attemptCount}, elapsedMs=${elapsedMs}, maxPollAttempts=${resolvedPollConfig.maxPollAttempts}, maxPollMs=${resolvedPollConfig.maxPollMs}`,
+      );
+    }
+
     await onPolling(currentOperation);
-    await sleep(10_000);
+    await sleep(resolvedPollConfig.pollIntervalMs);
     currentOperation = await aiClient.operations.getVideosOperation({ operation: currentOperation });
   }
 
@@ -212,7 +249,7 @@ async function generateInitialVideo(aiClient, options) {
     },
   });
 
-  return pollOperation(aiClient, generationOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, generationOperation, { onPolling: options.onPolling }, options.pollConfig);
 }
 
 async function extendVideo(aiClient, options) {
@@ -237,7 +274,7 @@ async function extendVideo(aiClient, options) {
     },
   });
 
-  return pollOperation(aiClient, extensionOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, extensionOperation, { onPolling: options.onPolling }, options.pollConfig);
 }
 
 async function downloadVideo(aiClient, videoFileId, outputPath) {
@@ -262,6 +299,19 @@ function createTaurusApi(apiConfig = {}) {
   }
 
   const aiClient = new GoogleGenAI({ apiKey: geminiApiKey });
+  const defaultPollConfig = resolvePollConfig({
+    pollIntervalMs: apiConfig.pollIntervalMs,
+    maxPollAttempts: apiConfig.maxPollAttempts,
+    maxPollMs: apiConfig.maxPollMs,
+  });
+
+  function buildPollConfig(overrideOptions = {}) {
+    return resolvePollConfig({
+      pollIntervalMs: overrideOptions.pollIntervalMs ?? defaultPollConfig.pollIntervalMs,
+      maxPollAttempts: overrideOptions.maxPollAttempts ?? defaultPollConfig.maxPollAttempts,
+      maxPollMs: overrideOptions.maxPollMs ?? defaultPollConfig.maxPollMs,
+    });
+  }
 
   async function generateVideo(prompt, options = {}) {
     if (!prompt || !prompt.trim()) {
@@ -295,6 +345,7 @@ function createTaurusApi(apiConfig = {}) {
 
     const totalSegments = 1 + segmentPlan.extensionCount;
     const onStatus = typeof options.onStatus === "function" ? options.onStatus : async () => {};
+    const pollConfig = buildPollConfig(options);
 
     const segmentedPrompts =
       segmentPlan.extensionCount === 0
@@ -316,6 +367,7 @@ function createTaurusApi(apiConfig = {}) {
       aspectRatio,
       initialDuration: segmentPlan.initialDuration,
       referenceImages,
+      pollConfig,
       onPolling: async () => onStatus("polling", { segment: 1, totalSegments }),
     });
 
@@ -328,6 +380,7 @@ function createTaurusApi(apiConfig = {}) {
         videoFileId: currentVideoFileId,
         prompt: segmentedPrompts[segmentNumber - 1],
         aspectRatio,
+        pollConfig,
         onStatus: async () => onStatus("extending", { segment: segmentNumber, totalSegments }),
         onPolling: async () => onStatus("polling", { segment: segmentNumber, totalSegments }),
       });
@@ -359,6 +412,7 @@ function createTaurusApi(apiConfig = {}) {
         videoFileId,
         prompt,
         aspectRatio,
+        pollConfig: buildPollConfig(options),
         onStatus: options.onStatus,
         onPolling: options.onPolling,
       });
@@ -366,7 +420,8 @@ function createTaurusApi(apiConfig = {}) {
     downloadVideo: async (videoFileId, outputPath) => downloadVideo(aiClient, videoFileId, outputPath),
     splitScenario: async (scenarioText, initialDuration, extensionCount, splitModel = SPLIT_MODEL) =>
       splitScenario(aiClient, scenarioText, initialDuration, extensionCount, splitModel),
-    pollOperation: async (operation, callbacks = {}) => pollOperation(aiClient, operation, callbacks),
+    pollOperation: async (operation, callbacks = {}, options = {}) =>
+      pollOperation(aiClient, operation, callbacks, buildPollConfig(options)),
     calculateSegments,
   };
 }

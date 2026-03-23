@@ -7,3 +7,6 @@
 - 코드 작성 시 불필요한 주석을 추가하지 않는다.
 [codex] 2026-03-23 추가 메모
 - taurus/index.js는 원본 참고용으로 유지하고, 재사용 API는 별도 파일(taurus/api.js)로 관리한다.
+[codex] 2026-03-23 추가 메모 2
+- taurus/api.js의 pollOperation 시그니처는 callbacks 외에 pollConfig(maxPollAttempts, maxPollMs, pollIntervalMs)를 받아 종료 한도를 강제한다.
+- generateInitialVideo/extendVideo/createTaurusApi.generateVideo 호출 흐름에서 동일 pollConfig를 전달해 구간별 폴링 동작을 일관화했다.
