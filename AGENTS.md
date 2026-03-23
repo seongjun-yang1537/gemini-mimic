@@ -72,6 +72,10 @@
 - 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
 - RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.
 [codex] 2026-03-23 추가 메모 14
+- 공통 라이트 테마 디자인 토큰과 기본 컴포넌트 스타일을 public/styles.css로 분리해 index/run/prompts 화면에서 재사용한다.
+- public/index.html은 다크 Tailwind 기반 탭 UI를 사이드바(240px)+메인 구조로 교체하고, 실행 카드/상태 뱃지/업로드 드롭존/최근 실행 목록을 Claude 스타일의 플랫 보더 디자인으로 반영했다.
+- public/run.html은 상태 바, 전문가 패널, 토론 버블, 라운드 구분선, 최종 시나리오 강조 박스를 포함한 모니터링 레이아웃으로 재구성했다.
+- public/prompts.html은 좌측 전문가 리스트+우측 모노스페이스 에디터 구조로 재구성하고, 수정됨 배지와 @태그 자동완성 드롭다운을 라이트 테마에 맞게 정리했다.
 - 운영자 전용 .env 오버라이드 로더를 src/config/environment.js에 추가해 VIDEO_MODEL, VIDEO_SPLIT_MODEL, IMAGE_MODEL, FFMPEG_PATH, SAFETY_MAX_API_CALLS, SAFETY_MAX_COST_USD, SAFETY_PIPELINE_TIMEOUT_MINUTES를 설정 병합에 사용할 수 있도록 했다.
 - SettingsService는 설정 우선순위를 코드 기본값 < config.json < 운영자 .env 오버라이드 순으로 적용하도록 readConfig/getDefaultConfig 병합 순서를 명시했다.
 - SETTINGS_SCHEMA에 운영자 전용 필드(hidden/readOnly)를 표시했고 settings UI는 hidden 항목을 렌더링에서 제외하며 readOnly 배지를 노출한다.
