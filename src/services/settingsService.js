@@ -68,6 +68,7 @@ class SettingsService {
     this.configDirectory = path.resolve(options.configDirectory || "./config");
     this.configFilePath = path.join(this.configDirectory, "config.json");
     this.envApiKey = (options.envApiKey || "").trim();
+    this.operatorEnvOverrides = deepClone(options.operatorEnvOverrides || {});
     fs.mkdirSync(this.configDirectory, { recursive: true });
     this.ensureConfigFile();
   }
@@ -81,17 +82,18 @@ class SettingsService {
   }
 
   getDefaultConfig() {
-    const defaults = deepClone(SETTINGS_DEFAULTS);
-    defaults.gemini.apiKey = this.envApiKey;
-    return defaults;
+    const codeDefaultConfig = deepClone(SETTINGS_DEFAULTS);
+    codeDefaultConfig.gemini.apiKey = this.envApiKey;
+    return mergeObjects(codeDefaultConfig, this.operatorEnvOverrides);
   }
 
   readConfig() {
-    const defaults = this.getDefaultConfig();
+    const codeDefaultConfig = deepClone(SETTINGS_DEFAULTS);
+    codeDefaultConfig.gemini.apiKey = this.envApiKey;
     const fileText = fs.readFileSync(this.configFilePath, "utf8");
     const parsedConfig = JSON.parse(fileText);
-    const mergedConfig = mergeObjects(defaults, parsedConfig);
-    return mergedConfig;
+    const codeAndFileMergedConfig = mergeObjects(codeDefaultConfig, parsedConfig);
+    return mergeObjects(codeAndFileMergedConfig, this.operatorEnvOverrides);
   }
 
   writeConfig(nextConfig) {

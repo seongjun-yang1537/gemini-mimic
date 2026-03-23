@@ -76,3 +76,7 @@
 - public/index.html은 다크 Tailwind 기반 탭 UI를 사이드바(240px)+메인 구조로 교체하고, 실행 카드/상태 뱃지/업로드 드롭존/최근 실행 목록을 Claude 스타일의 플랫 보더 디자인으로 반영했다.
 - public/run.html은 상태 바, 전문가 패널, 토론 버블, 라운드 구분선, 최종 시나리오 강조 박스를 포함한 모니터링 레이아웃으로 재구성했다.
 - public/prompts.html은 좌측 전문가 리스트+우측 모노스페이스 에디터 구조로 재구성하고, 수정됨 배지와 @태그 자동완성 드롭다운을 라이트 테마에 맞게 정리했다.
+- 운영자 전용 .env 오버라이드 로더를 src/config/environment.js에 추가해 VIDEO_MODEL, VIDEO_SPLIT_MODEL, IMAGE_MODEL, FFMPEG_PATH, SAFETY_MAX_API_CALLS, SAFETY_MAX_COST_USD, SAFETY_PIPELINE_TIMEOUT_MINUTES를 설정 병합에 사용할 수 있도록 했다.
+- SettingsService는 설정 우선순위를 코드 기본값 < config.json < 운영자 .env 오버라이드 순으로 적용하도록 readConfig/getDefaultConfig 병합 순서를 명시했다.
+- SETTINGS_SCHEMA에 운영자 전용 필드(hidden/readOnly)를 표시했고 settings UI는 hidden 항목을 렌더링에서 제외하며 readOnly 배지를 노출한다.
+- /api/settings 응답은 hidden/sensitive 스키마 정책에 따라 운영자 전용 값은 제외하고 민감 스키마는 마스킹 정책을 반영해 전달한다.

@@ -3,20 +3,75 @@ const { AppError } = require("../http/errors/AppError");
 const { validateRequest } = require("../http/middlewares/validateRequest");
 const { asyncRoute } = require("../http/middlewares/errorHandler");
 
+function getValueByPath(sourceObject, keyPath) {
+  return keyPath.split(".").reduce((currentValue, keyPart) => {
+    if (currentValue === undefined || currentValue === null) {
+      return undefined;
+    }
+    return currentValue[keyPart];
+  }, sourceObject);
+}
+
+function deleteValueByPath(targetObject, keyPath) {
+  const keyParts = keyPath.split(".");
+  let currentNode = targetObject;
+  for (let index = 0; index < keyParts.length - 1; index += 1) {
+    const keyPart = keyParts[index];
+    if (!currentNode[keyPart] || typeof currentNode[keyPart] !== "object") {
+      return;
+    }
+    currentNode = currentNode[keyPart];
+  }
+  delete currentNode[keyParts[keyParts.length - 1]];
+}
+
+function sanitizeSettingsPayload({ settings, defaults, schema }) {
+  const sanitizedSettings = JSON.parse(JSON.stringify(settings));
+  const sanitizedDefaults = JSON.parse(JSON.stringify(defaults));
+  const sanitizedSchema = {};
+
+  for (const [keyPath, schemaEntry] of Object.entries(schema)) {
+    if (schemaEntry.hidden) {
+      deleteValueByPath(sanitizedSettings, keyPath);
+      deleteValueByPath(sanitizedDefaults, keyPath);
+      continue;
+    }
+
+    const sanitizedSchemaEntry = { ...schemaEntry };
+    if (sanitizedSchemaEntry.sensitive) {
+      deleteValueByPath(sanitizedSettings, keyPath);
+      deleteValueByPath(sanitizedDefaults, keyPath);
+      sanitizedSchemaEntry.masked = true;
+    }
+
+    sanitizedSchema[keyPath] = sanitizedSchemaEntry;
+  }
+
+  return { settings: sanitizedSettings, defaults: sanitizedDefaults, schema: sanitizedSchema };
+}
+
 function createSettingsRoutes({ settingsService }) {
   const settingsRouter = express.Router();
   const supportedCategoryList = ["gemini", "pipeline", "experts", "video", "safety"];
 
   settingsRouter.get("/api/settings", (_request, response) => {
-    response.json({
+    const responsePayload = sanitizeSettingsPayload({
       settings: settingsService.getSettings(),
       defaults: settingsService.getDefaults(),
       schema: settingsService.getSchema(),
     });
+
+    response.json(responsePayload);
   });
 
   settingsRouter.get("/api/settings/defaults", (_request, response) => {
-    response.json({ defaults: settingsService.getDefaults(), schema: settingsService.getSchema() });
+    const responsePayload = sanitizeSettingsPayload({
+      settings: settingsService.getSettings(),
+      defaults: settingsService.getDefaults(),
+      schema: settingsService.getSchema(),
+    });
+
+    response.json({ defaults: responsePayload.defaults, schema: responsePayload.schema });
   });
 
   settingsRouter.patch(
@@ -25,6 +80,16 @@ function createSettingsRoutes({ settingsService }) {
       body: (bodyPayload) => {
         if (!bodyPayload || typeof bodyPayload !== "object" || Array.isArray(bodyPayload)) {
           return { field: "body", message: "요청 본문은 객체여야 합니다." };
+        }
+
+        for (const [patchKeyPath] of Object.entries(bodyPayload)) {
+          const schemaEntry = settingsService.getSchema()[patchKeyPath];
+          if (!schemaEntry) {
+            continue;
+          }
+          if (schemaEntry.hidden || schemaEntry.sensitive) {
+            return { field: patchKeyPath, message: "운영자 전용 또는 민감 설정은 수정할 수 없습니다." };
+          }
         }
         return null;
       },
@@ -36,10 +101,17 @@ function createSettingsRoutes({ settingsService }) {
       } catch (error) {
         throw AppError.badRequest(error.message, null, "SETTINGS_PATCH_FAILED");
       }
-      response.json({
+
+      const responsePayload = sanitizeSettingsPayload({
         settings: settingsService.getSettings(),
+        defaults: settingsService.getDefaults(),
+        schema: settingsService.getSchema(),
+      });
+
+      response.json({
+        settings: responsePayload.settings,
         savedAt: new Date().toISOString(),
-        hasApiKey: Boolean(updatedConfig.gemini.apiKey),
+        hasApiKey: Boolean(getValueByPath(updatedConfig, "gemini.apiKey")),
       });
     }),
   );
@@ -67,9 +139,16 @@ function createSettingsRoutes({ settingsService }) {
       } catch (error) {
         throw AppError.badRequest(error.message, null, "SETTINGS_RESET_FAILED");
       }
-      response.json({
+
+      const responsePayload = sanitizeSettingsPayload({
         settings: settingsService.getSettings(),
-        hasApiKey: Boolean(resetConfig.gemini.apiKey),
+        defaults: settingsService.getDefaults(),
+        schema: settingsService.getSchema(),
+      });
+
+      response.json({
+        settings: responsePayload.settings,
+        hasApiKey: Boolean(getValueByPath(resetConfig, "gemini.apiKey")),
       });
     }),
   );
