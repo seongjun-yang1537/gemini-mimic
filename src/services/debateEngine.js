@@ -1,7 +1,32 @@
-// Generated under Codex compliance with AGENTS.md (gemini-mimic)
 class DebateEngine {
   constructor(dependencies) {
     this.geminiClient = dependencies.geminiClient;
+  }
+
+  async collectExpertOpinions(experts, context, emitEvent, videoPath, parallelExperts) {
+    if (parallelExperts) {
+      return Promise.all(
+        experts.map(async (expertDefinition) => {
+          await emitEvent({ type: "expert_start", expert: expertDefinition.name });
+          const expertOpinion = await this.geminiClient.callGemini(expertDefinition.prompt, context, { videoPath });
+          await emitEvent({ type: "expert_done", expert: expertDefinition.name, response: expertOpinion });
+          return { name: expertDefinition.name, role: expertDefinition.role, initialOpinion: expertOpinion };
+        }),
+      );
+    }
+
+    const collectedOpinions = [];
+    for (const expertDefinition of experts) {
+      await emitEvent({ type: "expert_start", expert: expertDefinition.name });
+      const expertOpinion = await this.geminiClient.callGemini(expertDefinition.prompt, context, { videoPath });
+      await emitEvent({ type: "expert_done", expert: expertDefinition.name, response: expertOpinion });
+      collectedOpinions.push({
+        name: expertDefinition.name,
+        role: expertDefinition.role,
+        initialOpinion: expertOpinion,
+      });
+    }
+    return collectedOpinions;
   }
 
   async runDebate(config) {
@@ -13,16 +38,10 @@ class DebateEngine {
       emitEvent,
       rounds = 3,
       videoPath,
+      parallelExperts = true,
     } = config;
 
-    const expertOpinions = await Promise.all(
-      experts.map(async (expert) => {
-        await emitEvent({ type: "expert_start", expert: expert.name });
-        const opinion = await this.geminiClient.callGemini(expert.prompt, context, { videoPath });
-        await emitEvent({ type: "expert_done", expert: expert.name, response: opinion });
-        return { name: expert.name, role: expert.role, initialOpinion: opinion };
-      }),
-    );
+    const expertOpinions = await this.collectExpertOpinions(experts, context, emitEvent, videoPath, parallelExperts);
 
     const debateRounds = [];
     let debateHistory = "";
@@ -41,8 +60,8 @@ class DebateEngine {
       });
 
       const roundResponses = await Promise.all(
-        experts.map(async (expert) => {
-          const response = await this.geminiClient.callGemini(expert.prompt, {
+        experts.map(async (expertDefinition) => {
+          const expertResponse = await this.geminiClient.callGemini(expertDefinition.prompt, {
             facilitation,
             debateHistory,
             round,
@@ -50,11 +69,11 @@ class DebateEngine {
           await emitEvent({
             type: "debate_message",
             round,
-            speaker: expert.name,
+            speaker: expertDefinition.name,
             role: "expert",
-            content: response,
+            content: expertResponse,
           });
-          return { expert: expert.name, content: response };
+          return { expert: expertDefinition.name, content: expertResponse };
         }),
       );
 

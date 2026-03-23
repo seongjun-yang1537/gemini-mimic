@@ -19,3 +19,8 @@
 - 프롬프트 내 @태그는 AssetService.resolvePrompt/buildGeminiPartsFromPrompt와 GeminiClient 연동으로 inline_data 첨부 파트로 자동 변환된다.
 - 정적 에셋 관리 화면은 /assets 경로(public/assets.html)로 제공되고, 대시보드(public/index.html) 상단에서 바로 이동 가능하다.
 - 프롬프트 편집기(public/prompts.html)는 @ 입력 시 /api/assets 목록 기반 태그 자동완성 드롭다운을 제공한다.
+[codex] 2026-03-23 추가 메모 5
+- 설정 시스템은 src/services/settingsService.js에서 config/config.json 파일 기반으로 로드·병합·검증·마스킹·초기화를 처리한다.
+- 설정 API는 src/server.js에 /api/settings(GET/PATCH), /api/settings/defaults(GET), /api/settings/reset(POST)로 제공되며 대시보드에 /settings 링크가 추가되었다.
+- 파이프라인 실행 생성 시 RunStore.createRun에 configSnapshot을 저장하고, PipelineOrchestrator가 해당 스냅샷으로 Gemini/토론/전문가 활성화/영상 생성 파라미터를 적용한다.
+- 설정 UI는 public/settings.html에서 카테고리별 폼, 수정됨 배지, 항목별 기본값 복원, 저장/전체 초기화, 이탈 경고를 제공한다.

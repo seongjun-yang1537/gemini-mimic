@@ -1,0 +1,362 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mimic Settings</title>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="max-w-7xl mx-auto p-6 space-y-6">
+      <header class="flex items-center justify-between">
+        <div>
+          <a href="/" class="text-cyan-300 text-sm">← 대시보드</a>
+          <h1 class="text-2xl font-bold mt-2">파이프라인 설정</h1>
+        </div>
+      </header>
+
+      <div class="grid grid-cols-12 gap-4">
+        <aside class="col-span-3 bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <ul id="categoryList" class="space-y-2 text-sm"></ul>
+        </aside>
+
+        <main class="col-span-9 bg-slate-900 border border-slate-800 rounded-xl p-4">
+          <h2 id="categoryTitle" class="text-xl font-semibold mb-4"></h2>
+          <div id="formContainer" class="space-y-3"></div>
+        </main>
+      </div>
+
+      <div class="bg-slate-900 border border-slate-800 rounded-xl p-4 flex items-center justify-between">
+        <p id="dirtyText" class="text-sm text-amber-300 hidden">변경사항이 있습니다.</p>
+        <div class="flex gap-2">
+          <button id="saveButton" class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">저장</button>
+          <button id="resetButton" class="bg-rose-500 hover:bg-rose-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">전체 초기화</button>
+        </div>
+      </div>
+      <p id="message" class="text-sm"></p>
+    </div>
+
+    <script>
+      const categoryDefinitions = [
+        {
+          key: 'gemini',
+          label: 'Gemini API',
+          items: [
+            { key: 'gemini.apiKey', label: 'Gemini API 키', type: 'password', description: 'API 키를 설정합니다.' },
+            { key: 'gemini.model', label: '텍스트/분석 모델', type: 'select', options: ['gemini-3-pro', 'gemini-2.5-pro', 'gemini-2.5-flash'] },
+            { key: 'gemini.temperature', label: '생성 온도', type: 'slider', min: 0, max: 2, step: 0.1 },
+            { key: 'gemini.maxOutputTokens', label: '최대 출력 토큰', type: 'number', min: 1 },
+          ],
+        },
+        {
+          key: 'debate',
+          label: '토론 시스템',
+          items: [
+            { key: 'debate.rounds', label: '토론 라운드 수', type: 'number', min: 1, max: 10 },
+            { key: 'debate.parallelExperts', label: '전문가 병렬 호출', type: 'boolean' },
+          ],
+        },
+        {
+          key: 'video',
+          label: '영상 생성',
+          items: [
+            { key: 'video.model', label: 'Veo 모델', type: 'text' },
+            { key: 'video.defaultDuration', label: '기본 길이(초)', type: 'select', options: [4, 6, 8] },
+            { key: 'video.aspectRatio', label: '화면비', type: 'select', options: ['16:9', '9:16'] },
+            { key: 'video.resolution', label: '해상도', type: 'select', options: ['720p'] },
+            { key: 'video.maxIterations', label: '최대 재생성 횟수', type: 'number', min: 1, max: 10 },
+            { key: 'video.extensionSeconds', label: 'Extension 단위(초)', type: 'number', readonly: true },
+            { key: 'video.maxTotalSeconds', label: '최대 총 길이(초)', type: 'number', readonly: true },
+            { key: 'video.postProcessingWait', label: 'Extension 전 대기(ms)', type: 'number', min: 0 },
+            { key: 'video.pollInterval', label: '폴링 간격(ms)', type: 'number', min: 1000 },
+            { key: 'video.splitModel', label: '시나리오 분할 모델', type: 'select', options: ['gemini-3-flash-preview', 'gemini-2.5-flash'] },
+          ],
+        },
+        {
+          key: 'image',
+          label: '이미지 생성',
+          items: [
+            { key: 'image.model', label: 'Imagen 모델', type: 'text' },
+            { key: 'image.maxReferenceSheets', label: '최대 레퍼런스 시트 수', type: 'number', min: 1, max: 3 },
+          ],
+        },
+        {
+          key: 'ffmpeg',
+          label: '영상 편집',
+          items: [
+            { key: 'ffmpeg.path', label: 'ffmpeg 경로', type: 'text' },
+            { key: 'ffmpeg.defaultCodec', label: '코덱', type: 'select', options: ['libx264', 'libx265'] },
+            { key: 'ffmpeg.defaultCrf', label: 'CRF', type: 'slider', min: 0, max: 51, step: 1 },
+            { key: 'ffmpeg.defaultPreset', label: '프리셋', type: 'select', options: ['ultrafast', 'superfast', 'veryfast', 'faster', 'fast', 'medium', 'slow', 'slower', 'veryslow'] },
+          ],
+        },
+        {
+          key: 'experts',
+          label: '전문가 활성화',
+          items: [
+            { key: 'experts.phase1.hook', label: 'Phase1 훅', type: 'boolean' },
+            { key: 'experts.phase1.story', label: 'Phase1 스토리', type: 'boolean' },
+            { key: 'experts.phase1.cta', label: 'Phase1 CTA', type: 'boolean' },
+            { key: 'experts.phase1.actionDesc', label: 'Phase1 행동 묘사', type: 'boolean' },
+            { key: 'experts.phase1.characterDesc', label: 'Phase1 캐릭터 묘사', type: 'boolean' },
+            { key: 'experts.phase3.actionEval', label: 'Phase3 행동 평가', type: 'boolean' },
+            { key: 'experts.phase3.characterEval', label: 'Phase3 캐릭터 평가', type: 'boolean' },
+            { key: 'experts.phase3.scenarioEval', label: 'Phase3 시나리오 평가', type: 'boolean' },
+          ],
+        },
+      ];
+
+      let currentCategoryKey = 'gemini';
+      let savedSettings = null;
+      let defaultSettings = null;
+      let editingSettings = null;
+
+      function deepClone(value) {
+        return JSON.parse(JSON.stringify(value));
+      }
+
+      function getValueByPath(data, pathText) {
+        return pathText.split('.').reduce((acc, key) => acc?.[key], data);
+      }
+
+      function setValueByPath(data, pathText, value) {
+        const pathParts = pathText.split('.');
+        let nestedObject = data;
+        for (let index = 0; index < pathParts.length - 1; index += 1) {
+          const currentPart = pathParts[index];
+          nestedObject[currentPart] = nestedObject[currentPart] || {};
+          nestedObject = nestedObject[currentPart];
+        }
+        nestedObject[pathParts[pathParts.length - 1]] = value;
+      }
+
+      function isDirty() {
+        return JSON.stringify(savedSettings) !== JSON.stringify(editingSettings);
+      }
+
+      function updateDirtyState() {
+        document.getElementById('dirtyText').classList.toggle('hidden', !isDirty());
+      }
+
+      function showMessage(text, colorClass = 'text-slate-300') {
+        const messageElement = document.getElementById('message');
+        messageElement.className = `text-sm ${colorClass}`;
+        messageElement.textContent = text;
+      }
+
+      function buildInput(definition, currentValue) {
+        if (definition.type === 'boolean') {
+          const checkedText = currentValue ? 'checked' : '';
+          return `<input type="checkbox" data-key="${definition.key}" class="h-5 w-5" ${checkedText} ${definition.readonly ? 'disabled' : ''} />`;
+        }
+
+        if (definition.type === 'select') {
+          return `<select data-key="${definition.key}" class="bg-slate-950 border border-slate-700 rounded px-2 py-1" ${definition.readonly ? 'disabled' : ''}>${definition.options
+            .map((optionItem) => `<option value="${optionItem}" ${String(optionItem) === String(currentValue) ? 'selected' : ''}>${optionItem}</option>`)
+            .join('')}</select>`;
+        }
+
+        if (definition.type === 'slider') {
+          return `<div class="flex items-center gap-3"><input type="range" min="${definition.min}" max="${definition.max}" step="${definition.step || 1}" value="${currentValue}" data-key="${definition.key}" class="flex-1" ${definition.readonly ? 'disabled' : ''}/><span class="text-xs text-cyan-300">${currentValue}</span></div>`;
+        }
+
+        if (definition.type === 'password') {
+          return `<input type="password" data-key="${definition.key}" value="" placeholder="${currentValue || '미설정'}" class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" />`;
+        }
+
+        const inputType = definition.type === 'number' ? 'number' : 'text';
+        const minText = definition.min !== undefined ? `min="${definition.min}"` : '';
+        const maxText = definition.max !== undefined ? `max="${definition.max}"` : '';
+        return `<input type="${inputType}" data-key="${definition.key}" value="${currentValue}" ${minText} ${maxText} class="w-full bg-slate-950 border border-slate-700 rounded px-2 py-1" ${definition.readonly ? 'readonly' : ''} />`;
+      }
+
+      function renderCategories() {
+        document.getElementById('categoryList').innerHTML = categoryDefinitions
+          .map((category) => {
+            const activeClass = category.key === currentCategoryKey ? 'bg-slate-800 text-cyan-300' : 'hover:bg-slate-800';
+            return `<li><button data-category="${category.key}" class="w-full text-left rounded px-3 py-2 ${activeClass}">${category.label}</button></li>`;
+          })
+          .join('');
+
+        document.querySelectorAll('button[data-category]').forEach((buttonElement) => {
+          buttonElement.addEventListener('click', () => {
+            currentCategoryKey = buttonElement.dataset.category;
+            renderCategories();
+            renderForm();
+          });
+        });
+      }
+
+      function renderForm() {
+        const currentCategory = categoryDefinitions.find((category) => category.key === currentCategoryKey);
+        document.getElementById('categoryTitle').textContent = currentCategory.label;
+
+        document.getElementById('formContainer').innerHTML = currentCategory.items
+          .map((itemDefinition) => {
+            const currentValue = getValueByPath(editingSettings, itemDefinition.key);
+            const defaultValue = getValueByPath(defaultSettings, itemDefinition.key);
+            const changed = String(currentValue) !== String(defaultValue);
+            return `
+              <div class="border border-slate-800 rounded-lg p-3">
+                <div class="flex items-center justify-between mb-2">
+                  <p class="font-medium">${itemDefinition.label}</p>
+                  <div class="flex items-center gap-2">
+                    ${changed ? '<span class="text-xs bg-amber-500/20 text-amber-300 px-2 py-0.5 rounded">수정됨</span>' : ''}
+                    <button data-reset-item="${itemDefinition.key}" class="text-xs text-rose-300">기본값</button>
+                  </div>
+                </div>
+                ${buildInput(itemDefinition, currentValue)}
+              </div>
+            `;
+          })
+          .join('');
+
+        bindFormEvents(currentCategory.items);
+      }
+
+      function bindFormEvents(currentItems) {
+        currentItems.forEach((itemDefinition) => {
+          const inputElement = document.querySelector(`[data-key="${itemDefinition.key}"]`);
+          if (!inputElement || itemDefinition.readonly) {
+            return;
+          }
+
+          const eventType = itemDefinition.type === 'boolean' || itemDefinition.type === 'select' ? 'change' : 'input';
+          inputElement.addEventListener(eventType, () => {
+            let nextValue;
+            if (itemDefinition.type === 'boolean') {
+              nextValue = inputElement.checked;
+            } else if (itemDefinition.type === 'number' || itemDefinition.type === 'slider') {
+              nextValue = Number(inputElement.value);
+            } else if (itemDefinition.type === 'password') {
+              if (!inputElement.value.trim()) {
+                return;
+              }
+              nextValue = inputElement.value;
+            } else {
+              nextValue = inputElement.value;
+            }
+
+            setValueByPath(editingSettings, itemDefinition.key, nextValue);
+
+            if (itemDefinition.type === 'slider' && inputElement.parentElement?.querySelector('span')) {
+              inputElement.parentElement.querySelector('span').textContent = nextValue;
+            }
+
+            updateDirtyState();
+          });
+        });
+
+        document.querySelectorAll('button[data-reset-item]').forEach((resetButton) => {
+          resetButton.addEventListener('click', () => {
+            const itemKey = resetButton.dataset.resetItem;
+            const defaultValue = getValueByPath(defaultSettings, itemKey);
+            setValueByPath(editingSettings, itemKey, defaultValue);
+            renderForm();
+            updateDirtyState();
+          });
+        });
+      }
+
+      function validateExperts() {
+        const phase1Flags = Object.values(editingSettings.experts.phase1);
+        const phase3Flags = Object.values(editingSettings.experts.phase3);
+        if (!phase1Flags.some(Boolean) || !phase3Flags.some(Boolean)) {
+          showMessage('Phase별 전문가는 최소 1명 이상 활성화되어야 합니다.', 'text-rose-300');
+          return false;
+        }
+        return true;
+      }
+
+      function buildPatchPayload() {
+        const patchPayload = {};
+        categoryDefinitions.forEach((category) => {
+          category.items.forEach((itemDefinition) => {
+            const currentValue = getValueByPath(editingSettings, itemDefinition.key);
+            const previousValue = getValueByPath(savedSettings, itemDefinition.key);
+            if (String(currentValue) !== String(previousValue)) {
+              patchPayload[itemDefinition.key] = currentValue;
+            }
+          });
+        });
+        return patchPayload;
+      }
+
+      async function reloadSettings() {
+        const [settingsResponse, defaultsResponse] = await Promise.all([
+          fetch('/api/settings'),
+          fetch('/api/settings/defaults'),
+        ]);
+        savedSettings = await settingsResponse.json();
+        defaultSettings = await defaultsResponse.json();
+        editingSettings = deepClone(savedSettings);
+        renderCategories();
+        renderForm();
+        updateDirtyState();
+      }
+
+      document.getElementById('saveButton').addEventListener('click', async () => {
+        if (!validateExperts()) {
+          return;
+        }
+        const patchPayload = buildPatchPayload();
+        if (!Object.keys(patchPayload).length) {
+          showMessage('변경된 설정이 없습니다.', 'text-slate-300');
+          return;
+        }
+
+        const response = await fetch('/api/settings', {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(patchPayload),
+        });
+
+        const payload = await response.json();
+        if (!response.ok) {
+          showMessage(payload.error || '저장에 실패했습니다.', 'text-rose-300');
+          return;
+        }
+
+        savedSettings = payload;
+        editingSettings = deepClone(payload);
+        renderForm();
+        updateDirtyState();
+        showMessage('설정을 저장했습니다.', 'text-emerald-300');
+      });
+
+      document.getElementById('resetButton').addEventListener('click', async () => {
+        if (!confirm('전체 설정을 기본값으로 초기화할까요?')) {
+          return;
+        }
+        const response = await fetch('/api/settings/reset', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({}),
+        });
+        const payload = await response.json();
+        if (!response.ok) {
+          showMessage(payload.error || '초기화에 실패했습니다.', 'text-rose-300');
+          return;
+        }
+
+        savedSettings = payload;
+        editingSettings = deepClone(payload);
+        renderForm();
+        updateDirtyState();
+        showMessage('전체 설정을 초기화했습니다.', 'text-emerald-300');
+      });
+
+      window.addEventListener('beforeunload', (event) => {
+        if (!isDirty()) {
+          return;
+        }
+        event.preventDefault();
+        event.returnValue = '';
+      });
+
+      reloadSettings().catch(() => {
+        showMessage('설정 로딩에 실패했습니다.', 'text-rose-300');
+      });
+    </script>
+  </body>
+</html>

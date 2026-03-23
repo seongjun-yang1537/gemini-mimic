@@ -1,4 +1,3 @@
-// Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
 const path = require("node:path");
 const { randomUUID } = require("node:crypto");
@@ -21,13 +20,14 @@ class RunStore {
     fs.writeFileSync(this.storagePath, JSON.stringify(runList, null, 2), "utf8");
   }
 
-  createRun(inputVideoPath) {
+  createRun(inputVideoPath, configSnapshot) {
     const runList = this.readRuns();
     const pipelineRun = {
       id: randomUUID(),
       status: "running",
       createdAt: new Date().toISOString(),
       inputVideo: inputVideoPath,
+      configSnapshot,
       tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
     };
     runList.unshift(pipelineRun);

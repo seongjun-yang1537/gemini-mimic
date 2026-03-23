@@ -17,6 +17,13 @@ function sleep(milliseconds) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
 }
 
+function toPositiveInteger(value, fallbackValue) {
+  if (!Number.isInteger(value) || value <= 0) {
+    return fallbackValue;
+  }
+  return value;
+}
+
 function detectImageMimeType(filePath) {
   const fileExtension = path.extname(filePath).toLowerCase();
   if (fileExtension === ".png") return "image/png";
@@ -40,13 +47,17 @@ function loadImageAsInlineData(imagePath) {
   return { imageBytes, mimeType };
 }
 
-function calculateSegments(totalDuration) {
+function calculateSegments(totalDuration, options = {}) {
+  const extensionSeconds = toPositiveInteger(options.extensionSeconds, EXTENSION_SECONDS);
+  const maxTotalSeconds = toPositiveInteger(options.maxTotalSeconds, MAX_TOTAL_SECONDS);
+  const maxExtensions = toPositiveInteger(options.maxExtensions, MAX_EXTENSIONS);
+
   if (!Number.isInteger(totalDuration)) {
     throw new Error("Duration must be an integer in seconds.");
   }
 
-  if (totalDuration < 4 || totalDuration > MAX_TOTAL_SECONDS) {
-    throw new Error(`Duration must be between 4 and ${MAX_TOTAL_SECONDS}.`);
+  if (totalDuration < 4 || totalDuration > maxTotalSeconds) {
+    throw new Error(`Duration must be between 4 and ${maxTotalSeconds}.`);
   }
 
   if (totalDuration <= 8) {
@@ -62,15 +73,15 @@ function calculateSegments(totalDuration) {
   let bestSegmentPlan = null;
   for (const initialDuration of [4, 6, 8]) {
     const remainingDuration = totalDuration - initialDuration;
-    const lowerExtensionCount = Math.floor(remainingDuration / EXTENSION_SECONDS);
-    const upperExtensionCount = Math.ceil(remainingDuration / EXTENSION_SECONDS);
+    const lowerExtensionCount = Math.floor(remainingDuration / extensionSeconds);
+    const upperExtensionCount = Math.ceil(remainingDuration / extensionSeconds);
 
     for (const extensionCount of [lowerExtensionCount, upperExtensionCount]) {
-      if (extensionCount < 1 || extensionCount > MAX_EXTENSIONS) {
+      if (extensionCount < 1 || extensionCount > maxExtensions) {
         continue;
       }
 
-      const finalDuration = initialDuration + extensionCount * EXTENSION_SECONDS;
+      const finalDuration = initialDuration + extensionCount * extensionSeconds;
       const differenceFromTarget = Math.abs(finalDuration - totalDuration);
 
       if (
@@ -100,9 +111,16 @@ function calculateSegments(totalDuration) {
   };
 }
 
-async function splitScenario(aiClient, scenarioText, initialDuration, extensionCount, splitModel = SPLIT_MODEL) {
+async function splitScenario(
+  aiClient,
+  scenarioText,
+  initialDuration,
+  extensionCount,
+  splitModel = SPLIT_MODEL,
+  extensionSeconds = EXTENSION_SECONDS,
+) {
   const totalSegments = 1 + extensionCount;
-  const segmentDurations = [initialDuration, ...Array(extensionCount).fill(EXTENSION_SECONDS)];
+  const segmentDurations = [initialDuration, ...Array(extensionCount).fill(extensionSeconds)];
 
   const segmentListText = segmentDurations
     .map((segmentDuration, segmentIndex) => `  Segment ${segmentIndex + 1}: ${segmentDuration} seconds`)
@@ -178,11 +196,12 @@ function validateAspectRatio(aspectRatio) {
 
 async function pollOperation(aiClient, operation, callbacks = {}) {
   const onPolling = callbacks.onPolling || (() => {});
+  const pollInterval = toPositiveInteger(callbacks.pollInterval, 10_000);
   let currentOperation = operation;
 
   while (!currentOperation.done) {
     await onPolling(currentOperation);
-    await sleep(10_000);
+    await sleep(pollInterval);
     currentOperation = await aiClient.operations.getVideosOperation({ operation: currentOperation });
   }
 
@@ -200,19 +219,22 @@ async function pollOperation(aiClient, operation, callbacks = {}) {
 
 async function generateInitialVideo(aiClient, options) {
   const generationOperation = await aiClient.models.generateVideos({
-    model: MODEL,
+    model: options.model || MODEL,
     prompt: options.prompt,
     image: options.firstFrameImage || undefined,
     config: {
       aspectRatio: options.aspectRatio,
-      resolution: DEFAULT_RESOLUTION,
+      resolution: options.resolution || DEFAULT_RESOLUTION,
       durationSeconds: options.initialDuration,
       ...(options.lastFrameImage ? { lastFrame: options.lastFrameImage } : {}),
       ...(options.referenceImages ? { referenceImages: options.referenceImages } : {}),
     },
   });
 
-  return pollOperation(aiClient, generationOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, generationOperation, {
+    onPolling: options.onPolling,
+    pollInterval: options.pollInterval,
+  });
 }
 
 async function extendVideo(aiClient, options) {
@@ -224,20 +246,23 @@ async function extendVideo(aiClient, options) {
     await options.onStatus("extending");
   }
 
-  await sleep(30_000);
+  await sleep(toPositiveInteger(options.postProcessingWait, 30_000));
 
   const extensionOperation = await aiClient.models.generateVideos({
-    model: MODEL,
+    model: options.model || MODEL,
     prompt: options.prompt,
     video: options.videoFileId,
     config: {
       aspectRatio: options.aspectRatio,
-      resolution: DEFAULT_RESOLUTION,
+      resolution: options.resolution || DEFAULT_RESOLUTION,
       numberOfVideos: 1,
     },
   });
 
-  return pollOperation(aiClient, extensionOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, extensionOperation, {
+    onPolling: options.onPolling,
+    pollInterval: options.pollInterval,
+  });
 }
 
 async function downloadVideo(aiClient, videoFileId, outputPath) {
@@ -270,9 +295,17 @@ function createTaurusApi(apiConfig = {}) {
 
     const targetDuration = options.duration ?? DEFAULT_DURATION_SECONDS;
     const aspectRatio = options.aspectRatio ?? DEFAULT_ASPECT_RATIO;
+    const videoModel = options.model || MODEL;
+    const videoResolution = options.resolution || DEFAULT_RESOLUTION;
+    const extensionSeconds = toPositiveInteger(options.extensionSeconds, EXTENSION_SECONDS);
+    const maxTotalSeconds = toPositiveInteger(options.maxTotalSeconds, MAX_TOTAL_SECONDS);
     validateAspectRatio(aspectRatio);
 
-    const segmentPlan = calculateSegments(targetDuration);
+    const segmentPlan = calculateSegments(targetDuration, {
+      extensionSeconds,
+      maxTotalSeconds,
+      maxExtensions: options.maxExtensions,
+    });
     if (!ALLOWED_INITIAL_DURATIONS.has(segmentPlan.initialDuration)) {
       throw new Error("Calculated invalid initial duration.");
     }
@@ -305,6 +338,7 @@ function createTaurusApi(apiConfig = {}) {
             segmentPlan.initialDuration,
             segmentPlan.extensionCount,
             options.splitModel || SPLIT_MODEL,
+            extensionSeconds,
           );
 
     await onStatus("polling", { segment: 1, totalSegments });
@@ -313,9 +347,12 @@ function createTaurusApi(apiConfig = {}) {
       prompt: segmentedPrompts[0],
       firstFrameImage,
       lastFrameImage,
+      model: videoModel,
+      resolution: videoResolution,
       aspectRatio,
       initialDuration: segmentPlan.initialDuration,
       referenceImages,
+      pollInterval: options.pollInterval,
       onPolling: async () => onStatus("polling", { segment: 1, totalSegments }),
     });
 
@@ -327,7 +364,11 @@ function createTaurusApi(apiConfig = {}) {
       currentVideoFileId = await extendVideo(aiClient, {
         videoFileId: currentVideoFileId,
         prompt: segmentedPrompts[segmentNumber - 1],
+        model: videoModel,
+        resolution: videoResolution,
         aspectRatio,
+        postProcessingWait: options.postProcessingWait,
+        pollInterval: options.pollInterval,
         onStatus: async () => onStatus("extending", { segment: segmentNumber, totalSegments }),
         onPolling: async () => onStatus("polling", { segment: segmentNumber, totalSegments }),
       });
@@ -359,13 +400,22 @@ function createTaurusApi(apiConfig = {}) {
         videoFileId,
         prompt,
         aspectRatio,
+        model: options.model || MODEL,
+        resolution: options.resolution || DEFAULT_RESOLUTION,
+        postProcessingWait: options.postProcessingWait,
+        pollInterval: options.pollInterval,
         onStatus: options.onStatus,
         onPolling: options.onPolling,
       });
     },
     downloadVideo: async (videoFileId, outputPath) => downloadVideo(aiClient, videoFileId, outputPath),
-    splitScenario: async (scenarioText, initialDuration, extensionCount, splitModel = SPLIT_MODEL) =>
-      splitScenario(aiClient, scenarioText, initialDuration, extensionCount, splitModel),
+    splitScenario: async (
+      scenarioText,
+      initialDuration,
+      extensionCount,
+      splitModel = SPLIT_MODEL,
+      extensionSeconds = EXTENSION_SECONDS,
+    ) => splitScenario(aiClient, scenarioText, initialDuration, extensionCount, splitModel, extensionSeconds),
     pollOperation: async (operation, callbacks = {}) => pollOperation(aiClient, operation, callbacks),
     calculateSegments,
   };

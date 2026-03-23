@@ -1,4 +1,3 @@
-// Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
 const { getRequiredGeminiApiKey } = require("../config/environment");
 
@@ -24,6 +23,19 @@ class GeminiClient {
     this.apiKey = config.apiKey || getRequiredGeminiApiKey();
     this.model = config.model || "gemini-3-pro";
     this.assetService = config.assetService;
+    this.runtimeConfig = {
+      apiKey: this.apiKey,
+      model: this.model,
+      temperature: 0.7,
+      maxOutputTokens: 8192,
+    };
+  }
+
+  setRuntimeConfig(runtimeOverrides = {}) {
+    this.runtimeConfig = {
+      ...this.runtimeConfig,
+      ...runtimeOverrides,
+    };
   }
 
   buildPartsFromContent(content) {
@@ -45,14 +57,23 @@ class GeminiClient {
       parts.push(buildVideoPart(options.videoPath));
     }
 
+    const resolvedApiKey = options.apiKey || this.runtimeConfig.apiKey || this.apiKey;
+    const resolvedModel = options.model || this.runtimeConfig.model || this.model;
+    const resolvedTemperature = options.temperature ?? this.runtimeConfig.temperature;
+    const resolvedMaxOutputTokens = options.maxOutputTokens ?? this.runtimeConfig.maxOutputTokens;
+
     const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${this.model}:generateContent?key=${this.apiKey}`,
+      `https://generativelanguage.googleapis.com/v1beta/models/${resolvedModel}:generateContent?key=${resolvedApiKey}`,
       {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
           contents: [{ role: "user", parts }],
           systemInstruction: { parts: [{ text: systemPrompt }] },
+          generationConfig: {
+            temperature: resolvedTemperature,
+            maxOutputTokens: resolvedMaxOutputTokens,
+          },
         }),
       },
     );

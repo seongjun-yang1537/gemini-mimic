@@ -1,4 +1,3 @@
-// Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
 const path = require("node:path");
 const { createTaurusApi } = require("../../taurus/api");
@@ -12,15 +11,33 @@ class PipelineOrchestrator {
     this.wsHub = dependencies.wsHub;
     this.assetService = dependencies.assetService;
     this.outputsDirectory = path.resolve(process.env.OUTPUTS_DIR || "./outputs");
-    this.taurusApi = createTaurusApi({ apiKey: process.env.GEMINI_API_KEY });
+  }
+
+  resolveRunConfig(runId) {
+    const runState = this.runStore.getRun(runId);
+    if (!runState) {
+      throw new Error("Run not found");
+    }
+    const runConfig = runState.configSnapshot;
+    if (!runConfig) {
+      throw new Error("Run config snapshot is missing");
+    }
+    return runConfig;
+  }
+
+  createTaurusClient(runConfig) {
+    return createTaurusApi({ apiKey: runConfig.gemini.apiKey || process.env.GEMINI_API_KEY });
   }
 
   async execute(runId) {
     try {
-      await this.runPhase1(runId);
-      await this.runPhase2(runId);
-      await this.runPhase3(runId);
-      await this.runPhase4(runId);
+      const runConfig = this.resolveRunConfig(runId);
+      this.geminiClient.setRuntimeConfig(runConfig.gemini);
+
+      await this.runPhase1(runId, runConfig);
+      await this.runPhase2(runId, runConfig);
+      await this.runPhase3(runId, runConfig);
+      await this.runPhase4(runId, runConfig);
 
       const runState = this.runStore.updateRun(runId, {
         status: "completed",
@@ -38,25 +55,29 @@ class PipelineOrchestrator {
     }
   }
 
-  async runPhase1(runId) {
+  async runPhase1(runId, runConfig) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 1 });
     const runState = this.runStore.getRun(runId);
     const phasePrompts = this.promptService.loadPhasePrompts("phase1");
 
-    const expertDefinitions = [
-      { name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert },
-      { name: "스토리 전문가", role: "story", prompt: phasePrompts.story_expert },
-      { name: "CTA 전문가", role: "cta", prompt: phasePrompts.cta_expert },
-      { name: "행동 묘사 전문가", role: "action", prompt: phasePrompts.action_desc_expert },
-      { name: "캐릭터 묘사 전문가", role: "character", prompt: phasePrompts.character_desc_expert },
+    const phase1ExpertCatalog = [
+      { key: "hook", name: "훅 전문가", role: "hook", prompt: phasePrompts.hook_expert },
+      { key: "story", name: "스토리 전문가", role: "story", prompt: phasePrompts.story_expert },
+      { key: "cta", name: "CTA 전문가", role: "cta", prompt: phasePrompts.cta_expert },
+      { key: "actionDesc", name: "행동 묘사 전문가", role: "action", prompt: phasePrompts.action_desc_expert },
+      { key: "characterDesc", name: "캐릭터 묘사 전문가", role: "character", prompt: phasePrompts.character_desc_expert },
     ];
 
+    const activeExperts = phase1ExpertCatalog.filter((expertDefinition) => runConfig.experts.phase1[expertDefinition.key]);
+
     const phase1DebateResult = await this.debateEngine.runDebate({
-      experts: expertDefinitions,
+      experts: activeExperts,
       facilitatorPrompt: phasePrompts.facilitator,
       summarizerPrompt: phasePrompts.summarizer,
       context: "입력 밈 영상을 분석해서 마케팅 크리에이티브 시나리오를 확정해 주세요.",
       videoPath: runState.inputVideo,
+      rounds: runConfig.debate.rounds,
+      parallelExperts: runConfig.debate.parallelExperts,
       emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
     });
 
@@ -105,21 +126,30 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: 2 });
   }
 
-  async runPhase3(runId) {
+  async runPhase3(runId, runConfig) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 3 });
     const runState = this.runStore.getRun(runId);
     const phase3Prompts = this.promptService.loadPhasePrompts("phase3");
+    const taurusClient = this.createTaurusClient(runConfig);
 
     const iterationList = [];
     let currentIteration = 1;
     let passDecision = false;
     let finalVideoPath = "";
 
-    while (!passDecision && currentIteration <= 3) {
+    while (!passDecision && currentIteration <= runConfig.video.maxIterations) {
       const generatedVideoPath = path.join(this.outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
-      const taurusResult = await this.taurusApi.generateVideo(runState.phase1Result.scenario, {
-        referenceImages: runState.phase2Result.referenceSheets,
-        duration: 8,
+      const taurusResult = await taurusClient.generateVideo(runState.phase1Result.scenario, {
+        referenceImages: runState.phase2Result.referenceSheets.slice(0, runConfig.image.maxReferenceSheets),
+        duration: runConfig.video.defaultDuration,
+        model: runConfig.video.model,
+        aspectRatio: runConfig.video.aspectRatio,
+        resolution: runConfig.video.resolution,
+        extensionSeconds: runConfig.video.extensionSeconds,
+        maxTotalSeconds: runConfig.video.maxTotalSeconds,
+        postProcessingWait: runConfig.video.postProcessingWait,
+        pollInterval: runConfig.video.pollInterval,
+        splitModel: runConfig.video.splitModel,
         outputPath: generatedVideoPath,
         onStatus: async (status, payload) => {
           this.wsHub.publish(runId, {
@@ -144,18 +174,21 @@ class PipelineOrchestrator {
         });
       }
 
-      const evaluatorDefinitions = [
-        { name: "행동 묘사 평가", role: "action", prompt: phase3Prompts.action_eval_expert },
-        { name: "캐릭터 평가", role: "character", prompt: phase3Prompts.character_eval_expert },
-        { name: "시나리오 정합성 평가", role: "scenario", prompt: phase3Prompts.scenario_eval_expert },
+      const phase3EvaluatorCatalog = [
+        { key: "actionEval", name: "행동 묘사 평가", role: "action", prompt: phase3Prompts.action_eval_expert },
+        { key: "characterEval", name: "캐릭터 평가", role: "character", prompt: phase3Prompts.character_eval_expert },
+        { key: "scenarioEval", name: "시나리오 정합성 평가", role: "scenario", prompt: phase3Prompts.scenario_eval_expert },
       ];
+      const activeEvaluators = phase3EvaluatorCatalog.filter((expertDefinition) => runConfig.experts.phase3[expertDefinition.key]);
 
       const evaluationDebate = await this.debateEngine.runDebate({
-        experts: evaluatorDefinitions,
+        experts: activeEvaluators,
         facilitatorPrompt: phase3Prompts.facilitator,
         summarizerPrompt: phase3Prompts.summarizer,
         context: runState.phase1Result.scenario,
         videoPath: taurusResult.outputPath,
+        rounds: runConfig.debate.rounds,
+        parallelExperts: runConfig.debate.parallelExperts,
         emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
       });
 
@@ -205,6 +238,7 @@ class PipelineOrchestrator {
     const editSpecText = await this.geminiClient.callGemini(phase4Prompts.editor_expert, {
       scenario: runState.phase1Result.scenario,
       sourceVideo: runState.phase3Result.finalVideo,
+      ffmpeg: runState.configSnapshot.ffmpeg,
     });
 
     const finalCreativePath = path.join(this.outputsDirectory, `${runId}-final-creative.mp4`);

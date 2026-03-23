@@ -1,4 +1,3 @@
-// Generated under Codex compliance with AGENTS.md (gemini-mimic)
 const fs = require("node:fs");
 const path = require("node:path");
 const http = require("node:http");
@@ -10,6 +9,7 @@ const { PromptService } = require("./services/promptService");
 const { RunStore } = require("./store/runStore");
 const { AssetStore } = require("./store/assetStore");
 const { AssetService } = require("./services/assetService");
+const { SettingsService } = require("./services/settingsService");
 const { PipelineOrchestrator } = require("./services/pipelineOrchestrator");
 const { RunWebSocketHub } = require("./services/wsHub");
 const { getRequiredGeminiApiKey } = require("./config/environment");
@@ -29,6 +29,7 @@ app.use("/outputs", express.static(path.resolve(process.env.OUTPUTS_DIR || "./ou
 app.use(express.static(path.resolve("public")));
 
 const runStore = new RunStore();
+const settingsService = new SettingsService();
 const assetStore = new AssetStore();
 const assetService = new AssetService({ assetStore, assetsRootPath: assetsDirectory });
 const geminiClient = new GeminiClient({ apiKey: getRequiredGeminiApiKey(), assetService });
@@ -60,7 +61,8 @@ app.post("/api/run", uploadMiddleware.single("video"), async (request, response)
       originalFileName: request.file.originalname,
     });
 
-    const createdRun = runStore.createRun(registeredInputAsset.filePath);
+    const settingsSnapshot = settingsService.getSettings();
+    const createdRun = runStore.createRun(registeredInputAsset.filePath, settingsSnapshot);
     runStore.updateRun(createdRun.id, { inputAssetId: registeredInputAsset.id });
     pipelineOrchestrator.execute(createdRun.id).catch(() => {});
 
@@ -98,6 +100,32 @@ app.get("/api/run/:id/logs", (request, response) => {
 app.delete("/api/run/:id", (request, response) => {
   runStore.deleteRun(request.params.id);
   response.status(204).send();
+});
+
+app.get("/api/settings", (_request, response) => {
+  response.json(settingsService.getSettingsForResponse());
+});
+
+app.get("/api/settings/defaults", (_request, response) => {
+  response.json(settingsService.getDefaultsForResponse());
+});
+
+app.patch("/api/settings", (request, response) => {
+  try {
+    const updatedSettings = settingsService.updateSettings(request.body);
+    response.json(updatedSettings);
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
+});
+
+app.post("/api/settings/reset", (request, response) => {
+  try {
+    const resetSettings = settingsService.resetSettings(request.body?.category);
+    response.json(resetSettings);
+  } catch (error) {
+    response.status(400).json({ error: error.message });
+  }
 });
 
 app.get("/api/prompts", (_request, response) => {
@@ -262,10 +290,10 @@ app.get("/assets", (_request, response) => {
   response.sendFile(path.resolve("public/assets.html"));
 });
 
-app.get("*", (_request, response) => {
-  response.sendFile(path.resolve("public/index.html"));
+app.get("/settings", (_request, response) => {
+  response.sendFile(path.resolve("public/settings.html"));
 });
 
 server.listen(portNumber, () => {
-  console.log(`Mimic server started on port ${portNumber}`);
+  console.log(`Mimic server listening on http://localhost:${portNumber}`);
 });
