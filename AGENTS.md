@@ -36,3 +36,10 @@
 - video 설정에 pollTimeoutMs(기본 1800000ms), maxPollAttempts(기본 180)을 추가했고 settings 스키마/검증에 연결했다.
 - SettingsService 검증에 video.pollTimeoutMs >= video.pollInterval 제약을 추가했다.
 - 파이프라인의 taurusApi.generateVideo 호출은 pollIntervalMs/maxPollAttempts/maxPollMs를 runtimeConfig.video에서 전달해 폴링 제한값을 일관 적용한다.
+- src/services/pipelineOrchestrator.js의 execute catch 블록에서 실패 시 status/failedAt/failedPhase/errorMessage를 run 레코드에 함께 저장한다.
+- executeWithTimeout은 예외에 failedPhase가 없으면 현재 phase 번호를 주입해 실패 원인 추적이 가능하다.
+- public/index.html 실행 목록은 failed 상태에서 errorMessage를 한 줄로 렌더링한다.
+- src/services/pipelineOrchestrator.js의 phase2는 생성된 레퍼런스 이미지 파일 존재 여부를 확인해 referenceSheets를 동적으로 저장하며, 파일이 없으면 빈 배열로 기록한다.
+- phase2에서 레퍼런스 이미지가 없을 때 WebSocket pipeline_error 이벤트로 "레퍼런스 이미지 파일 없음" 메시지를 발행해 UI가 원인을 안내할 수 있게 한다.
+- phase3 영상 생성 옵션은 존재하는 레퍼런스 이미지 경로만 referenceImages로 전달하고, 배열이 비어 있으면 referenceImages 옵션 자체를 생략한다.
+- public/run.html은 pipeline_error 수신 시 레퍼런스 이미지 누락 메시지를 사용자 친화 문구로 변환해 표시한다.

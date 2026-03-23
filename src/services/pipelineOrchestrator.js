@@ -64,9 +64,13 @@ class PipelineOrchestrator {
       return runState;
     } catch (error) {
       console.error(`[pipeline:${runId}]`, error);
+      const failureTimestamp = new Date().toISOString();
       this.runStore.updateRun(runId, {
         status: "failed",
-        completedAt: new Date().toISOString(),
+        completedAt: failureTimestamp,
+        failedAt: failureTimestamp,
+        failedPhase: error.failedPhase ?? null,
+        errorMessage: error.message,
       });
       this.wsHub.publish(runId, { type: "pipeline_error", error: error.message });
       throw error;
@@ -141,6 +145,11 @@ class PipelineOrchestrator {
           }, phaseTimeoutMs);
         }),
       ]);
+    } catch (error) {
+      if (typeof error.failedPhase !== "number") {
+        error.failedPhase = phaseNumber;
+      }
+      throw error;
     } finally {
       if (phaseTimeoutHandle) {
         clearTimeout(phaseTimeoutHandle);
@@ -203,9 +212,11 @@ class PipelineOrchestrator {
     );
 
     const generatedReferencePath = path.join(this.outputsDirectory, `${runId}-reference-1.png`);
+    const hasGeneratedReference = fs.existsSync(generatedReferencePath);
+    const referenceSheets = hasGeneratedReference ? [generatedReferencePath] : [];
     const generatedReferenceAssets = [];
 
-    if (this.assetService && fs.existsSync(generatedReferencePath)) {
+    if (this.assetService && hasGeneratedReference) {
       const storedReferenceAsset = this.assetService.registerAssetFromFile(generatedReferencePath, {
         category: "generated_image",
         tagSeed: `${runId}_reference_1`,
@@ -217,13 +228,20 @@ class PipelineOrchestrator {
 
     this.runStore.updateRun(runId, {
       phase2Result: {
-        referenceSheets: [generatedReferencePath],
+        referenceSheets,
         referenceAssetIds: generatedReferenceAssets.map((assetItem) => assetItem.id),
         assetList: assetListText,
       },
     });
 
-    this.wsHub.publish(runId, { type: "media_ready", mediaType: "image", url: generatedReferencePath });
+    if (hasGeneratedReference) {
+      this.wsHub.publish(runId, { type: "media_ready", mediaType: "image", url: generatedReferencePath });
+    } else {
+      this.wsHub.publish(runId, {
+        type: "pipeline_error",
+        error: "레퍼런스 이미지 파일 없음",
+      });
+    }
     this.wsHub.publish(runId, { type: "phase_done", phase: 2 });
   }
 
@@ -242,8 +260,10 @@ class PipelineOrchestrator {
 
     while (!passDecision && currentIteration <= maxIterations) {
       const generatedVideoPath = path.join(this.outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
-      const taurusResult = await taurusApi.generateVideo(runState.phase1Result.scenario, {
-        referenceImages: runState.phase2Result.referenceSheets,
+      const referenceImagePaths = Array.isArray(runState.phase2Result?.referenceSheets)
+        ? runState.phase2Result.referenceSheets.filter((referencePathItem) => fs.existsSync(referencePathItem))
+        : [];
+      const taurusGenerationOptions = {
         duration: runtimeConfig.video.defaultDuration,
         aspectRatio: runtimeConfig.video.aspectRatio,
         splitModel: runtimeConfig.video.splitModel,
@@ -264,6 +284,14 @@ class PipelineOrchestrator {
             status,
           });
         },
+      };
+
+      if (referenceImagePaths.length > 0) {
+        taurusGenerationOptions.referenceImages = referenceImagePaths;
+      }
+
+      const taurusResult = await taurusApi.generateVideo(runState.phase1Result.scenario, {
+        ...taurusGenerationOptions,
       });
 
       this.wsHub.publish(runId, { type: "media_ready", mediaType: "video", url: taurusResult.outputPath });
