@@ -99,13 +99,19 @@
 
           <section class="card" style="margin-bottom: 16px;">
             <form id="runForm" class="run-form">
-              <label for="videoInput" class="caption">영상 파일 업로드</label>
+              <label for="videoInput" class="caption">영상 파일 업로드 (선택)</label>
               <label class="upload-dropzone" id="dropzone" for="videoInput">
                 <div>📤</div>
-                <div>밈 영상을 업로드해 파이프라인을 실행하세요</div>
-                <div class="caption">MP4 파일만 지원됩니다</div>
+                <div>밈 영상을 업로드하거나 기존 에셋을 선택해 실행하세요</div>
+                <div class="caption">MP4 / WEBM 지원</div>
               </label>
-              <input id="videoInput" type="file" name="video" accept="video/mp4" required />
+              <input id="videoInput" type="file" name="video" accept="video/mp4,video/webm" />
+              <label for="inputAssetId" class="caption">서버에 있는 영상 에셋 선택 (선택)</label>
+              <select id="inputAssetId" name="inputAssetId"></select>
+              <label for="referenceAssetIds" class="caption">레퍼런스 이미지 에셋 선택 (복수 선택 가능)</label>
+              <select id="referenceAssetIds" multiple size="5"></select>
+              <label for="inputText" class="caption">텍스트 입력 (선택)</label>
+              <textarea id="inputText" name="inputText" rows="4" placeholder="영상 없이 텍스트만으로도 실행할 수 있습니다."></textarea>
               <div>
                 <button class="btn-primary" type="submit">파이프라인 실행</button>
               </div>
@@ -200,6 +206,52 @@
         emptyStateElement.classList.toggle('hidden', runs.length > 0);
       }
 
+      function buildAssetOption(valueText, labelText) {
+        const optionElement = document.createElement('option');
+        optionElement.value = valueText;
+        optionElement.textContent = labelText;
+        return optionElement;
+      }
+
+      async function loadRunInputAssets() {
+        const [inputResponse, generatedResponse] = await Promise.all([
+          fetch('/api/assets?category=input'),
+          fetch('/api/assets?category=generated_video'),
+        ]);
+        const inputAssetList = inputResponse.ok ? await inputResponse.json() : [];
+        const generatedAssetList = generatedResponse.ok ? await generatedResponse.json() : [];
+        const mergedVideoAssetList = [...inputAssetList, ...generatedAssetList]
+          .filter((assetItem) => assetItem?.mimeType?.startsWith('video/'));
+
+        const inputAssetSelectElement = document.getElementById('inputAssetId');
+        inputAssetSelectElement.innerHTML = '';
+        inputAssetSelectElement.appendChild(buildAssetOption('', '선택 안 함'));
+        mergedVideoAssetList.forEach((assetItem) => {
+          inputAssetSelectElement.appendChild(
+            buildAssetOption(assetItem.id, `${assetItem.tagId} · ${assetItem.fileName}`),
+          );
+        });
+      }
+
+      async function loadReferenceAssets() {
+        const [referenceResponse, generatedResponse] = await Promise.all([
+          fetch('/api/assets?category=reference'),
+          fetch('/api/assets?category=generated_image'),
+        ]);
+        const referenceAssetList = referenceResponse.ok ? await referenceResponse.json() : [];
+        const generatedAssetList = generatedResponse.ok ? await generatedResponse.json() : [];
+        const mergedImageAssetList = [...referenceAssetList, ...generatedAssetList]
+          .filter((assetItem) => assetItem?.mimeType?.startsWith('image/'));
+
+        const referenceAssetSelectElement = document.getElementById('referenceAssetIds');
+        referenceAssetSelectElement.innerHTML = '';
+        mergedImageAssetList.forEach((assetItem) => {
+          referenceAssetSelectElement.appendChild(
+            buildAssetOption(assetItem.id, `${assetItem.tagId} · ${assetItem.fileName}`),
+          );
+        });
+      }
+
       function updateVisibleTab(targetTab) {
         document.querySelectorAll('.tab-panel').forEach((panelElement) => {
           panelElement.classList.add('hidden');
@@ -224,6 +276,10 @@
       document.getElementById('runForm').addEventListener('submit', async (event) => {
         event.preventDefault();
         const formData = new FormData(event.target);
+        const selectedReferenceAssetIds = Array.from(document.getElementById('referenceAssetIds').selectedOptions)
+          .map((optionElement) => optionElement.value)
+          .filter(Boolean);
+        formData.set('referenceAssetIds', JSON.stringify(selectedReferenceAssetIds));
         await fetch('/api/run', { method: 'POST', body: formData });
         await loadRuns();
       });
@@ -245,7 +301,7 @@
         }
       });
 
-      loadRuns();
+      Promise.all([loadRuns(), loadRunInputAssets(), loadReferenceAssets()]);
     </script>
   </body>
 </html>

@@ -17,13 +17,17 @@ async function runPhase1({ runId, services, runtimeConfig, runSafetyContext }) {
   ];
 
   const expertDefinitions = candidateExperts.filter((expertItem) => runtimeConfig.experts.phase1[expertItem.settingKey]);
+  const phase1ContextParts = ["입력 밈 영상을 분석해서 마케팅 크리에이티브 시나리오를 확정해 주세요."];
+  if (runState.inputText) {
+    phase1ContextParts.push(`추가 텍스트 입력:\n${runState.inputText}`);
+  }
 
   const phase1DebateResult = await debateEngine.runDebate({
     experts: expertDefinitions,
     facilitatorPrompt: phasePrompts.facilitator,
     summarizerPrompt: phasePrompts.summarizer,
-    context: "입력 밈 영상을 분석해서 마케팅 크리에이티브 시나리오를 확정해 주세요.",
-    videoPath: runState.inputVideo,
+    context: phase1ContextParts.join("\n\n"),
+    videoPath: runState.inputVideo || undefined,
     rounds: runtimeConfig.debate.rounds,
     parallelExperts: runtimeConfig.debate.parallelExperts,
     emitEvent,

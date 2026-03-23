@@ -40,16 +40,24 @@ class RunStore {
     });
   }
 
-  async createRun(inputVideoPath, configSnapshot = null) {
+  async createRun(inputPayload, configSnapshot = null) {
     await this.readyPromise;
     return this.runWithSerializedFileAccess(async () => {
       const runsJsonText = await fs.readFile(this.storagePath, "utf8");
       const runList = JSON.parse(runsJsonText);
+      const normalizedInputPayload = typeof inputPayload === "string"
+        ? { inputVideo: inputPayload }
+        : (inputPayload || {});
       const pipelineRun = {
         id: randomUUID(),
         status: "running",
         createdAt: new Date().toISOString(),
-        inputVideo: inputVideoPath,
+        inputVideo: normalizedInputPayload.inputVideo || null,
+        inputText: normalizedInputPayload.inputText || null,
+        inputAssetId: normalizedInputPayload.inputAssetId || null,
+        selectedReferenceAssets: Array.isArray(normalizedInputPayload.selectedReferenceAssets)
+          ? normalizedInputPayload.selectedReferenceAssets
+          : [],
         tokenUsage: { inputTokens: 0, outputTokens: 0, estimatedCost: 0 },
         apiCallUsage: { callCount: 0, maxCalls: 0 },
         configSnapshot: configSnapshot ? JSON.parse(JSON.stringify(configSnapshot)) : null,

@@ -11,3 +11,7 @@
 - src/services/settingsService.js는 readConfig에서 코드 기본값 < config.json < env 오버라이드 순서로 병합하고 getDefaultConfig도 env 오버라이드를 반영한다.
 - src/config/settingsDefaults.js의 운영자 전용 항목(video.model, video.splitModel, image.model, ffmpeg.path, safety.*)에 readOnly + hidden 플래그를 부여했다.
 - src/routes/settingsRoutes.js는 /api/settings, /api/settings/defaults, PATCH/RESET 응답에서 hidden/sensitive 정책을 적용해 운영값 노출을 제한한다.
+[codex] 2026-03-23 작업 메모 2
+- src/routes/runRoutes.js는 createRun 시 inputVideo/inputText/inputAssetId/selectedReferenceAssets를 함께 저장하도록 입력 분기를 확장했다.
+- src/store/runStore.js createRun은 문자열(기존 호환)과 객체 입력을 모두 허용하며 inputText/selectedReferenceAssets 필드를 run 레코드에 기록한다.
+- src/services/geminiClient.js는 영상 확장자 기반으로 inline_data mime_type(video/mp4, video/webm)을 동적으로 지정한다.
