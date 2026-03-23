@@ -1,0 +1,55 @@
+<!doctype html>
+<html lang="ko">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script src="https://cdn.tailwindcss.com"></script>
+    <title>Mimic</title>
+  </head>
+  <body class="bg-slate-950 text-slate-100">
+    <div class="max-w-6xl mx-auto p-6 space-y-6">
+      <header class="flex items-center justify-between">
+        <h1 class="text-2xl font-bold">Mimic Pipeline Dashboard</h1>
+        <a href="/prompts.html" class="text-sm text-cyan-300">프롬프트 관리</a>
+      </header>
+
+      <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <form id="runForm" class="flex gap-3 items-center">
+          <input type="file" name="video" accept="video/mp4" class="text-sm" required />
+          <button class="bg-cyan-500 hover:bg-cyan-400 text-slate-950 px-4 py-2 rounded-lg font-semibold">새 파이프라인 실행</button>
+        </form>
+      </section>
+
+      <section class="bg-slate-900 border border-slate-800 rounded-xl p-4">
+        <h2 class="font-semibold mb-3">실행 목록</h2>
+        <ul id="runList" class="space-y-2"></ul>
+      </section>
+    </div>
+
+    <script>
+      async function loadRuns() {
+        const response = await fetch('/api/run');
+        const runs = await response.json();
+        const runListElement = document.getElementById('runList');
+        runListElement.innerHTML = runs.map((run) => `
+          <li class="border border-slate-800 rounded-lg p-3 flex justify-between items-center">
+            <div>
+              <p class="font-mono text-xs">${run.id}</p>
+              <p class="text-sm">${run.status} · ${new Date(run.createdAt).toLocaleString()}</p>
+            </div>
+            <a href="/run.html?id=${run.id}" class="text-cyan-300 text-sm">상세 보기</a>
+          </li>
+        `).join('');
+      }
+
+      document.getElementById('runForm').addEventListener('submit', async (event) => {
+        event.preventDefault();
+        const formData = new FormData(event.target);
+        await fetch('/api/run', { method: 'POST', body: formData });
+        await loadRuns();
+      });
+
+      loadRuns();
+    </script>
+  </body>
+</html>
