@@ -161,12 +161,6 @@
       font-weight: 500;
     }
 
-    .usage-summary {
-      color: var(--color-text-tertiary);
-      font-size: 12px;
-      white-space: nowrap;
-    }
-
     main {
       width: min(100%, 780px);
       margin: 0 auto;
@@ -397,15 +391,13 @@
     }
 
     .toolbar-left,
-    .toolbar-center,
     .toolbar-right {
       display: flex;
       align-items: center;
       gap: 8px;
     }
 
-    .attach-button,
-    .toolbar-pill {
+    .attach-button {
       height: 32px;
       border-radius: 6px;
       border: 0.5px solid var(--color-border-tertiary);
@@ -415,12 +407,6 @@
       font-weight: 400;
       padding: 0 10px;
       cursor: pointer;
-    }
-
-    .toolbar-pill {
-      display: inline-flex;
-      align-items: center;
-      color: var(--color-text-secondary);
     }
 
     .send-button {
@@ -446,7 +432,6 @@
 
     .send-button:active,
     .attach-button:active,
-    .toolbar-pill:active,
     .tab-button:active,
     .task-row:active,
     .tag-autocomplete-item:active { transform: scale(0.98); }
@@ -455,7 +440,6 @@
       margin-top: 36px;
       display: flex;
       align-items: flex-end;
-      justify-content: space-between;
       gap: 12px;
       border-bottom: 0.5px solid var(--color-border-tertiary);
       padding-bottom: 8px;
@@ -502,15 +486,6 @@
       color: var(--purple-800);
     }
 
-    .status-summary {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: flex-end;
-    }
-
-    .summary-pill,
     .status-badge {
       border-radius: 99px;
       padding: 3px 10px;
@@ -519,31 +494,22 @@
       border: 0.5px solid transparent;
     }
 
-    .summary-pill[data-variant="running"],
     .status-badge[data-status="running"] {
       background: var(--purple-50);
       border-color: var(--purple-200);
       color: var(--purple-800);
     }
 
-    .summary-pill[data-variant="completed"],
     .status-badge[data-status="completed"] {
       background: var(--teal-50);
       border-color: var(--teal-200);
       color: var(--teal-800);
     }
 
-    .summary-pill[data-variant="failed"],
     .status-badge[data-status="failed"] {
       background: var(--red-50);
       border-color: var(--red-200);
       color: var(--red-800);
-    }
-
-    .summary-pill[data-zero="true"] {
-      background: var(--color-background-secondary);
-      color: var(--color-text-tertiary);
-      border-color: var(--color-border-tertiary);
     }
 
     .tab-panel { min-height: 300px; }
@@ -779,7 +745,6 @@
         color: var(--purple-100);
       }
 
-      .summary-pill[data-variant="running"],
       .status-badge[data-status="running"],
       .phase-step.current,
       .tab-button.active .count-badge {
@@ -788,7 +753,6 @@
         color: var(--purple-100);
       }
 
-      .summary-pill[data-variant="completed"],
       .status-badge[data-status="completed"],
       .phase-step.completed {
         background: var(--teal-800);
@@ -796,7 +760,6 @@
         color: var(--teal-100);
       }
 
-      .summary-pill[data-variant="failed"],
       .status-badge[data-status="failed"],
       .phase-step.failed {
         background: var(--red-800);
@@ -822,13 +785,23 @@
       .header-inner,
       main { padding-left: 16px; padding-right: 16px; }
       .hero-title { font-size: 22px; }
-      .usage-summary { display: none; }
     }
 
     @media (max-width: 480px) {
-      .toolbar-pill { display: none; }
-      .tabs-bar { flex-direction: column; align-items: flex-start; gap: 8px; }
-      .status-summary { justify-content: flex-start; }
+      .tabs { gap: 12px; }
+      .attachment-preview-card {
+        width: 80px;
+        height: 68px;
+        grid-template-rows: 40px 12px 12px;
+      }
+      .attachment-thumb {
+        height: 40px;
+      }
+      .attachment-play-indicator {
+        width: 12px;
+        height: 12px;
+        font-size: 7px;
+      }
     }
   </style>
 </head>
@@ -844,7 +817,6 @@
           <button class="nav-link" type="button">설정</button>
         </nav>
       </div>
-      <div class="usage-summary">API: 142 · 비용: $4.27</div>
     </div>
   </header>
 
@@ -852,17 +824,13 @@
     <h1 class="hero-title">어떤 밈을 크리에이티브로 만들까요?</h1>
 
     <section class="composer" aria-label="입력 영역">
-      <textarea id="promptInput" rows="2" placeholder="밈 영상을 업로드하거나, 만들고 싶은 크리에이티브를 설명해주세요"></textarea>
+      <textarea id="promptInput" rows="2" placeholder="밈 영상을 업로드하거나 설명해주세요"></textarea>
       <div class="tag-autocomplete" id="tagAutocomplete"></div>
       <div class="attachment-preview-list" id="attachmentList"></div>
       <div class="composer-toolbar">
         <div class="toolbar-left">
           <input id="fileInput" type="file" accept="video/*,image/*" multiple hidden>
           <button class="attach-button" id="attachButton" type="button">+ 첨부</button>
-        </div>
-        <div class="toolbar-center">
-          <button class="toolbar-pill" id="modelPill" type="button">Gemini 3 Pro</button>
-          <button class="toolbar-pill" id="roundPill" type="button">토론 3R</button>
         </div>
         <div class="toolbar-right">
           <button class="send-button" id="sendButton" type="button" aria-label="전송">→</button>
@@ -875,8 +843,8 @@
         <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab="tasks">작업 <span class="count-badge" id="tasksCountBadge">3</span></button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="prompts">프롬프트 <span class="count-badge">13</span></button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="assets">에셋</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="settings">설정</button>
       </div>
-      <div class="status-summary" id="statusSummary"></div>
     </section>
 
     <section class="tab-panel" id="tabPanel"></section>
@@ -885,8 +853,6 @@
   <script>
     const dashboardState = {
       selectedTab: 'tasks',
-      selectedModel: 'Gemini 3 Pro',
-      selectedRounds: 3,
       attachments: [],
       autocomplete: {
         isOpen: false,
@@ -947,10 +913,7 @@
     const attachmentListElement = document.getElementById('attachmentList');
     const tagAutocompleteElement = document.getElementById('tagAutocomplete');
     const tabPanelElement = document.getElementById('tabPanel');
-    const statusSummaryElement = document.getElementById('statusSummary');
     const tasksCountBadgeElement = document.getElementById('tasksCountBadge');
-    const modelPillElement = document.getElementById('modelPill');
-    const roundPillElement = document.getElementById('roundPill');
 
     function formatTokenCount(tokenCount) {
       return `${new Intl.NumberFormat('ko-KR').format(Math.round(tokenCount))} tok`;
@@ -1240,18 +1203,6 @@
       renderAutocomplete();
     }
 
-    function renderStatusSummary() {
-      const runningCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'running').length;
-      const completedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'completed').length;
-      const failedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'failed').length;
-
-      statusSummaryElement.innerHTML = `
-        <span class="summary-pill" data-variant="running" data-zero="${runningCount === 0}">${runningCount} 진행 중</span>
-        <span class="summary-pill" data-variant="completed" data-zero="${completedCount === 0}">${completedCount} 완료</span>
-        <span class="summary-pill" data-variant="failed" data-zero="${failedCount === 0}">${failedCount} 실패</span>
-      `;
-    }
-
     function buildTaskRow(taskItem) {
       const ringRadius = 15;
       const ringCircumference = 2 * Math.PI * ringRadius;
@@ -1315,7 +1266,11 @@
         tabPanelElement.innerHTML = '<div class="sub-panel">프롬프트 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
         return;
       }
-      tabPanelElement.innerHTML = '<div class="sub-panel">에셋 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
+      if (dashboardState.selectedTab === 'assets') {
+        tabPanelElement.innerHTML = '<div class="sub-panel">에셋 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
+        return;
+      }
+      tabPanelElement.innerHTML = '<div class="sub-panel">설정 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
     }
 
     function refreshSendButtonState() {
@@ -1364,7 +1319,6 @@
       dashboardState.attachments = [];
       closeAutocomplete();
       renderAttachmentList();
-      renderStatusSummary();
       renderTabContent();
       refreshSendButtonState();
     }
@@ -1452,16 +1406,6 @@
         fileInputElement.value = '';
       });
 
-      modelPillElement.addEventListener('click', () => {
-        dashboardState.selectedModel = dashboardState.selectedModel === 'Gemini 3 Pro' ? 'Gemini 3.1 Pro Preview' : 'Gemini 3 Pro';
-        modelPillElement.textContent = dashboardState.selectedModel;
-      });
-
-      roundPillElement.addEventListener('click', () => {
-        dashboardState.selectedRounds = dashboardState.selectedRounds === 3 ? 5 : 3;
-        roundPillElement.textContent = `토론 ${dashboardState.selectedRounds}R`;
-      });
-
       document.addEventListener('click', (event) => {
         const targetElement = event.target;
         if (!targetElement.closest('.composer')) {
@@ -1484,7 +1428,6 @@
     }
 
     renderAttachmentList();
-    renderStatusSummary();
     renderTabContent();
     refreshSendButtonState();
     bindEvents();

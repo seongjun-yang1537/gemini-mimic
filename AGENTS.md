@@ -756,3 +756,6 @@ range slider에는 `step` 속성 필수:
 
 [codex] 2026-03-23 추가 메모 19
 - config/config.json의 Gemini API 키 하드코딩 값을 제거했고, API 키는 .env의 GEMINI_API_KEY로만 관리한다.
+[codex] 2026-03-23 추가 메모 20
+- public/index.html 대시보드 UI를 최신 명세에 맞춰 헤더 우측 공란, 첨부+전송 중심 입력 툴바, 작업/프롬프트/에셋/설정 4탭 구조로 정리했다.
+- 대시보드 탭에서 상태 요약 pill을 제거하고 태스크 행 중심 정보만 남겨 단일 컬럼 집중 레이아웃을 유지했다.
