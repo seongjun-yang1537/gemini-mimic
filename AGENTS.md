@@ -48,3 +48,8 @@
 - Gemini 텍스트 기본 모델 기본값을 더 이상 존재하지 않는 gemini-3-pro에서 gemini-3.1-pro-preview로 변경했다.
 - 분할용 splitModel 기본값/선택지도 gemini-3.1-flash-lite-preview 중심으로 갱신해 모델 not found(404) 가능성을 낮췄다.
 - settings 스키마의 gemini.model 옵션에서 gemini-3-pro를 제거하고 현재 가격 문서에 노출된 유효 모델명을 반영했다.
+[codex] 2026-03-23 추가 메모 11
+- 서버 엔트리포인트(src/server.js)는 서비스 인스턴스 구성 후 createApp 호출과 HTTP 서버 listen 책임으로 축소했고, API/웹 라우팅 로직은 src/routes/* 모듈로 분리했다.
+- 앱 팩토리(src/app/createApp.js)는 express() 생성, 공통 미들웨어(json/uploads/outputs/static), 주입된 라우터 마운트만 담당한다.
+- API 라우터는 도메인별 팩토리 함수로 분리되며 src/routes/runRoutes.js, promptRoutes.js, assetRoutes.js, settingsRoutes.js가 각각 서비스 의존성을 외부 주입받아 엔드포인트를 등록한다.
+- 정적 페이지 라우트(/run/:id, /run/:id/result, /prompts, /assets, /settings, /{*fallbackPath})는 src/routes/webRoutes.js에서 관리한다.
