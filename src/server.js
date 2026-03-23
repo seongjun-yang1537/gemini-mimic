@@ -14,6 +14,9 @@ const { PipelineOrchestrator } = require("./services/pipelineOrchestrator");
 const { RunWebSocketHub } = require("./services/wsHub");
 const { SettingsService } = require("./services/settingsService");
 const { getLoadedGeminiApiKey } = require("./config/environment");
+const { AppError } = require("./http/errors/AppError");
+const { validateRequest } = require("./http/middlewares/validateRequest");
+const { asyncRoute, errorHandler } = require("./http/middlewares/errorHandler");
 
 const portNumber = Number(process.env.PORT || 3000);
 const uploadsDirectory = path.resolve(process.env.UPLOADS_DIR || "./uploads");
@@ -60,6 +63,21 @@ const pipelineOrchestrator = new PipelineOrchestrator({
   settingsService,
 });
 
+const categoryList = ["gemini", "pipeline", "experts", "video", "safety"];
+const assetCategoryList = ["input", "reference", "generated_image", "generated_video", "export"];
+const slugPattern = /^[a-zA-Z0-9_-]+$/;
+
+function validatePromptParams(routeParams = {}) {
+  const validationErrors = [];
+  if (!routeParams.phase || !slugPattern.test(routeParams.phase)) {
+    validationErrors.push({ field: "params.phase", message: "phase는 영문/숫자/_/-만 허용됩니다." });
+  }
+  if (!routeParams.expert || !slugPattern.test(routeParams.expert)) {
+    validationErrors.push({ field: "params.expert", message: "expert는 영문/숫자/_/-만 허용됩니다." });
+  }
+  return validationErrors;
+}
+
 app.get("/api/settings", (_request, response) => {
   response.json({
     settings: settingsService.getSettings(),
@@ -72,43 +90,73 @@ app.get("/api/settings/defaults", (_request, response) => {
   response.json({ defaults: settingsService.getDefaults(), schema: settingsService.getSchema() });
 });
 
-app.patch("/api/settings", (request, response) => {
-  try {
-    const updatedConfig = settingsService.patchSettings(request.body || {});
+app.patch(
+  "/api/settings",
+  validateRequest({
+    body: (bodyPayload) => {
+      if (!bodyPayload || typeof bodyPayload !== "object" || Array.isArray(bodyPayload)) {
+        return { field: "body", message: "요청 본문은 객체여야 합니다." };
+      }
+      return null;
+    },
+  }),
+  asyncRoute(async (request, response) => {
+    let updatedConfig;
+    try {
+      updatedConfig = settingsService.patchSettings(request.body || {});
+    } catch (error) {
+      throw AppError.badRequest(error.message, null, "SETTINGS_PATCH_FAILED");
+    }
     response.json({
       settings: settingsService.getSettings(),
       savedAt: new Date().toISOString(),
       hasApiKey: Boolean(updatedConfig.gemini.apiKey),
     });
-  } catch (error) {
-    response.status(400).json({ error: error.message });
-  }
-});
+  }),
+);
 
-app.post("/api/settings/reset", (request, response) => {
-  try {
-    const resetConfig = settingsService.resetSettings(request.body?.category);
+app.post(
+  "/api/settings/reset",
+  validateRequest({
+    body: (bodyPayload) => {
+      if (bodyPayload === undefined) {
+        return null;
+      }
+      if (!bodyPayload || typeof bodyPayload !== "object" || Array.isArray(bodyPayload)) {
+        return { field: "body", message: "요청 본문은 객체여야 합니다." };
+      }
+      if (bodyPayload.category !== undefined && !categoryList.includes(bodyPayload.category)) {
+        return { field: "body.category", message: "지원하지 않는 category입니다." };
+      }
+      return null;
+    },
+  }),
+  asyncRoute(async (request, response) => {
+    let resetConfig;
+    try {
+      resetConfig = settingsService.resetSettings(request.body?.category);
+    } catch (error) {
+      throw AppError.badRequest(error.message, null, "SETTINGS_RESET_FAILED");
+    }
     response.json({
       settings: settingsService.getSettings(),
       hasApiKey: Boolean(resetConfig.gemini.apiKey),
     });
-  } catch (error) {
-    response.status(400).json({ error: error.message });
-  }
-});
+  }),
+);
 
-app.post("/api/run", uploadMiddleware.single("video"), async (request, response) => {
-  try {
+app.post(
+  "/api/run",
+  uploadMiddleware.single("video"),
+  asyncRoute(async (request, response) => {
     const currentConfig = settingsService.readConfig();
     if (!currentConfig.gemini.apiKey) {
-      response.status(400).json({ error: "Gemini API 키를 먼저 설정하세요." });
-      return;
+      throw AppError.badRequest("Gemini API 키를 먼저 설정하세요.", null, "MISSING_API_KEY");
     }
 
     const uploadedVideoPath = request.file?.path;
     if (!uploadedVideoPath) {
-      response.status(400).json({ error: "video 파일이 필요합니다." });
-      return;
+      throw AppError.badRequest("video 파일이 필요합니다.", [{ field: "video", message: "multipart 파일이 없습니다." }], "VIDEO_FILE_REQUIRED");
     }
 
     const registeredInputAsset = assetService.registerAssetFromFile(uploadedVideoPath, {
@@ -122,10 +170,8 @@ app.post("/api/run", uploadMiddleware.single("video"), async (request, response)
     pipelineOrchestrator.execute(createdRun.id).catch(() => {});
 
     response.status(201).json(runStore.getRun(createdRun.id));
-  } catch (error) {
-    response.status(500).json({ error: error.message });
-  }
-});
+  }),
+);
 
 app.get("/api/run", (_request, response) => {
   response.json(runStore.listRuns());
@@ -134,8 +180,7 @@ app.get("/api/run", (_request, response) => {
 app.get("/api/run/:id", (request, response) => {
   const foundRun = runStore.getRun(request.params.id);
   if (!foundRun) {
-    response.status(404).json({ error: "run not found" });
-    return;
+    throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
   response.json(foundRun);
 });
@@ -143,8 +188,7 @@ app.get("/api/run/:id", (request, response) => {
 app.get("/api/run/:id/logs", (request, response) => {
   const foundRun = runStore.getRun(request.params.id);
   if (!foundRun) {
-    response.status(404).json({ error: "run not found" });
-    return;
+    throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
   response.json({
     phase1: foundRun.phase1Result?.debateLog || null,
@@ -161,89 +205,129 @@ app.get("/api/prompts", (_request, response) => {
   response.json(promptService.listPrompts());
 });
 
-app.get("/api/prompts/:phase/:expert", (request, response) => {
-  try {
+app.get(
+  "/api/prompts/:phase/:expert",
+  validateRequest({ params: validatePromptParams }),
+  asyncRoute(async (request, response) => {
     const promptContent = promptService.getPrompt(request.params.phase, request.params.expert);
     response.json({ content: promptContent });
-  } catch (error) {
-    response.status(404).json({ error: error.message });
-  }
-});
+  }),
+);
 
-app.put("/api/prompts/:phase/:expert", (request, response) => {
-  const { content } = request.body;
-  if (typeof content !== "string") {
-    response.status(400).json({ error: "content는 문자열이어야 합니다." });
-    return;
-  }
-  const updateResult = promptService.updatePrompt(request.params.phase, request.params.expert, content);
-  response.json(updateResult);
-});
+app.put(
+  "/api/prompts/:phase/:expert",
+  validateRequest({
+    params: validatePromptParams,
+    body: (bodyPayload = {}) => {
+      if (typeof bodyPayload.content !== "string") {
+        return { field: "body.content", message: "content는 문자열이어야 합니다." };
+      }
+      return null;
+    },
+  }),
+  (request, response) => {
+    const updateResult = promptService.updatePrompt(request.params.phase, request.params.expert, request.body.content);
+    response.json(updateResult);
+  },
+);
 
-app.post("/api/prompts/ai-update", async (request, response) => {
-  const { feedback } = request.body;
-  if (!feedback) {
-    response.status(400).json({ error: "feedback이 필요합니다." });
-    return;
-  }
+app.post(
+  "/api/prompts/ai-update",
+  validateRequest({
+    body: (bodyPayload = {}) => {
+      if (typeof bodyPayload.feedback !== "string" || !bodyPayload.feedback.trim()) {
+        return { field: "body.feedback", message: "feedback이 필요합니다." };
+      }
+      return null;
+    },
+  }),
+  asyncRoute(async (request, response) => {
+    const feedbackText = request.body.feedback;
 
-  const promptList = promptService.listPrompts();
-  const promptSnapshot = promptList.map((prompt) => ({
-    phase: prompt.phase,
-    expert: prompt.expert,
-    content: promptService.getPrompt(prompt.phase, prompt.expert),
-  }));
+    const promptList = promptService.listPrompts();
+    const promptSnapshot = promptList.map((prompt) => ({
+      phase: prompt.phase,
+      expert: prompt.expert,
+      content: promptService.getPrompt(prompt.phase, prompt.expert),
+    }));
 
-  const updaterPrompt = promptService.getPrompt("meta", "prompt_updater");
-  const updateSuggestion = await geminiClient.callGemini(updaterPrompt, {
-    feedback,
-    prompts: promptSnapshot,
-    format: "JSON array: [{phase,expert,before,after,reason}]",
-  });
+    const updaterPrompt = promptService.getPrompt("meta", "prompt_updater");
+    const updateSuggestion = await geminiClient.callGemini(updaterPrompt, {
+      feedback: feedbackText,
+      prompts: promptSnapshot,
+      format: "JSON array: [{phase,expert,before,after,reason}]",
+    });
 
-  response.json({ suggestion: updateSuggestion });
-});
+    response.json({ suggestion: updateSuggestion });
+  }),
+);
 
 app.get("/api/run/:id/result", (request, response) => {
   const foundRun = runStore.getRun(request.params.id);
   if (!foundRun) {
-    response.status(404).json({ error: "run not found" });
-    return;
+    throw AppError.notFound("run not found", { id: request.params.id }, "RUN_NOT_FOUND");
   }
   response.json(foundRun);
 });
 
-app.get("/api/assets", (request, response) => {
-  const filteredAssets = assetService.listAssets({
-    category: request.query.category,
-    queryText: request.query.q,
-  });
-  response.json(filteredAssets);
-});
+app.get(
+  "/api/assets",
+  validateRequest({
+    query: (queryPayload = {}) => {
+      const validationErrors = [];
+      if (queryPayload.category !== undefined && !assetCategoryList.includes(queryPayload.category)) {
+        validationErrors.push({ field: "query.category", message: "지원하지 않는 category입니다." });
+      }
+      if (queryPayload.q !== undefined && typeof queryPayload.q !== "string") {
+        validationErrors.push({ field: "query.q", message: "q는 문자열이어야 합니다." });
+      }
+      return validationErrors;
+    },
+  }),
+  (request, response) => {
+    const filteredAssets = assetService.listAssets({
+      category: request.query.category,
+      queryText: request.query.q,
+    });
+    response.json(filteredAssets);
+  },
+);
 
-app.get("/api/assets/resolve/:tagId", (request, response) => {
-  try {
+app.get(
+  "/api/assets/resolve/:tagId",
+  validateRequest({
+    params: (routeParams = {}) => {
+      if (!routeParams.tagId || !slugPattern.test(routeParams.tagId)) {
+        return { field: "params.tagId", message: "tagId 형식이 올바르지 않습니다." };
+      }
+      return null;
+    },
+  }),
+  asyncRoute(async (request, response) => {
     const resolvedAsset = assetService.resolveTag(request.params.tagId);
     response.json(resolvedAsset);
-  } catch (error) {
-    response.status(404).json({ error: error.message });
-  }
-});
+  }),
+);
 
-app.post("/api/assets/resolve-prompt", (request, response) => {
-  const { prompt } = request.body;
-  if (typeof prompt !== "string") {
-    response.status(400).json({ error: "prompt는 문자열이어야 합니다." });
-    return;
-  }
-  response.json(assetService.resolvePrompt(prompt));
-});
+app.post(
+  "/api/assets/resolve-prompt",
+  validateRequest({
+    body: (bodyPayload = {}) => {
+      if (typeof bodyPayload.prompt !== "string") {
+        return { field: "body.prompt", message: "prompt는 문자열이어야 합니다." };
+      }
+      return null;
+    },
+  }),
+  (request, response) => {
+    response.json(assetService.resolvePrompt(request.body.prompt));
+  },
+);
 
 app.get("/api/assets/:id/file", (request, response) => {
   const assetItem = assetService.getAssetById(request.params.id);
   if (!assetItem) {
-    response.status(404).json({ error: "asset not found" });
-    return;
+    throw AppError.notFound("asset not found", { id: request.params.id }, "ASSET_NOT_FOUND");
   }
   response.type(assetItem.mimeType);
   response.sendFile(path.resolve(assetItem.filePath));
@@ -252,8 +336,7 @@ app.get("/api/assets/:id/file", (request, response) => {
 app.get("/api/assets/:id/thumbnail", (request, response) => {
   const assetItem = assetService.getAssetById(request.params.id);
   if (!assetItem) {
-    response.status(404).json({ error: "asset not found" });
-    return;
+    throw AppError.notFound("asset not found", { id: request.params.id }, "ASSET_NOT_FOUND");
   }
   response.type(assetItem.mimeType);
   response.sendFile(path.resolve(assetItem.filePath));
@@ -262,43 +345,71 @@ app.get("/api/assets/:id/thumbnail", (request, response) => {
 app.get("/api/assets/:id", (request, response) => {
   const assetItem = assetService.getAssetById(request.params.id);
   if (!assetItem) {
-    response.status(404).json({ error: "asset not found" });
-    return;
+    throw AppError.notFound("asset not found", { id: request.params.id }, "ASSET_NOT_FOUND");
   }
   response.json(assetItem);
 });
 
-app.post("/api/assets/upload", uploadMiddleware.single("file"), (request, response) => {
-  if (!request.file?.path) {
-    response.status(400).json({ error: "업로드 파일이 필요합니다." });
-    return;
-  }
+app.post(
+  "/api/assets/upload",
+  uploadMiddleware.single("file"),
+  validateRequest({
+    body: (bodyPayload = {}, requestContext) => {
+      const validationErrors = [];
+      if (bodyPayload.tagId !== undefined && (!bodyPayload.tagId || !slugPattern.test(bodyPayload.tagId))) {
+        validationErrors.push({ field: "body.tagId", message: "tagId는 영문/숫자/_/-만 허용됩니다." });
+      }
+      if (!requestContext.file?.path) {
+        validationErrors.push({ field: "file", message: "업로드 파일이 필요합니다." });
+      }
+      return validationErrors;
+    },
+  }),
+  (request, response) => {
+    const uploadedAsset = assetService.registerAssetFromFile(request.file.path, {
+      category: "reference",
+      tagSeed: request.body?.tagId || request.file.originalname,
+      originalFileName: request.file.originalname,
+    });
+    response.status(201).json(uploadedAsset);
+  },
+);
 
-  const uploadedAsset = assetService.registerAssetFromFile(request.file.path, {
-    category: "reference",
-    tagSeed: request.body?.tagId || request.file.originalname,
-    originalFileName: request.file.originalname,
-  });
-  response.status(201).json(uploadedAsset);
-});
-
-app.patch("/api/assets/:id", (request, response) => {
-  try {
+app.patch(
+  "/api/assets/:id",
+  validateRequest({
+    params: (routeParams = {}) => {
+      if (!routeParams.id || !slugPattern.test(routeParams.id)) {
+        return { field: "params.id", message: "id 형식이 올바르지 않습니다." };
+      }
+      return null;
+    },
+    body: (bodyPayload = {}) => {
+      if (!bodyPayload || typeof bodyPayload !== "object" || Array.isArray(bodyPayload)) {
+        return { field: "body", message: "요청 본문은 객체여야 합니다." };
+      }
+      if (bodyPayload.tagId !== undefined && (!bodyPayload.tagId || !slugPattern.test(bodyPayload.tagId))) {
+        return { field: "body.tagId", message: "tagId는 영문/숫자/_/-만 허용됩니다." };
+      }
+      if (bodyPayload.fileName !== undefined && typeof bodyPayload.fileName !== "string") {
+        return { field: "body.fileName", message: "fileName은 문자열이어야 합니다." };
+      }
+      return null;
+    },
+  }),
+  asyncRoute(async (request, response) => {
     const updatedAsset = assetService.updateAsset(request.params.id, {
       tagId: request.body?.tagId,
       fileName: request.body?.fileName,
     });
     response.json(updatedAsset);
-  } catch (error) {
-    response.status(400).json({ error: error.message });
-  }
-});
+  }),
+);
 
 app.delete("/api/assets/:id", (request, response) => {
   const deletedAsset = assetService.deleteAsset(request.params.id);
   if (!deletedAsset) {
-    response.status(404).json({ error: "asset not found" });
-    return;
+    throw AppError.notFound("asset not found", { id: request.params.id }, "ASSET_NOT_FOUND");
   }
   response.status(204).send();
 });
@@ -326,6 +437,25 @@ app.get("/settings", (_request, response) => {
 app.get("/{*fallbackPath}", (_request, response) => {
   response.sendFile(path.resolve("public/index.html"));
 });
+
+app.use((error, request, response, next) => {
+  if (error instanceof AppError) {
+    next(error);
+    return;
+  }
+  const messageText = String(error?.message || "");
+  if (messageText.includes("not found")) {
+    next(AppError.notFound(error.message, null, "RESOURCE_NOT_FOUND"));
+    return;
+  }
+  if (messageText.includes("찾을 수 없습니다") || messageText.includes("지원하지 않는")) {
+    next(AppError.badRequest(error.message, null, "REQUEST_REJECTED"));
+    return;
+  }
+  next(error);
+});
+
+app.use(errorHandler);
 
 server.listen(portNumber, () => {
   console.log(`Mimic server started on port ${portNumber}`);
