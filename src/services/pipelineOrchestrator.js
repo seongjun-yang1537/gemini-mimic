@@ -2,6 +2,15 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { createTaurusApi } = require("../../taurus/api");
+const { ApiGuard, CostTracker } = require("./runSafety");
+
+const PIPELINE_TIMEOUT_MINUTES_HARD_LIMIT = 60;
+const PHASE_TIMEOUT_MAP = {
+  1: { defaultMs: 5 * 60_000, hardLimitMs: 10 * 60_000 },
+  2: { defaultMs: 5 * 60_000, hardLimitMs: 10 * 60_000 },
+  3: { defaultMs: 20 * 60_000, hardLimitMs: 40 * 60_000 },
+  4: { defaultMs: 3 * 60_000, hardLimitMs: 5 * 60_000 },
+};
 
 class PipelineOrchestrator {
   constructor(dependencies) {
@@ -19,16 +28,33 @@ class PipelineOrchestrator {
     const runtimeConfig = this.settingsService.readConfig();
     this.geminiClient.setRuntimeConfig(runtimeConfig.gemini);
     const taurusApi = createTaurusApi({ apiKey: runtimeConfig.gemini.apiKey });
+    const runSafetyContext = this.createRunSafetyContext(runId, runtimeConfig);
 
     this.runStore.updateRun(runId, {
       configSnapshot: JSON.parse(JSON.stringify(runtimeConfig)),
     });
 
     try {
-      await this.runPhase1(runId, runtimeConfig);
-      await this.runPhase2(runId);
-      await this.runPhase3(runId, runtimeConfig, taurusApi);
-      await this.runPhase4(runId);
+      await this.executeWithTimeout(
+        1,
+        () => this.runPhase1(runId, runtimeConfig, runSafetyContext),
+        runSafetyContext.getRemainingPipelineTimeMs(),
+      );
+      await this.executeWithTimeout(
+        2,
+        () => this.runPhase2(runId, runSafetyContext),
+        runSafetyContext.getRemainingPipelineTimeMs(),
+      );
+      await this.executeWithTimeout(
+        3,
+        () => this.runPhase3(runId, runtimeConfig, taurusApi, runSafetyContext),
+        runSafetyContext.getRemainingPipelineTimeMs(),
+      );
+      await this.executeWithTimeout(
+        4,
+        () => this.runPhase4(runId, runSafetyContext),
+        runSafetyContext.getRemainingPipelineTimeMs(),
+      );
 
       const runState = this.runStore.updateRun(runId, {
         status: "completed",
@@ -37,6 +63,7 @@ class PipelineOrchestrator {
       this.wsHub.publish(runId, { type: "pipeline_done", resultUrl: `/api/run/${runId}/result` });
       return runState;
     } catch (error) {
+      console.error(`[pipeline:${runId}]`, error);
       this.runStore.updateRun(runId, {
         status: "failed",
         completedAt: new Date().toISOString(),
@@ -46,7 +73,82 @@ class PipelineOrchestrator {
     }
   }
 
-  async runPhase1(runId, runtimeConfig) {
+  createRunSafetyContext(runId, runtimeConfig) {
+    const configuredMaxCalls = runtimeConfig.safety?.maxApiCallsPerRun ?? 200;
+    const configuredCostLimit = runtimeConfig.safety?.maxCostPerRunUsd ?? 10;
+    const configuredPipelineTimeoutMinutes = runtimeConfig.safety?.pipelineTimeoutMinutes ?? 30;
+    const pipelineTimeoutMs = Math.min(configuredPipelineTimeoutMinutes, PIPELINE_TIMEOUT_MINUTES_HARD_LIMIT) * 60_000;
+    const pipelineStartedAt = Date.now();
+    const apiGuard = new ApiGuard(configuredMaxCalls);
+    const costTracker = new CostTracker(configuredCostLimit);
+
+    const updateUsage = () => {
+      const usageSnapshot = costTracker.getUsage();
+      this.runStore.updateRun(runId, {
+        tokenUsage: {
+          inputTokens: usageSnapshot.inputTokens,
+          outputTokens: usageSnapshot.outputTokens,
+          estimatedCost: usageSnapshot.estimatedCost,
+        },
+        apiCallUsage: {
+          callCount: apiGuard.getCount(),
+          maxCalls: configuredMaxCalls,
+        },
+      });
+      this.wsHub.publish(runId, {
+        type: "usage_update",
+        tokenUsage: {
+          inputTokens: usageSnapshot.inputTokens,
+          outputTokens: usageSnapshot.outputTokens,
+          estimatedCost: usageSnapshot.estimatedCost,
+          maxCostUsd: usageSnapshot.maxCostUsd,
+        },
+        apiCallUsage: {
+          callCount: apiGuard.getCount(),
+          maxCalls: configuredMaxCalls,
+        },
+      });
+    };
+
+    return {
+      apiGuard,
+      costTracker,
+      updateUsage,
+      onUsage: () => updateUsage(),
+      getRemainingPipelineTimeMs: () => {
+        const elapsedMs = Date.now() - pipelineStartedAt;
+        const remainingMs = pipelineTimeoutMs - elapsedMs;
+        if (remainingMs <= 0) {
+          throw new Error(`파이프라인 타임아웃: ${Math.floor(pipelineTimeoutMs / 60_000)}분 초과.`);
+        }
+        return remainingMs;
+      },
+    };
+  }
+
+  async executeWithTimeout(phaseNumber, executionFn, remainingPipelineTimeMs) {
+    const phaseTimeoutSpec = PHASE_TIMEOUT_MAP[phaseNumber];
+    const phaseTimeoutMs = Math.min(phaseTimeoutSpec.defaultMs, phaseTimeoutSpec.hardLimitMs, remainingPipelineTimeMs);
+    let phaseTimeoutHandle = null;
+    try {
+      return await Promise.race([
+        executionFn(),
+        new Promise((_, rejectExecution) => {
+          phaseTimeoutHandle = setTimeout(() => {
+            rejectExecution(
+              new Error(`Phase ${phaseNumber} 타임아웃: ${Math.floor(phaseTimeoutMs / 60_000)}분 초과.`),
+            );
+          }, phaseTimeoutMs);
+        }),
+      ]);
+    } finally {
+      if (phaseTimeoutHandle) {
+        clearTimeout(phaseTimeoutHandle);
+      }
+    }
+  }
+
+  async runPhase1(runId, runtimeConfig, runSafetyContext) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 1 });
     const runState = this.runStore.getRun(runId);
     const phasePrompts = this.promptService.loadPhasePrompts("phase1");
@@ -75,6 +177,8 @@ class PipelineOrchestrator {
       rounds: runtimeConfig.debate.rounds,
       parallelExperts: runtimeConfig.debate.parallelExperts,
       emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
+      safetyContext: runSafetyContext,
+      onUsage: runSafetyContext.onUsage,
     });
 
     this.runStore.updateRun(runId, {
@@ -87,7 +191,7 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: 1 });
   }
 
-  async runPhase2(runId) {
+  async runPhase2(runId, runSafetyContext) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 2 });
     const runState = this.runStore.getRun(runId);
     const phase2Prompts = this.promptService.loadPhasePrompts("phase2");
@@ -95,6 +199,7 @@ class PipelineOrchestrator {
     const assetListText = await this.geminiClient.callGemini(
       phase2Prompts.reference_expert,
       runState.phase1Result.scenario,
+      { safetyContext: runSafetyContext, onUsage: runSafetyContext.onUsage },
     );
 
     const generatedReferencePath = path.join(this.outputsDirectory, `${runId}-reference-1.png`);
@@ -122,7 +227,7 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: 2 });
   }
 
-  async runPhase3(runId, runtimeConfig, taurusApi) {
+  async runPhase3(runId, runtimeConfig, taurusApi, runSafetyContext) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 3 });
     const runState = this.runStore.getRun(runId);
     const phase3Prompts = this.promptService.loadPhasePrompts("phase3");
@@ -132,14 +237,23 @@ class PipelineOrchestrator {
     let passDecision = false;
     let finalVideoPath = "";
 
-    while (!passDecision && currentIteration <= runtimeConfig.video.maxIterations) {
+    const maxIterationsHardLimit = 10;
+    const maxIterations = Math.min(runtimeConfig.video.maxIterations, maxIterationsHardLimit);
+
+    while (!passDecision && currentIteration <= maxIterations) {
       const generatedVideoPath = path.join(this.outputsDirectory, `${runId}-iteration-${currentIteration}.mp4`);
       const taurusResult = await taurusApi.generateVideo(runState.phase1Result.scenario, {
         referenceImages: runState.phase2Result.referenceSheets,
         duration: runtimeConfig.video.defaultDuration,
         aspectRatio: runtimeConfig.video.aspectRatio,
         splitModel: runtimeConfig.video.splitModel,
+        pollInterval: runtimeConfig.video.pollInterval,
+        postProcessingWait: runtimeConfig.video.postProcessingWait,
         outputPath: generatedVideoPath,
+        onApiCall: () => {
+          runSafetyContext.apiGuard.check();
+          runSafetyContext.updateUsage();
+        },
         onStatus: async (status, payload) => {
           this.wsHub.publish(runId, {
             type: "video_generating",
@@ -197,6 +311,8 @@ class PipelineOrchestrator {
         rounds: runtimeConfig.debate.rounds,
         parallelExperts: runtimeConfig.debate.parallelExperts,
         emitEvent: async (eventPayload) => this.wsHub.publish(runId, eventPayload),
+        safetyContext: runSafetyContext,
+        onUsage: runSafetyContext.onUsage,
       });
 
       const verdictText = evaluationDebate.summary.toLowerCase();
@@ -237,7 +353,7 @@ class PipelineOrchestrator {
     this.wsHub.publish(runId, { type: "phase_done", phase: 3 });
   }
 
-  async runPhase4(runId) {
+  async runPhase4(runId, runSafetyContext) {
     this.wsHub.publish(runId, { type: "phase_start", phase: 4 });
     const runState = this.runStore.getRun(runId);
     const phase4Prompts = this.promptService.loadPhasePrompts("phase4");
@@ -245,7 +361,7 @@ class PipelineOrchestrator {
     const editSpecText = await this.geminiClient.callGemini(phase4Prompts.editor_expert, {
       scenario: runState.phase1Result.scenario,
       sourceVideo: runState.phase3Result.finalVideo,
-    });
+    }, { safetyContext: runSafetyContext, onUsage: runSafetyContext.onUsage });
 
     const finalCreativePath = path.join(this.outputsDirectory, `${runId}-final-creative.mp4`);
 

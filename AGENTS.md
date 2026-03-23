@@ -27,3 +27,8 @@
 - 설정 시스템은 config/config.json 파일을 사용하며 src/services/settingsService.js에서 기본값 병합, 부분 업데이트, 카테고리/전체 초기화, 유효성 검증을 처리한다.
 - 설정 API는 src/server.js에 /api/settings(GET, PATCH), /api/settings/defaults(GET), /api/settings/reset(POST)로 추가되었고 /settings 정적 라우트(public/settings.html)를 제공한다.
 - 파이프라인 실행 시 src/store/runStore.js의 run 레코드에 configSnapshot을 저장하고 src/services/pipelineOrchestrator.js에서 설정 기반 라운드 수/전문가 활성화/반복 횟수/영상 파라미터를 반영한다.
+[codex] 2026-03-23 추가 메모 8
+- run 단위 안전장치로 src/services/runSafety.js에 ApiGuard(호출수 제한)와 CostTracker(토큰/비용 누적)를 추가했고, 파이프라인 실행 중 tokenUsage/apiCallUsage를 run 레코드와 WebSocket usage_update 이벤트로 갱신한다.
+- src/services/pipelineOrchestrator.js는 safety 설정값을 읽어 전체 파이프라인 타임아웃(최대 60분)과 phase별 타임아웃(1:5분,2:5분,3:20분,4:3분 + 코드 하드리밋)을 적용한다.
+- debate 라운드는 src/services/debateEngine.js에서 하드리밋 10으로 강제하고, phase3 재생성은 src/services/pipelineOrchestrator.js에서 하드리밋 10으로 강제한다.
+- settings 기본값/스키마에 safety.maxApiCallsPerRun(200), safety.maxCostPerRunUsd(10), safety.pipelineTimeoutMinutes(30)를 추가했다.

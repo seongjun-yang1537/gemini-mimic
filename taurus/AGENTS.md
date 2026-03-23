@@ -7,3 +7,6 @@
 - 코드 작성 시 불필요한 주석을 추가하지 않는다.
 [codex] 2026-03-23 추가 메모
 - taurus/index.js는 원본 참고용으로 유지하고, 재사용 API는 별도 파일(taurus/api.js)로 관리한다.
+[codex] 2026-03-23 추가 메모 2
+- taurus/api.js의 polling 루프에 MAX_POLLS(60) 하드리밋을 추가해 무한 폴링을 방지했다.
+- taurus API 호출 경로(split/generate/poll/download)에 onApiCall 훅을 넣어 상위 파이프라인에서 글로벌 API 카운터를 적용할 수 있게 했다.

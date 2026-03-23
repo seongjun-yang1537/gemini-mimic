@@ -66,21 +66,39 @@ class GeminiClient {
       parts.push(buildVideoPart(options.videoPath));
     }
 
-    const response = await fetch(
-      `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
-      {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({
-          contents: [{ role: "user", parts }],
-          systemInstruction: { parts: [{ text: systemPrompt }] },
-          generationConfig: {
-            temperature: temperatureValue,
-            maxOutputTokens: maxOutputTokensValue,
-          },
-        }),
-      },
-    );
+    const apiCallTimeoutMs = Math.min(options.timeoutMs ?? 30_000, 60_000);
+    const abortController = new AbortController();
+    const timeoutHandle = setTimeout(() => abortController.abort(), apiCallTimeoutMs);
+    if (options.safetyContext?.apiGuard) {
+      options.safetyContext.apiGuard.check();
+    }
+
+    let response;
+    try {
+      response = await fetch(
+        `https://generativelanguage.googleapis.com/v1beta/models/${modelName}:generateContent?key=${apiKey}`,
+        {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          signal: abortController.signal,
+          body: JSON.stringify({
+            contents: [{ role: "user", parts }],
+            systemInstruction: { parts: [{ text: systemPrompt }] },
+            generationConfig: {
+              temperature: temperatureValue,
+              maxOutputTokens: maxOutputTokensValue,
+            },
+          }),
+        },
+      );
+    } catch (error) {
+      if (error.name === "AbortError") {
+        throw new Error(`Gemini API 타임아웃: ${apiCallTimeoutMs}ms 초과.`);
+      }
+      throw error;
+    } finally {
+      clearTimeout(timeoutHandle);
+    }
 
     if (!response.ok) {
       const errorText = await response.text();
@@ -88,6 +106,12 @@ class GeminiClient {
     }
 
     const responsePayload = await response.json();
+    if (options.safetyContext?.costTracker) {
+      options.safetyContext.costTracker.track(responsePayload);
+    }
+    if (typeof options.onUsage === "function") {
+      options.onUsage(responsePayload.usageMetadata || {});
+    }
     return responsePayload?.candidates?.[0]?.content?.parts?.[0]?.text || "";
   }
 }

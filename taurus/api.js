@@ -12,6 +12,8 @@ const SPLIT_MODEL = "gemini-3-flash-preview";
 const EXTENSION_SECONDS = 7;
 const MAX_TOTAL_SECONDS = 148;
 const MAX_EXTENSIONS = 20;
+const MAX_POLLS = 60;
+const DEFAULT_POLL_INTERVAL_MS = 10_000;
 
 function sleep(milliseconds) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
@@ -178,11 +180,19 @@ function validateAspectRatio(aspectRatio) {
 
 async function pollOperation(aiClient, operation, callbacks = {}) {
   const onPolling = callbacks.onPolling || (() => {});
+  const onApiCall = callbacks.onApiCall || (() => {});
+  const pollInterval = callbacks.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
   let currentOperation = operation;
+  let pollCount = 0;
 
   while (!currentOperation.done) {
+    pollCount += 1;
+    if (pollCount > MAX_POLLS) {
+      throw new Error(`Veo3 polling 타임아웃: ${MAX_POLLS}회 초과.`);
+    }
     await onPolling(currentOperation);
-    await sleep(10_000);
+    await sleep(pollInterval);
+    await onApiCall();
     currentOperation = await aiClient.operations.getVideosOperation({ operation: currentOperation });
   }
 
@@ -199,6 +209,7 @@ async function pollOperation(aiClient, operation, callbacks = {}) {
 }
 
 async function generateInitialVideo(aiClient, options) {
+  await options.onApiCall();
   const generationOperation = await aiClient.models.generateVideos({
     model: MODEL,
     prompt: options.prompt,
@@ -212,7 +223,11 @@ async function generateInitialVideo(aiClient, options) {
     },
   });
 
-  return pollOperation(aiClient, generationOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, generationOperation, {
+    onPolling: options.onPolling,
+    onApiCall: options.onApiCall,
+    pollInterval: options.pollInterval,
+  });
 }
 
 async function extendVideo(aiClient, options) {
@@ -224,7 +239,8 @@ async function extendVideo(aiClient, options) {
     await options.onStatus("extending");
   }
 
-  await sleep(30_000);
+  await sleep(options.postProcessingWait ?? 30_000);
+  await options.onApiCall();
 
   const extensionOperation = await aiClient.models.generateVideos({
     model: MODEL,
@@ -237,10 +253,14 @@ async function extendVideo(aiClient, options) {
     },
   });
 
-  return pollOperation(aiClient, extensionOperation, { onPolling: options.onPolling });
+  return pollOperation(aiClient, extensionOperation, {
+    onPolling: options.onPolling,
+    onApiCall: options.onApiCall,
+    pollInterval: options.pollInterval,
+  });
 }
 
-async function downloadVideo(aiClient, videoFileId, outputPath) {
+async function downloadVideo(aiClient, videoFileId, outputPath, options = {}) {
   if (!videoFileId) {
     throw new Error("videoFileId is required.");
   }
@@ -251,6 +271,7 @@ async function downloadVideo(aiClient, videoFileId, outputPath) {
 
   const resolvedOutputPath = path.resolve(outputPath);
   fs.mkdirSync(path.dirname(resolvedOutputPath), { recursive: true });
+  await options.onApiCall?.();
   await aiClient.files.download({ file: videoFileId, downloadPath: resolvedOutputPath });
   return resolvedOutputPath;
 }
@@ -295,17 +316,23 @@ function createTaurusApi(apiConfig = {}) {
 
     const totalSegments = 1 + segmentPlan.extensionCount;
     const onStatus = typeof options.onStatus === "function" ? options.onStatus : async () => {};
+    const onApiCall = typeof options.onApiCall === "function" ? options.onApiCall : async () => {};
+    const pollInterval = options.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
+    const postProcessingWait = options.postProcessingWait ?? 30_000;
 
     const segmentedPrompts =
       segmentPlan.extensionCount === 0
         ? [prompt]
-        : await splitScenario(
-            aiClient,
-            prompt,
-            segmentPlan.initialDuration,
-            segmentPlan.extensionCount,
-            options.splitModel || SPLIT_MODEL,
-          );
+        : await (async () => {
+            await onApiCall();
+            return splitScenario(
+              aiClient,
+              prompt,
+              segmentPlan.initialDuration,
+              segmentPlan.extensionCount,
+              options.splitModel || SPLIT_MODEL,
+            );
+          })();
 
     await onStatus("polling", { segment: 1, totalSegments });
 
@@ -316,6 +343,8 @@ function createTaurusApi(apiConfig = {}) {
       aspectRatio,
       initialDuration: segmentPlan.initialDuration,
       referenceImages,
+      onApiCall,
+      pollInterval,
       onPolling: async () => onStatus("polling", { segment: 1, totalSegments }),
     });
 
@@ -328,6 +357,9 @@ function createTaurusApi(apiConfig = {}) {
         videoFileId: currentVideoFileId,
         prompt: segmentedPrompts[segmentNumber - 1],
         aspectRatio,
+        onApiCall,
+        pollInterval,
+        postProcessingWait,
         onStatus: async () => onStatus("extending", { segment: segmentNumber, totalSegments }),
         onPolling: async () => onStatus("polling", { segment: segmentNumber, totalSegments }),
       });
@@ -343,7 +375,7 @@ function createTaurusApi(apiConfig = {}) {
 
     if (options.outputPath) {
       await onStatus("downloading", { segment: totalSegments, totalSegments });
-      generationResult.outputPath = await downloadVideo(aiClient, currentVideoFileId, options.outputPath);
+      generationResult.outputPath = await downloadVideo(aiClient, currentVideoFileId, options.outputPath, { onApiCall });
     }
 
     return generationResult;
@@ -359,11 +391,15 @@ function createTaurusApi(apiConfig = {}) {
         videoFileId,
         prompt,
         aspectRatio,
+        onApiCall: options.onApiCall,
+        pollInterval: options.pollInterval,
+        postProcessingWait: options.postProcessingWait,
         onStatus: options.onStatus,
         onPolling: options.onPolling,
       });
     },
-    downloadVideo: async (videoFileId, outputPath) => downloadVideo(aiClient, videoFileId, outputPath),
+    downloadVideo: async (videoFileId, outputPath, options = {}) =>
+      downloadVideo(aiClient, videoFileId, outputPath, options),
     splitScenario: async (scenarioText, initialDuration, extensionCount, splitModel = SPLIT_MODEL) =>
       splitScenario(aiClient, scenarioText, initialDuration, extensionCount, splitModel),
     pollOperation: async (operation, callbacks = {}) => pollOperation(aiClient, operation, callbacks),
@@ -377,6 +413,7 @@ module.exports = {
   EXTENSION_SECONDS,
   MAX_TOTAL_SECONDS,
   MAX_EXTENSIONS,
+  MAX_POLLS,
   calculateSegments,
   splitScenario,
   pollOperation,

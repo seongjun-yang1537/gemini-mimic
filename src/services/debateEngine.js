@@ -14,7 +14,11 @@ class DebateEngine {
       rounds = 3,
       videoPath,
       parallelExperts = true,
+      safetyContext,
+      onUsage,
     } = config;
+    const maxRoundsHardLimit = 10;
+    const safeRoundCount = Math.min(rounds, maxRoundsHardLimit);
 
     const runExpertCalls = async (expertList, callFn) => {
       if (parallelExperts) {
@@ -29,7 +33,7 @@ class DebateEngine {
 
     const expertOpinions = await runExpertCalls(experts, async (expert) => {
       await emitEvent({ type: "expert_start", expert: expert.name });
-      const opinion = await this.geminiClient.callGemini(expert.prompt, context, { videoPath });
+      const opinion = await this.geminiClient.callGemini(expert.prompt, context, { videoPath, safetyContext, onUsage });
       await emitEvent({ type: "expert_done", expert: expert.name, response: opinion });
       return { name: expert.name, role: expert.role, initialOpinion: opinion };
     });
@@ -37,10 +41,11 @@ class DebateEngine {
     const debateRounds = [];
     let debateHistory = "";
 
-    for (let round = 1; round <= rounds; round += 1) {
+    for (let round = 1; round <= safeRoundCount; round += 1) {
       const facilitation = await this.geminiClient.callGemini(
         facilitatorPrompt,
         { expertOpinions, debateHistory, round },
+        { safetyContext, onUsage },
       );
       await emitEvent({
         type: "debate_message",
@@ -55,7 +60,7 @@ class DebateEngine {
           facilitation,
           debateHistory,
           round,
-        });
+        }, { safetyContext, onUsage });
         await emitEvent({
           type: "debate_message",
           round,
@@ -75,7 +80,7 @@ class DebateEngine {
       await emitEvent({ type: "debate_round_end", round });
     }
 
-    const summary = await this.geminiClient.callGemini(summarizerPrompt, debateHistory);
+    const summary = await this.geminiClient.callGemini(summarizerPrompt, debateHistory, { safetyContext, onUsage });
     await emitEvent({ type: "summary_done", content: summary });
 
     return {
