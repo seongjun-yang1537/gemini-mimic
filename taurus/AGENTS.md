@@ -14,3 +14,5 @@
 - taurus/api.js pollOperation은 pollIntervalMs/maxPollAttempts/maxPollMs 옵션을 받아 시도 횟수와 경과 시간을 동시에 제한한다.
 - poll timeout 에러 메시지에 operation 식별자와 누적 attempts/elapsedMs를 포함해 원인 추적성을 높였다.
 - generateInitialVideo/extendVideo/createTaurusApi.generateVideo에서 동일 폴링 제한값을 전달하도록 정렬했다.
+[codex] 2026-03-23 상수 연동 메모
+- taurus/api.js의 영상 분할 규칙(4/6/8, 7초 확장, 148초 제한), 레퍼런스 이미지 개수, 폴링/후처리 기본 대기값을 src/config/runtimeConstants.js import 기반으로 전환했다.

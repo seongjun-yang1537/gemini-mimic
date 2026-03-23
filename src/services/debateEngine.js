@@ -1,3 +1,5 @@
+const { DEBATE_ROUNDS_DEFAULT, DEBATE_ROUNDS_HARD_LIMIT } = require("../config/runtimeConstants");
+
 // Generated under Codex compliance with AGENTS.md (gemini-mimic)
 class DebateEngine {
   constructor(dependencies) {
@@ -11,14 +13,13 @@ class DebateEngine {
       summarizerPrompt,
       context,
       emitEvent,
-      rounds = 3,
+      rounds = DEBATE_ROUNDS_DEFAULT,
       videoPath,
       parallelExperts = true,
       safetyContext,
       onUsage,
     } = config;
-    const maxRoundsHardLimit = 10;
-    const safeRoundCount = Math.min(rounds, maxRoundsHardLimit);
+    const safeRoundCount = Math.min(rounds, DEBATE_ROUNDS_HARD_LIMIT);
 
     const runExpertCalls = async (expertList, callFn) => {
       if (parallelExperts) {

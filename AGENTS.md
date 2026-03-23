@@ -71,3 +71,7 @@
 - RunStore(src/store/runStore.js)와 PromptService(src/services/promptService.js)를 Promise 기반 비동기 API로 전환했다.
 - 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
 - RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.
+[codex] 2026-03-23 추가 메모 14
+- 런타임 하드리밋/기본값의 단일 소스 오브 트루스로 src/config/runtimeConstants.js를 추가했다.
+- taurus/api.js, settingsDefaults, pipeline/constants, debateEngine, runSafety가 세그먼트 규칙/폴링 기본값/안전장치 기본값을 runtimeConstants import로 재사용하도록 정리했다.
+- settings/config.json 계열에서 조정 가능한 값은 SETTINGS_DEFAULTS/SCHEMA에 남기고, 변경 불가 하드리밋(예: extensionSeconds 7, maxTotalSeconds 148, debate/phase hard limit)은 runtimeConstants에서만 선언하도록 분리했다.

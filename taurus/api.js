@@ -1,20 +1,33 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { GoogleGenAI } = require("@google/genai");
+const {
+  VIDEO_SEGMENT_ALLOWED_INITIAL_DURATIONS,
+  VIDEO_SEGMENT_MIN_TOTAL_SECONDS,
+  VIDEO_SEGMENT_DEFAULT_DURATION_SECONDS,
+  VIDEO_SEGMENT_EXTENSION_SECONDS,
+  VIDEO_SEGMENT_MAX_TOTAL_SECONDS,
+  VIDEO_SEGMENT_MAX_EXTENSIONS,
+  VIDEO_REFERENCE_IMAGES_MAX_COUNT,
+  VIDEO_POLL_DEFAULT_INTERVAL_MS,
+  VIDEO_POLL_DEFAULT_TIMEOUT_MS,
+  VIDEO_POLL_DEFAULT_MAX_ATTEMPTS,
+  VIDEO_POST_PROCESSING_WAIT_DEFAULT_MS,
+} = require("../src/config/runtimeConstants");
 
 const DEFAULT_ASPECT_RATIO = "16:9";
 const DEFAULT_RESOLUTION = "720p";
-const DEFAULT_DURATION_SECONDS = 8;
-const ALLOWED_INITIAL_DURATIONS = new Set([4, 6, 8]);
+const DEFAULT_DURATION_SECONDS = VIDEO_SEGMENT_DEFAULT_DURATION_SECONDS;
+const ALLOWED_INITIAL_DURATIONS = new Set(VIDEO_SEGMENT_ALLOWED_INITIAL_DURATIONS);
 const ALLOWED_ASPECT_RATIOS = new Set(["16:9", "9:16"]);
 const MODEL = "veo-3.1-generate-preview";
 const SPLIT_MODEL = "gemini-3-flash-preview";
-const EXTENSION_SECONDS = 7;
-const MAX_TOTAL_SECONDS = 148;
-const MAX_EXTENSIONS = 20;
-const DEFAULT_POLL_INTERVAL_MS = 10_000;
-const DEFAULT_MAX_POLL_ATTEMPTS = 180;
-const DEFAULT_MAX_POLL_MS = 30 * 60 * 1000;
+const EXTENSION_SECONDS = VIDEO_SEGMENT_EXTENSION_SECONDS;
+const MAX_TOTAL_SECONDS = VIDEO_SEGMENT_MAX_TOTAL_SECONDS;
+const MAX_EXTENSIONS = VIDEO_SEGMENT_MAX_EXTENSIONS;
+const DEFAULT_POLL_INTERVAL_MS = VIDEO_POLL_DEFAULT_INTERVAL_MS;
+const DEFAULT_MAX_POLL_ATTEMPTS = VIDEO_POLL_DEFAULT_MAX_ATTEMPTS;
+const DEFAULT_MAX_POLL_MS = VIDEO_POLL_DEFAULT_TIMEOUT_MS;
 
 function sleep(milliseconds) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, milliseconds));
@@ -48,12 +61,12 @@ function calculateSegments(totalDuration) {
     throw new Error("Duration must be an integer in seconds.");
   }
 
-  if (totalDuration < 4 || totalDuration > MAX_TOTAL_SECONDS) {
-    throw new Error(`Duration must be between 4 and ${MAX_TOTAL_SECONDS}.`);
+  if (totalDuration < VIDEO_SEGMENT_MIN_TOTAL_SECONDS || totalDuration > MAX_TOTAL_SECONDS) {
+    throw new Error(`Duration must be between ${VIDEO_SEGMENT_MIN_TOTAL_SECONDS} and ${MAX_TOTAL_SECONDS}.`);
   }
 
-  if (totalDuration <= 8) {
-    const initialDuration = [4, 6, 8].reduce((previousDuration, currentDuration) =>
+  if (totalDuration <= VIDEO_SEGMENT_DEFAULT_DURATION_SECONDS) {
+    const initialDuration = VIDEO_SEGMENT_ALLOWED_INITIAL_DURATIONS.reduce((previousDuration, currentDuration) =>
       Math.abs(currentDuration - totalDuration) < Math.abs(previousDuration - totalDuration)
         ? currentDuration
         : previousDuration,
@@ -63,7 +76,7 @@ function calculateSegments(totalDuration) {
   }
 
   let bestSegmentPlan = null;
-  for (const initialDuration of [4, 6, 8]) {
+  for (const initialDuration of VIDEO_SEGMENT_ALLOWED_INITIAL_DURATIONS) {
     const remainingDuration = totalDuration - initialDuration;
     const lowerExtensionCount = Math.floor(remainingDuration / EXTENSION_SECONDS);
     const upperExtensionCount = Math.ceil(remainingDuration / EXTENSION_SECONDS);
@@ -163,8 +176,8 @@ function buildReferenceImages(referenceImagePaths) {
     throw new Error("referenceImages must be an array of image paths.");
   }
 
-  if (referenceImagePaths.length > 3) {
-    throw new Error("Veo 3.1 supports up to 3 reference images.");
+  if (referenceImagePaths.length > VIDEO_REFERENCE_IMAGES_MAX_COUNT) {
+    throw new Error(`Veo 3.1 supports up to ${VIDEO_REFERENCE_IMAGES_MAX_COUNT} reference images.`);
   }
 
   return referenceImagePaths.map((referenceImagePath) => ({
@@ -249,7 +262,7 @@ async function extendVideo(aiClient, options) {
     await options.onStatus("extending");
   }
 
-  await sleep(options.postProcessingWait ?? 30_000);
+  await sleep(options.postProcessingWait ?? VIDEO_POST_PROCESSING_WAIT_DEFAULT_MS);
   await options.onApiCall();
 
   const extensionOperation = await aiClient.models.generateVideos({
@@ -332,7 +345,7 @@ function createTaurusApi(apiConfig = {}) {
     const pollIntervalMs = options.pollIntervalMs ?? options.pollInterval ?? DEFAULT_POLL_INTERVAL_MS;
     const maxPollAttempts = options.maxPollAttempts ?? DEFAULT_MAX_POLL_ATTEMPTS;
     const maxPollMs = options.maxPollMs ?? DEFAULT_MAX_POLL_MS;
-    const postProcessingWait = options.postProcessingWait ?? 30_000;
+    const postProcessingWait = options.postProcessingWait ?? VIDEO_POST_PROCESSING_WAIT_DEFAULT_MS;
 
     const segmentedPrompts =
       segmentPlan.extensionCount === 0

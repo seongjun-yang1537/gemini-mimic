@@ -6,3 +6,6 @@
 - src/store/runStore.js는 fs/promises 기반으로 전환했고 readyPromise + fileAccessQueue 직렬화로 create/update/get/list/delete를 모두 async 메서드로 제공한다.
 - src/services/promptService.js는 list/get/update/loadPhasePrompts를 async로 전환해 프롬프트 파일 접근을 await 기반으로 통일했다.
 - src/routes/runRoutes.js, src/routes/promptRoutes.js, src/services/pipelineOrchestrator.js, src/services/pipeline/*.js 호출부를 await로 맞춰 예외가 asyncRoute/상위 catch로 일관 전파되도록 정리했다.
+[codex] 2026-03-23 런타임 상수 메모
+- src/config/runtimeConstants.js를 추가해 영상 세그먼트/폴링/토론/안전장치/phase timeout 하드리밋과 기본값을 중앙화했다.
+- src/config/settingsDefaults.js, src/services/debateEngine.js, src/services/runSafety.js가 runtimeConstants를 import해 숫자 중복 선언을 제거했다.

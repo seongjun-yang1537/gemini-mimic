@@ -1,5 +1,12 @@
+const {
+  SAFETY_DEFAULT_MAX_API_CALLS_PER_RUN,
+  SAFETY_DEFAULT_MAX_COST_PER_RUN_USD,
+  SAFETY_COST_INPUT_RATE_PER_TOKEN_USD,
+  SAFETY_COST_OUTPUT_RATE_PER_TOKEN_USD,
+} = require("../config/runtimeConstants");
+
 class ApiGuard {
-  constructor(maxCalls = 200) {
+  constructor(maxCalls = SAFETY_DEFAULT_MAX_API_CALLS_PER_RUN) {
     this.callCount = 0;
     this.maxCalls = maxCalls;
   }
@@ -17,12 +24,12 @@ class ApiGuard {
 }
 
 class CostTracker {
-  constructor(maxCostUsd = 10) {
+  constructor(maxCostUsd = SAFETY_DEFAULT_MAX_COST_PER_RUN_USD) {
     this.inputTokens = 0;
     this.outputTokens = 0;
     this.maxCostUsd = maxCostUsd;
-    this.inputRate = 2.0 / 1_000_000;
-    this.outputRate = 12.0 / 1_000_000;
+    this.inputRate = SAFETY_COST_INPUT_RATE_PER_TOKEN_USD;
+    this.outputRate = SAFETY_COST_OUTPUT_RATE_PER_TOKEN_USD;
   }
 
   track(responsePayload = {}) {
