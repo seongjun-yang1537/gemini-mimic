@@ -12,3 +12,7 @@
 - public/styles.css에 .badge-radial-progress와 radial-spin/radial-pulse 키프레임을 추가해 실행 중 상태 뱃지 주변에 원형 진행 애니메이션을 표시한다.
 [codex] 2026-03-23 추가 메모 5
 - 사용자 요청으로 public/index.html을 Hello World 단일 페이지로 교체했고, 나머지 public 정적 페이지/스타일 파일을 제거했다.
+[codex] 2026-03-23 추가 메모 6
+- public/index.html을 Mimic 단일 컬럼 대시보드 레이아웃으로 재구성해 헤더/입력 컴포저/탭·상태 요약/태스크 리스트를 한 화면에서 동작하도록 구현했다.
+- 태스크 행에 phase ring(진행률 arc + 공전 dot), 전문가 pulse dot, 4단계 phase track, 비용/토큰 포맷, 상태 badge를 추가하고 640px 이하에서는 phase track/비용 영역을 숨기도록 반응형 처리했다.
+- 입력 컴포저는 Enter 전송·Shift+Enter 줄바꿈·최대 3개 첨부·파일 칩 제거·모델/토론 라운드 pill 토글을 지원하며 전송 시 running 상태 태스크를 목록 최상단에 추가한다.
