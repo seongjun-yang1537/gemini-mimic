@@ -71,3 +71,8 @@
 - RunStore(src/store/runStore.js)와 PromptService(src/services/promptService.js)를 Promise 기반 비동기 API로 전환했다.
 - 대량 변경 전 시그니처/호출 지점을 `rg "createRun\(|updateRun\(|listPrompts\(" -n src test scripts`로 점검해 runRoutes/promptRoutes/pipelineOrchestrator/pipeline runners/test(runStore) 반영 범위를 확인했다.
 - RunStore는 in-process 직렬화 큐(fileAccessQueue)로 파일 접근을 순차 처리해 동시 updateRun 호출 시 덮어쓰기 충돌을 방지한다.
+[codex] 2026-03-23 추가 메모 14
+- 운영자 전용 .env 오버라이드 로더를 src/config/environment.js에 추가해 VIDEO_MODEL, VIDEO_SPLIT_MODEL, IMAGE_MODEL, FFMPEG_PATH, SAFETY_MAX_API_CALLS, SAFETY_MAX_COST_USD, SAFETY_PIPELINE_TIMEOUT_MINUTES를 설정 병합에 사용할 수 있도록 했다.
+- SettingsService는 설정 우선순위를 코드 기본값 < config.json < 운영자 .env 오버라이드 순으로 적용하도록 readConfig/getDefaultConfig 병합 순서를 명시했다.
+- SETTINGS_SCHEMA에 운영자 전용 필드(hidden/readOnly)를 표시했고 settings UI는 hidden 항목을 렌더링에서 제외하며 readOnly 배지를 노출한다.
+- /api/settings 응답은 hidden/sensitive 스키마 정책에 따라 운영자 전용 값은 제외하고 민감 스키마는 마스킹 정책을 반영해 전달한다.

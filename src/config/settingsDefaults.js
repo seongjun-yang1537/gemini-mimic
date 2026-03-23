@@ -67,7 +67,7 @@ const SETTINGS_SCHEMA = {
   "gemini.maxOutputTokens": { category: "gemini", type: "number", min: 1, max: 65536, label: "최대 출력 토큰" },
   "debate.rounds": { category: "debate", type: "number", min: 1, max: 10, label: "토론 라운드 수" },
   "debate.parallelExperts": { category: "debate", type: "boolean", label: "전문가 병렬 호출" },
-  "video.model": { category: "video", type: "string", label: "Veo 모델" },
+  "video.model": { category: "video", type: "string", label: "Veo 모델", readOnly: true, hidden: true },
   "video.defaultDuration": { category: "video", type: "select", options: [4, 6, 8], label: "기본 영상 길이" },
   "video.aspectRatio": { category: "video", type: "select", options: ["16:9", "9:16"], label: "기본 화면비" },
   "video.resolution": { category: "video", type: "select", options: ["720p"], label: "해상도" },
@@ -83,10 +83,12 @@ const SETTINGS_SCHEMA = {
     type: "select",
     options: ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash"],
     label: "시나리오 분할 모델",
+    readOnly: true,
+    hidden: true,
   },
-  "image.model": { category: "image", type: "string", label: "Imagen 모델" },
+  "image.model": { category: "image", type: "string", label: "Imagen 모델", readOnly: true, hidden: true },
   "image.maxReferenceSheets": { category: "image", type: "number", min: 1, max: 3, label: "레퍼런스 시트 최대 장수" },
-  "ffmpeg.path": { category: "ffmpeg", type: "string", label: "ffmpeg 경로" },
+  "ffmpeg.path": { category: "ffmpeg", type: "string", label: "ffmpeg 경로", readOnly: true, hidden: true },
   "ffmpeg.defaultCodec": { category: "ffmpeg", type: "select", options: ["libx264", "libx265"], label: "출력 코덱" },
   "ffmpeg.defaultCrf": { category: "ffmpeg", type: "slider", min: 0, max: 51, step: 1, label: "CRF" },
   "ffmpeg.defaultPreset": {
@@ -109,6 +111,8 @@ const SETTINGS_SCHEMA = {
     min: 50,
     max: 500,
     label: "Run당 최대 API 호출 수",
+    readOnly: true,
+    hidden: true,
   },
   "safety.maxCostPerRunUsd": {
     category: "safety",
@@ -116,6 +120,8 @@ const SETTINGS_SCHEMA = {
     min: 1,
     max: 100,
     label: "Run당 최대 비용(USD)",
+    readOnly: true,
+    hidden: true,
   },
   "safety.pipelineTimeoutMinutes": {
     category: "safety",
@@ -123,6 +129,8 @@ const SETTINGS_SCHEMA = {
     min: 10,
     max: 60,
     label: "파이프라인 타임아웃(분)",
+    readOnly: true,
+    hidden: true,
   },
 };
 

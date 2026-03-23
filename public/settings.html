@@ -47,6 +47,7 @@
         image: '이미지 생성',
         ffmpeg: '영상 편집',
         experts: '전문가 활성화',
+        safety: '안전장치',
       };
 
       let settingsData = {};
@@ -105,9 +106,25 @@
         return rawValue;
       }
 
+
+      function getVisibleCategories() {
+        const visibleCategorySet = new Set(
+          Object.values(schemaData)
+            .filter((schema) => !schema.hidden)
+            .map((schema) => schema.category),
+        );
+
+        return Object.keys(categoryLabelMap).filter((categoryKey) => visibleCategorySet.has(categoryKey));
+      }
+
       function buildCategoryNav() {
         const navContainer = document.getElementById('categoryNav');
-        navContainer.innerHTML = Object.keys(categoryLabelMap)
+        const visibleCategories = getVisibleCategories();
+        if (!visibleCategories.includes(activeCategory)) {
+          [activeCategory] = visibleCategories;
+        }
+
+        navContainer.innerHTML = visibleCategories
           .map((categoryKey) => {
             const selectedClass = categoryKey === activeCategory ? 'bg-cyan-500 text-slate-950 font-semibold' : 'bg-slate-800';
             return `<button data-category="${categoryKey}" class="w-full text-left px-3 py-2 rounded ${selectedClass}">${categoryLabelMap[categoryKey]}</button>`;
@@ -127,6 +144,9 @@
         const modifiedBadge = String(currentValue) !== String(defaultValue)
           ? '<span class="text-xs text-amber-300 border border-amber-400 px-2 py-0.5 rounded">수정됨</span>'
           : '';
+        const readOnlyBadge = schema.readOnly
+          ? '<span class="text-xs text-slate-200 border border-slate-500 px-2 py-0.5 rounded">읽기 전용</span>'
+          : '';
         const readOnly = schema.readOnly ? 'disabled' : '';
 
         if (schema.type === 'boolean') {
@@ -135,7 +155,7 @@
               <input type="checkbox" data-key-path="${keyPath}" ${currentValue ? 'checked' : ''} ${readOnly} class="h-5 w-5" />
               <span>${schema.label}</span>
             </label>
-            <div class="ml-auto flex items-center gap-2">${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
+            <div class="ml-auto flex items-center gap-2">${readOnlyBadge}${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
           `;
         }
 
@@ -147,7 +167,7 @@
                 ${schema.options.map((optionValue) => `<option value="${optionValue}" ${String(optionValue) === String(currentValue) ? 'selected' : ''}>${optionValue}</option>`).join('')}
               </select>
             </div>
-            <div class="flex items-center gap-2">${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
+            <div class="flex items-center gap-2">${readOnlyBadge}${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
           `;
         }
 
@@ -157,7 +177,7 @@
               <label class="text-sm block mb-1">${schema.label} <span class="text-cyan-300">${currentValue}</span></label>
               <input type="range" data-key-path="${keyPath}" min="${schema.min}" max="${schema.max}" step="${schema.step || 1}" value="${currentValue}" ${readOnly} class="w-full" />
             </div>
-            <div class="flex items-center gap-2">${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
+            <div class="flex items-center gap-2">${readOnlyBadge}${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
           `;
         }
 
@@ -169,7 +189,7 @@
               <input type="password" data-key-path="${keyPath}" value="" placeholder="새 API 키 입력" ${readOnly} class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2" />
               <p class="text-xs text-slate-400 mt-1">현재 저장값: ${maskedText}</p>
             </div>
-            <div class="flex items-center gap-2">${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
+            <div class="flex items-center gap-2">${readOnlyBadge}${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
           `;
         }
 
@@ -178,7 +198,7 @@
             <label class="text-sm block mb-1">${schema.label}</label>
             <input type="${schema.type === 'number' ? 'number' : 'text'}" data-key-path="${keyPath}" value="${currentValue}" ${schema.min !== undefined ? `min="${schema.min}"` : ''} ${schema.max !== undefined ? `max="${schema.max}"` : ''} ${readOnly} class="w-full bg-slate-800 border border-slate-700 rounded px-3 py-2" />
           </div>
-          <div class="flex items-center gap-2">${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
+          <div class="flex items-center gap-2">${readOnlyBadge}${modifiedBadge}<button type="button" data-reset-key="${keyPath}" class="text-xs px-2 py-1 rounded bg-slate-700">초기화</button></div>
         `;
       }
 
@@ -188,7 +208,7 @@
 
         const formElement = document.getElementById('settingsForm');
         const categoryKeys = Object.entries(schemaData)
-          .filter(([, schema]) => schema.category === activeCategory)
+          .filter(([, schema]) => schema.category === activeCategory && !schema.hidden)
           .map(([keyPath]) => keyPath);
 
         formElement.innerHTML = categoryKeys
