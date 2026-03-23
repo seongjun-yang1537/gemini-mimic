@@ -49,6 +49,11 @@
 - 분할용 splitModel 기본값/선택지도 gemini-3.1-flash-lite-preview 중심으로 갱신해 모델 not found(404) 가능성을 낮췄다.
 - settings 스키마의 gemini.model 옵션에서 gemini-3-pro를 제거하고 현재 가격 문서에 노출된 유효 모델명을 반영했다.
 [codex] 2026-03-23 추가 메모 11
+- package.json scripts에 lint(eslint), test(node --test), test:api(node scripts/api-smoke.js)를 추가해 로컬 최소 검증 루틴을 표준화했다.
+- test/ 디렉터리에 SettingsService.validateConfig 경계값, RunStore CRUD, PipelineOrchestrator.executeWithTimeout 실패 phase 주입 단위 테스트를 추가했다.
+- scripts/api-smoke.js는 임시 작업 디렉터리에서 서버를 실행해 /api/settings, /api/prompts, /api/run 핵심 라우트를 smoke 검증한다.
+- GitHub Actions CI(.github/workflows/ci.yml)는 npm ci 후 npm run lint && npm run test를 필수 게이트로 실행한다.
+- PR 템플릿(.github/pull_request_template.md)에 영향받는 API 엔드포인트/실행 확인 명령/롤백 포인트 체크리스트를 추가했다.
 - 공통 HTTP 에러 포맷을 src/http/errors/AppError.js로 분리해 status/message/code/details를 표준화했고, 응답에는 기존 호환 필드 error를 유지한다.
 - 요청 검증을 src/http/middlewares/validateRequest.js로 분리해 /api/settings, /api/prompts/*, /api/assets/upload 등 주요 라우트의 body/query/params 검증을 핸들러 이전 단계로 이동했다.
 - 라우트 비동기/예외 처리를 src/http/middlewares/errorHandler.js의 asyncRoute + 전역 errorHandler로 통합해 중복 try/catch를 줄이고 next(error) 경로로 일원화했다.
