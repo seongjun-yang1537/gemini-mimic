@@ -186,6 +186,7 @@
       border: 0.5px solid var(--color-border-secondary);
       border-radius: var(--border-radius-xl);
       padding: 14px 14px 12px;
+      position: relative;
     }
 
     .composer textarea {
@@ -204,41 +205,185 @@
 
     .composer textarea::placeholder { color: var(--color-text-tertiary); }
 
-    .attachment-list {
+    .attachment-preview-list {
       display: flex;
-      flex-wrap: wrap;
+      flex-direction: row;
       gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
       margin-top: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
     }
 
-    .attachment-chip {
+    .attachment-preview-list::-webkit-scrollbar { display: none; }
+
+    .attachment-preview-card {
+      width: 104px;
+      height: 88px;
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: 4px;
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-rows: 52px 14px 14px;
+      row-gap: 2px;
+    }
+
+    .attachment-thumb {
+      width: 100%;
+      height: 52px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--color-background-tertiary);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attachment-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .attachment-thumb-fallback {
+      width: 18px;
+      height: 18px;
+      color: var(--color-text-tertiary);
+    }
+
+    .attachment-play-indicator {
+      position: absolute;
+      left: 5px;
+      top: 5px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(241, 239, 232, 0.8);
+      color: var(--purple-800);
+      font-size: 8px;
       display: inline-flex;
       align-items: center;
-      gap: 8px;
-      background: var(--color-background-secondary);
-      border-radius: var(--border-radius-md);
-      border: 0.5px solid var(--color-border-tertiary);
-      padding: 4px 8px;
-      max-width: 190px;
-      font-size: 12px;
-      color: var(--color-text-secondary);
+      justify-content: center;
+      line-height: 1;
     }
 
-    .attachment-chip .label {
-      max-width: 120px;
+    .attachment-tag {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--purple-600);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .attachment-file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      min-width: 0;
+      line-height: 1;
+    }
+
+    .attachment-filename {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80px;
+      line-height: 1.2;
+    }
+
+    .attachment-remove {
+      border: 0;
+      background: transparent;
+      color: var(--color-text-tertiary);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .attachment-remove:hover { color: var(--color-text-primary); }
+
+    .tag-autocomplete {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 76px;
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      display: none;
+      z-index: 10;
+      max-height: 168px;
+      overflow-y: auto;
+    }
+
+    .tag-autocomplete.visible { display: block; }
+
+    .tag-autocomplete-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    .tag-autocomplete-item:hover,
+    .tag-autocomplete-item.active {
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+    }
+
+    .autocomplete-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--color-background-tertiary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .autocomplete-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .autocomplete-tag {
+      color: var(--purple-600);
+      font-weight: 500;
+      min-width: 54px;
+      max-width: 54px;
       overflow: hidden;
       text-overflow: ellipsis;
       white-space: nowrap;
     }
 
-    .attachment-chip button {
-      border: 0;
-      background: transparent;
+    .autocomplete-name {
       color: var(--color-text-tertiary);
-      cursor: pointer;
-      font-size: 13px;
-      padding: 0;
-      line-height: 1;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
     }
 
     .composer-toolbar {
@@ -303,7 +448,8 @@
     .attach-button:active,
     .toolbar-pill:active,
     .tab-button:active,
-    .task-row:active { transform: scale(0.98); }
+    .task-row:active,
+    .tag-autocomplete-item:active { transform: scale(0.98); }
 
     .tabs-bar {
       margin-top: 36px;
@@ -660,6 +806,9 @@
 
       .task-meta .detail-running { color: var(--purple-100); }
       .task-meta .detail-failed { color: var(--red-100); }
+      .attachment-play-indicator { background: rgba(18, 18, 16, 0.75); color: var(--purple-100); }
+      .attachment-tag,
+      .autocomplete-tag { color: var(--purple-100); }
     }
 
     @media (max-width: 640px) {
@@ -704,7 +853,8 @@
 
     <section class="composer" aria-label="입력 영역">
       <textarea id="promptInput" rows="2" placeholder="밈 영상을 업로드하거나, 만들고 싶은 크리에이티브를 설명해주세요"></textarea>
-      <div class="attachment-list" id="attachmentList"></div>
+      <div class="tag-autocomplete" id="tagAutocomplete"></div>
+      <div class="attachment-preview-list" id="attachmentList"></div>
       <div class="composer-toolbar">
         <div class="toolbar-left">
           <input id="fileInput" type="file" accept="video/*,image/*" multiple hidden>
@@ -738,12 +888,19 @@
       selectedModel: 'Gemini 3 Pro',
       selectedRounds: 3,
       attachments: [],
+      autocomplete: {
+        isOpen: false,
+        activeIndex: 0,
+        triggerIndex: -1,
+        queryText: ''
+      },
       tasks: [
         {
           id: 'run-001',
           title: '고양이 밈 — 놀란 표정 리액션',
           input: 'cat_reaction.mp4',
           inputType: 'video',
+          attachments: [],
           status: 'running',
           phase: 2,
           phaseDetail: '토론 2라운드 진행 중',
@@ -757,6 +914,7 @@
           title: 'GTA 워스텔 — 용사 등장씬',
           input: 'gta_intro.mp4',
           inputType: 'video',
+          attachments: [],
           status: 'completed',
           phase: 4,
           phaseDetail: '완료',
@@ -770,6 +928,7 @@
           title: 'This is fine — 보스전 밈',
           input: 'this_is_fine.gif',
           inputType: 'image',
+          attachments: [],
           status: 'failed',
           phase: 3,
           phaseDetail: 'Veo3 실패',
@@ -786,6 +945,7 @@
     const attachButtonElement = document.getElementById('attachButton');
     const fileInputElement = document.getElementById('fileInput');
     const attachmentListElement = document.getElementById('attachmentList');
+    const tagAutocompleteElement = document.getElementById('tagAutocomplete');
     const tabPanelElement = document.getElementById('tabPanel');
     const statusSummaryElement = document.getElementById('statusSummary');
     const tasksCountBadgeElement = document.getElementById('tasksCountBadge');
@@ -849,6 +1009,249 @@
       return phaseMarkup.join('');
     }
 
+    function createFallbackSvg(fileType) {
+      const svgFill = encodeURIComponent('currentColor');
+      const iconPath = fileType === 'video'
+        ? '<path d="M7 6h6.2c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2Zm2.2 3.2 4.3 2.8-4.3 2.8V9.2Z" fill="' + svgFill + '"/>'
+        : '<path d="M6.5 5h9A1.5 1.5 0 0 1 17 6.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 15.5v-9A1.5 1.5 0 0 1 6.5 5Zm.7 8.8h7.6l-1.9-2.4a.9.9 0 0 0-1.4 0l-1.3 1.7-.8-.9a.9.9 0 0 0-1.4.1l-.8 1.1Zm6.6-5.9a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z" fill="' + svgFill + '"/>';
+      return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 22 22'>${iconPath}</svg>`;
+    }
+
+    function detectAttachmentType(fileObject) {
+      if (fileObject.type.startsWith('video/')) {
+        return 'video';
+      }
+      return 'image';
+    }
+
+    function createImageThumbnail(fileObject) {
+      return Promise.resolve(URL.createObjectURL(fileObject));
+    }
+
+    function createVideoThumbnail(fileObject) {
+      return new Promise((resolve) => {
+        const videoElement = document.createElement('video');
+        const objectUrl = URL.createObjectURL(fileObject);
+        let hasResolved = false;
+
+        const finalizeResolve = (thumbnailValue) => {
+          if (hasResolved) {
+            return;
+          }
+          hasResolved = true;
+          videoElement.removeAttribute('src');
+          videoElement.load();
+          URL.revokeObjectURL(objectUrl);
+          resolve(thumbnailValue);
+        };
+
+        videoElement.preload = 'metadata';
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.src = objectUrl;
+
+        videoElement.addEventListener('loadeddata', () => {
+          try {
+            const canvasElement = document.createElement('canvas');
+            canvasElement.width = 104;
+            canvasElement.height = 52;
+            const canvasContext = canvasElement.getContext('2d');
+            if (!canvasContext) {
+              finalizeResolve(createFallbackSvg('video'));
+              return;
+            }
+            canvasContext.drawImage(videoElement, 0, 0, 104, 52);
+            const thumbnailDataUrl = canvasElement.toDataURL('image/jpeg', 0.82);
+            finalizeResolve(thumbnailDataUrl);
+          } catch {
+            finalizeResolve(createFallbackSvg('video'));
+          }
+        }, { once: true });
+
+        videoElement.addEventListener('error', () => {
+          finalizeResolve(createFallbackSvg('video'));
+        }, { once: true });
+
+        setTimeout(() => {
+          finalizeResolve(createFallbackSvg('video'));
+        }, 2000);
+      });
+    }
+
+    function generateThumbnailForFile(fileObject, attachmentType) {
+      if (attachmentType === 'video') {
+        return createVideoThumbnail(fileObject);
+      }
+      return createImageThumbnail(fileObject);
+    }
+
+    function reindexAttachments() {
+      let videoOrder = 0;
+      let imageOrder = 0;
+      dashboardState.attachments = dashboardState.attachments.map((attachmentItem) => {
+        const nextAttachmentItem = { ...attachmentItem };
+        if (nextAttachmentItem.type === 'video') {
+          videoOrder += 1;
+          nextAttachmentItem.index = videoOrder;
+          nextAttachmentItem.tag = `@영상${videoOrder}`;
+        } else {
+          imageOrder += 1;
+          nextAttachmentItem.index = imageOrder;
+          nextAttachmentItem.tag = `@이미지${imageOrder}`;
+        }
+        return nextAttachmentItem;
+      });
+    }
+
+    function buildAttachmentCard(attachmentItem, attachmentIndex) {
+      const thumbContent = attachmentItem.thumbnailUrl
+        ? `<img src="${attachmentItem.thumbnailUrl}" alt="${attachmentItem.file.name}">`
+        : `<img class="attachment-thumb-fallback" src="${createFallbackSvg(attachmentItem.type)}" alt="파일">`;
+      return `
+        <article class="attachment-preview-card">
+          <div class="attachment-thumb">
+            ${thumbContent}
+            ${attachmentItem.type === 'video' ? '<span class="attachment-play-indicator">▶</span>' : ''}
+          </div>
+          <div class="attachment-tag">${attachmentItem.tag}</div>
+          <div class="attachment-file-row">
+            <span class="attachment-filename" title="${attachmentItem.file.name}">${attachmentItem.file.name}</span>
+            <button class="attachment-remove" type="button" data-remove-index="${attachmentIndex}" aria-label="첨부 제거">×</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderAttachmentList() {
+      attachmentListElement.innerHTML = dashboardState.attachments.map((attachmentItem, attachmentIndex) => buildAttachmentCard(attachmentItem, attachmentIndex)).join('');
+
+      attachmentListElement.querySelectorAll('[data-remove-index]').forEach((removeButtonElement) => {
+        removeButtonElement.addEventListener('click', () => {
+          const removeIndexValue = Number(removeButtonElement.dataset.removeIndex);
+          const removedAttachment = dashboardState.attachments[removeIndexValue];
+          if (removedAttachment && removedAttachment.thumbnailUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(removedAttachment.thumbnailUrl);
+          }
+          dashboardState.attachments.splice(removeIndexValue, 1);
+          reindexAttachments();
+          renderAttachmentList();
+          updateAutocompleteForInput();
+          refreshSendButtonState();
+        });
+      });
+    }
+
+    function closeAutocomplete() {
+      dashboardState.autocomplete.isOpen = false;
+      dashboardState.autocomplete.activeIndex = 0;
+      dashboardState.autocomplete.triggerIndex = -1;
+      dashboardState.autocomplete.queryText = '';
+      tagAutocompleteElement.classList.remove('visible');
+      tagAutocompleteElement.innerHTML = '';
+    }
+
+    function getAutocompleteCandidates() {
+      const normalizedQuery = dashboardState.autocomplete.queryText.trim();
+      if (!normalizedQuery) {
+        return dashboardState.attachments;
+      }
+      return dashboardState.attachments.filter((attachmentItem) => {
+        return attachmentItem.tag.includes(normalizedQuery) || attachmentItem.file.name.toLowerCase().includes(normalizedQuery.toLowerCase());
+      });
+    }
+
+    function renderAutocomplete() {
+      const candidates = getAutocompleteCandidates();
+      if (!dashboardState.autocomplete.isOpen || !candidates.length) {
+        closeAutocomplete();
+        return;
+      }
+
+      if (dashboardState.autocomplete.activeIndex > candidates.length - 1) {
+        dashboardState.autocomplete.activeIndex = 0;
+      }
+
+      tagAutocompleteElement.innerHTML = candidates.map((attachmentItem, candidateIndex) => {
+        const candidateClass = candidateIndex === dashboardState.autocomplete.activeIndex ? 'tag-autocomplete-item active' : 'tag-autocomplete-item';
+        const thumbMarkup = attachmentItem.thumbnailUrl
+          ? `<img src="${attachmentItem.thumbnailUrl}" alt="${attachmentItem.file.name}">`
+          : `<img src="${createFallbackSvg(attachmentItem.type)}" alt="파일">`;
+        return `
+          <button type="button" class="${candidateClass}" data-candidate-index="${candidateIndex}">
+            <span class="autocomplete-thumb">${thumbMarkup}</span>
+            <span class="autocomplete-tag">${attachmentItem.tag}</span>
+            <span class="autocomplete-name">${attachmentItem.file.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      tagAutocompleteElement.classList.add('visible');
+
+      tagAutocompleteElement.querySelectorAll('[data-candidate-index]').forEach((candidateButtonElement) => {
+        candidateButtonElement.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          const candidateIndex = Number(candidateButtonElement.dataset.candidateIndex);
+          selectAutocompleteCandidate(candidateIndex);
+        });
+      });
+    }
+
+    function selectAutocompleteCandidate(candidateIndex) {
+      const candidates = getAutocompleteCandidates();
+      const selectedAttachment = candidates[candidateIndex];
+      if (!selectedAttachment || dashboardState.autocomplete.triggerIndex < 0) {
+        closeAutocomplete();
+        return;
+      }
+
+      const currentInputText = promptInputElement.value;
+      const beforeAtText = currentInputText.slice(0, dashboardState.autocomplete.triggerIndex);
+      const trailingTextStart = dashboardState.autocomplete.triggerIndex + 1 + dashboardState.autocomplete.queryText.length;
+      const afterTagText = currentInputText.slice(trailingTextStart);
+      const nextTextValue = `${beforeAtText}${selectedAttachment.tag} ${afterTagText}`;
+      promptInputElement.value = nextTextValue;
+      const nextCaretPosition = beforeAtText.length + selectedAttachment.tag.length + 1;
+      promptInputElement.setSelectionRange(nextCaretPosition, nextCaretPosition);
+      closeAutocomplete();
+      refreshSendButtonState();
+      promptInputElement.focus();
+    }
+
+    function updateAutocompleteForInput() {
+      const inputValue = promptInputElement.value;
+      const cursorPosition = promptInputElement.selectionStart;
+      const textUntilCursor = inputValue.slice(0, cursorPosition);
+      const atIndex = textUntilCursor.lastIndexOf('@');
+
+      if (atIndex < 0 || dashboardState.attachments.length === 0) {
+        closeAutocomplete();
+        return;
+      }
+
+      const rawQuery = textUntilCursor.slice(atIndex + 1);
+      if (rawQuery.includes(' ') || rawQuery.includes('\n')) {
+        closeAutocomplete();
+        return;
+      }
+
+      dashboardState.autocomplete.isOpen = true;
+      dashboardState.autocomplete.triggerIndex = atIndex;
+      dashboardState.autocomplete.queryText = rawQuery;
+      renderAutocomplete();
+    }
+
+    function renderStatusSummary() {
+      const runningCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'running').length;
+      const completedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'completed').length;
+      const failedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'failed').length;
+
+      statusSummaryElement.innerHTML = `
+        <span class="summary-pill" data-variant="running" data-zero="${runningCount === 0}">${runningCount} 진행 중</span>
+        <span class="summary-pill" data-variant="completed" data-zero="${completedCount === 0}">${completedCount} 완료</span>
+        <span class="summary-pill" data-variant="failed" data-zero="${failedCount === 0}">${failedCount} 실패</span>
+      `;
+    }
+
     function buildTaskRow(taskItem) {
       const ringRadius = 15;
       const ringCircumference = 2 * Math.PI * ringRadius;
@@ -880,40 +1283,6 @@
           <span class="status-badge" data-status="${taskItem.status}">${taskItem.status === 'running' ? '진행 중' : taskItem.status === 'completed' ? '완료' : '실패'}</span>
         </button>
       `;
-    }
-
-    function renderStatusSummary() {
-      const runningCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'running').length;
-      const completedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'completed').length;
-      const failedCount = dashboardState.tasks.filter((taskItem) => taskItem.status === 'failed').length;
-
-      statusSummaryElement.innerHTML = `
-        <span class="summary-pill" data-variant="running" data-zero="${runningCount === 0}">${runningCount} 진행 중</span>
-        <span class="summary-pill" data-variant="completed" data-zero="${completedCount === 0}">${completedCount} 완료</span>
-        <span class="summary-pill" data-variant="failed" data-zero="${failedCount === 0}">${failedCount} 실패</span>
-      `;
-    }
-
-    function renderAttachmentList() {
-      attachmentListElement.innerHTML = dashboardState.attachments.map((attachmentItem, attachmentIndex) => {
-        const inputTypeLabel = attachmentItem.type.startsWith('video/') ? 'VIDEO' : 'IMAGE';
-        return `
-          <span class="attachment-chip">
-            <span>${inputTypeLabel}</span>
-            <span class="label">${attachmentItem.name}</span>
-            <button type="button" data-remove-index="${attachmentIndex}" aria-label="첨부 제거">×</button>
-          </span>
-        `;
-      }).join('');
-
-      attachmentListElement.querySelectorAll('[data-remove-index]').forEach((removeButtonElement) => {
-        removeButtonElement.addEventListener('click', () => {
-          const removeIndexValue = Number(removeButtonElement.dataset.removeIndex);
-          dashboardState.attachments.splice(removeIndexValue, 1);
-          renderAttachmentList();
-          refreshSendButtonState();
-        });
-      });
     }
 
     function renderTasksTab() {
@@ -965,9 +1334,17 @@
       const nowIdentifier = Date.now();
       const createdTask = {
         id: `run-${nowIdentifier}`,
-        title: trimmedInputText || `${latestAttachment.name} 기반 크리에이티브`,
-        input: trimmedInputText || latestAttachment.name,
-        inputType: latestAttachment ? (latestAttachment.type.startsWith('video/') ? 'video' : 'image') : 'text',
+        title: trimmedInputText || `${latestAttachment.file.name} 기반 크리에이티브`,
+        input: trimmedInputText || latestAttachment.file.name,
+        inputType: latestAttachment ? latestAttachment.type : 'text',
+        attachments: dashboardState.attachments.map((attachmentItem) => {
+          return {
+            tag: attachmentItem.tag,
+            filename: attachmentItem.file.name,
+            type: attachmentItem.type,
+            thumbnailUrl: attachmentItem.thumbnailUrl
+          };
+        }),
         status: 'running',
         phase: 1,
         phaseDetail: '분석 준비 중',
@@ -979,20 +1356,88 @@
 
       dashboardState.tasks.unshift(createdTask);
       promptInputElement.value = '';
+      dashboardState.attachments.forEach((attachmentItem) => {
+        if (attachmentItem.thumbnailUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(attachmentItem.thumbnailUrl);
+        }
+      });
       dashboardState.attachments = [];
+      closeAutocomplete();
       renderAttachmentList();
       renderStatusSummary();
       renderTabContent();
       refreshSendButtonState();
     }
 
+    async function attachSelectedFiles(selectedFileList) {
+      const availableSlots = Math.max(0, 3 - dashboardState.attachments.length);
+      const filesToAdd = selectedFileList.slice(0, availableSlots);
+      if (!filesToAdd.length) {
+        return;
+      }
+
+      const createdAttachmentItems = await Promise.all(filesToAdd.map(async (selectedFile) => {
+        const attachmentType = detectAttachmentType(selectedFile);
+        const thumbnailValue = await generateThumbnailForFile(selectedFile, attachmentType);
+        return {
+          file: selectedFile,
+          tag: '',
+          type: attachmentType,
+          thumbnailUrl: thumbnailValue,
+          index: 0
+        };
+      }));
+
+      dashboardState.attachments.push(...createdAttachmentItems);
+      reindexAttachments();
+      renderAttachmentList();
+      updateAutocompleteForInput();
+      refreshSendButtonState();
+    }
+
     function bindEvents() {
-      promptInputElement.addEventListener('input', refreshSendButtonState);
+      promptInputElement.addEventListener('input', () => {
+        refreshSendButtonState();
+        updateAutocompleteForInput();
+      });
+
       promptInputElement.addEventListener('keydown', (event) => {
+        if (event.key === 'ArrowDown' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          const candidates = getAutocompleteCandidates();
+          dashboardState.autocomplete.activeIndex = (dashboardState.autocomplete.activeIndex + 1) % candidates.length;
+          renderAutocomplete();
+          return;
+        }
+        if (event.key === 'ArrowUp' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          const candidates = getAutocompleteCandidates();
+          dashboardState.autocomplete.activeIndex = (dashboardState.autocomplete.activeIndex - 1 + candidates.length) % candidates.length;
+          renderAutocomplete();
+          return;
+        }
+        if (event.key === 'Enter' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          selectAutocompleteCandidate(dashboardState.autocomplete.activeIndex);
+          return;
+        }
+        if (event.key === 'Escape' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          closeAutocomplete();
+          return;
+        }
         if (event.key === 'Enter' && !event.shiftKey) {
           event.preventDefault();
           createTaskFromInput();
         }
+      });
+
+      promptInputElement.addEventListener('click', updateAutocompleteForInput);
+      promptInputElement.addEventListener('keyup', updateAutocompleteForInput);
+      promptInputElement.addEventListener('blur', () => {
+        setTimeout(() => {
+          closeAutocomplete();
+        }, 120);
       });
 
       sendButtonElement.addEventListener('click', createTaskFromInput);
@@ -1001,14 +1446,10 @@
         fileInputElement.click();
       });
 
-      fileInputElement.addEventListener('change', () => {
+      fileInputElement.addEventListener('change', async () => {
         const selectedFiles = Array.from(fileInputElement.files || []);
-        const availableSlots = Math.max(0, 3 - dashboardState.attachments.length);
-        const filesToAdd = selectedFiles.slice(0, availableSlots);
-        dashboardState.attachments.push(...filesToAdd.map((selectedFile) => ({ name: selectedFile.name, type: selectedFile.type || 'image/*' })));
+        await attachSelectedFiles(selectedFiles);
         fileInputElement.value = '';
-        renderAttachmentList();
-        refreshSendButtonState();
       });
 
       modelPillElement.addEventListener('click', () => {
@@ -1019,6 +1460,13 @@
       roundPillElement.addEventListener('click', () => {
         dashboardState.selectedRounds = dashboardState.selectedRounds === 3 ? 5 : 3;
         roundPillElement.textContent = `토론 ${dashboardState.selectedRounds}R`;
+      });
+
+      document.addEventListener('click', (event) => {
+        const targetElement = event.target;
+        if (!targetElement.closest('.composer')) {
+          closeAutocomplete();
+        }
       });
 
       document.querySelectorAll('.tab-button').forEach((tabButtonElement) => {
