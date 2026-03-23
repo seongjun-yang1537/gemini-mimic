@@ -22,7 +22,7 @@ function buildVideoPart(videoPath) {
 class GeminiClient {
   constructor(config = {}) {
     this.apiKey = config.apiKey || getRequiredGeminiApiKey();
-    this.model = config.model || "gemini-3-pro";
+    this.model = config.model || "gemini-3.1-pro-preview";
     this.temperature = config.temperature ?? 0.7;
     this.maxOutputTokens = config.maxOutputTokens ?? 8192;
     this.assetService = config.assetService;

@@ -2,7 +2,7 @@
 const SETTINGS_DEFAULTS = {
   gemini: {
     apiKey: "",
-    model: "gemini-3-pro",
+    model: "gemini-3.1-pro-preview",
     temperature: 0.7,
     maxOutputTokens: 8192,
   },
@@ -22,7 +22,7 @@ const SETTINGS_DEFAULTS = {
     pollInterval: 10000,
     pollTimeoutMs: 1800000,
     maxPollAttempts: 180,
-    splitModel: "gemini-3-flash-preview",
+    splitModel: "gemini-3.1-flash-lite-preview",
   },
   image: {
     model: "imagen-4.0-generate-001",
@@ -61,7 +61,7 @@ const SETTINGS_SCHEMA = {
     category: "gemini",
     type: "select",
     label: "텍스트/분석 모델",
-    options: ["gemini-3-pro", "gemini-2.5-pro", "gemini-2.5-flash"],
+    options: ["gemini-3.1-pro-preview", "gemini-3.1-flash-lite-preview", "gemini-2.5-pro", "gemini-2.5-flash"],
   },
   "gemini.temperature": { category: "gemini", type: "slider", min: 0, max: 2, step: 0.1, label: "생성 온도" },
   "gemini.maxOutputTokens": { category: "gemini", type: "number", min: 1, max: 65536, label: "최대 출력 토큰" },
@@ -81,7 +81,7 @@ const SETTINGS_SCHEMA = {
   "video.splitModel": {
     category: "video",
     type: "select",
-    options: ["gemini-3-flash-preview", "gemini-2.5-flash"],
+    options: ["gemini-3.1-flash-lite-preview", "gemini-2.5-flash"],
     label: "시나리오 분할 모델",
   },
   "image.model": { category: "image", type: "string", label: "Imagen 모델" },
