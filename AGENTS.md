@@ -19,3 +19,5 @@
 - 프롬프트 내 @태그는 AssetService.resolvePrompt/buildGeminiPartsFromPrompt와 GeminiClient 연동으로 inline_data 첨부 파트로 자동 변환된다.
 - 정적 에셋 관리 화면은 /assets 경로(public/assets.html)로 제공되고, 대시보드(public/index.html) 상단에서 바로 이동 가능하다.
 - 프롬프트 편집기(public/prompts.html)는 @ 입력 시 /api/assets 목록 기반 태그 자동완성 드롭다운을 제공한다.
+[codex] 2026-03-23 추가 메모 5
+- Express 5 환경에서는 src/server.js의 catch-all 라우트에 "*"를 직접 사용할 수 없고 "/{*fallbackPath}" 형태를 사용해야 서버 부팅 시 path-to-regexp 오류가 발생하지 않는다.
