@@ -14,3 +14,7 @@
 [codex] 2026-03-24 추가 메모 4
 - `client/src/App.tsx`에 Run 상세 라우트(`/run/:id`, `/debug/run/:id`)를 추가하고, `RunDetailPage`를 신규 도입해 Task 상세 화면 진입 경로를 연결했다.
 - `client/src/styles/index.css`에 run-detail 전용 레이아웃/섹션/탭/스테퍼/생성물 아이콘 스타일을 추가해 360px 좌측 패널 + 우측 콘텐츠 구조와 모바일 토글 동작을 반영했다.
+
+[codex] 2026-03-24 추가 메모 5
+- client/index.html의 대시보드 인라인 구조를 Vite 엔트리 포맷(ko locale, #root, /src/main.tsx)으로 정리했다.
+- client/src/main.tsx에서 스타일 import를 tokens/global/animations/header/composer/tabs/task/empty 순서로 분리하고 run 상세 전용 스타일(index.css)을 별도 유지했다.

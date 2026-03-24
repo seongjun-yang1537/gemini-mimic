@@ -11,3 +11,8 @@
 [codex] 2026-03-24 작업 메모 3
 - task 행 클릭 미이동 이슈 대응으로 `components/task/TaskRow.tsx`를 `useNavigate` 기반 키보드/마우스 네비게이션(`role="link"`, `tabIndex=0`, `Enter/Space`)으로 조정했다.
 - `styles/index.css`에 `.task-row:hover` 배경 전환을 추가해 클릭 가능 상태를 시각적으로 드러냈다.
+
+[codex] 2026-03-24 작업 메모 4
+- 대시보드 입력 영역을 Composer/PromptEditor/AttachmentStrip/AttachmentCard/TagAutocomplete/ComposerToolbar로 재조립해 기존 monolithic 입력 블록을 컴포넌트 단위로 분리했다.
+- 스타일을 tokens.css, global.css, header.css, composer.css, tabs.css, task.css, empty.css로 분리하고 main.tsx에서 순차 import하도록 반영했다.
+- 첨부/태그 훅 로직에서 thumbnail/editor/fallback/format 유틸을 utils로 분리해 재사용 경로를 명확히 했다.

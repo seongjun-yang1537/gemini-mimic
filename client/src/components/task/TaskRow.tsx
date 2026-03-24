@@ -4,18 +4,11 @@ import ExpertDots from './ExpertDots';
 import PhaseRing from './PhaseRing';
 import PhaseTrack from './PhaseTrack';
 import StatusBadge from './StatusBadge';
+import { formatTokenCount, formatUsdCost } from '../../utils/format';
 
 interface TaskRowProps {
   taskItem: Task;
   dataMode: 'production' | 'debug';
-}
-
-function formatTokenCount(tokenCount: number): string {
-  return `${new Intl.NumberFormat('ko-KR').format(Math.round(tokenCount))} tok`;
-}
-
-function formatUsdCost(costValue: number): string {
-  return `$${costValue.toFixed(2)}`;
 }
 
 export default function TaskRow({ taskItem, dataMode }: TaskRowProps) {

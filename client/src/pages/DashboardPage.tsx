@@ -2,11 +2,11 @@ import { useRef, useState } from 'react';
 import type { KeyboardEvent } from 'react';
 import Header from '../components/layout/Header';
 import Tabs from '../components/layout/Tabs';
-import TaskInput from '../components/input/TaskInput';
+import Composer from '../components/input/Composer';
 import TaskList from '../components/task/TaskList';
 import EmptyState from '../components/task/EmptyState';
-import { useTasksFromAPI } from '../hooks/useTasks';
-import { useTasksFromMock } from '../hooks/useTasksMock';
+import { useTasks } from '../hooks/useTasks';
+import { useTasksMock } from '../hooks/useTasksMock';
 import { useAttachments } from '../hooks/useAttachments';
 import { useTagChips } from '../hooks/useTagChips';
 import { parseChipsToText } from '../utils/parseChipsToText';
@@ -23,8 +23,8 @@ export default function DashboardPage({ dataMode }: DashboardPageProps) {
   const [selectedTab, setSelectedTab] = useState<DashboardTabKey>('tasks');
   const [editorPlainText, setEditorPlainText] = useState<string>('');
   const editorElementRef = useRef<HTMLDivElement>(null);
-  const productionTaskDataSource = useTasksFromAPI();
-  const debugTaskDataSource = useTasksFromMock();
+  const productionTaskDataSource = useTasks();
+  const debugTaskDataSource = useTasksMock();
   const taskDataSource = dataMode === 'debug' ? debugTaskDataSource : productionTaskDataSource;
   const { taskItems, taskCount, prependTask } = taskDataSource;
   const { attachmentItems, addFiles, removeAttachmentById, fallbackIcon } = useAttachments();
@@ -121,8 +121,8 @@ export default function DashboardPage({ dataMode }: DashboardPageProps) {
       <main>
         <h1 className="hero-title">어떤 밈을 크리에이티브로 만들까요?</h1>
         {dataMode === 'debug' ? <DebugToolbar onAddTask={handleAddDebugTask} onResetTasks={handleResetDebugTasks} /> : null}
-        <TaskInput
-          attachmentItems={attachmentItems}
+        <Composer
+          attachments={attachmentItems}
           fallbackImageIcon={fallbackIcon.image}
           isSendEnabled={isSendEnabled}
           autocompleteOpen={autocompleteState.isOpen}
