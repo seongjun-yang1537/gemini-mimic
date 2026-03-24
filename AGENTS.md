@@ -759,3 +759,7 @@ range slider에는 `step` 속성 필수:
 [codex] 2026-03-23 추가 메모 20
 - public/index.html 대시보드 UI를 최신 명세에 맞춰 헤더 우측 공란, 첨부+전송 중심 입력 툴바, 작업/프롬프트/에셋/설정 4탭 구조로 정리했다.
 - 대시보드 탭에서 상태 요약 pill을 제거하고 태스크 행 중심 정보만 남겨 단일 컬럼 집중 레이아웃을 유지했다.
+[codex] 2026-03-23 추가 메모 21
+- client/ 디렉터리를 Vite React TypeScript 템플릿으로 생성하고, tailwindcss + @tailwindcss/vite + react-router-dom을 설치했다.
+- public/index.html의 대시보드 단일 HTML/CSS/JS를 client/src 기준 pages/components/hooks/types/constants/styles 구조로 분할했다.
+- 대시보드 입력/첨부/@태그 자동완성/작업 리스트 UI를 DashboardPage와 하위 컴포넌트로 분리하고, 태스크/첨부/칩 로직을 useTasks/useAttachments/useTagChips로 분리했다.
