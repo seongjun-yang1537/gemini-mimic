@@ -21,7 +21,8 @@
     "test:api": "node scripts/api-smoke.js",
     "sync:build-hash": "node scripts/sync-build-hash.js",
     "prestart": "npm run sync:build-hash",
-    "predev": "npm run sync:build-hash"
+    "predev": "npm run sync:build-hash",
+    "up": "npm run dev & npm --prefix client run dev"
   },
   "repository": {
     "type": "git",

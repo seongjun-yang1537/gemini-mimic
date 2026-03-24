@@ -780,3 +780,5 @@ range slider에는 `step` 속성 필수:
 
 [codex] 2026-03-24 추가 메모 26
 - 루트 정적 엔트리(public/index.html)의 인라인 CSS/JS 대시보드 코드를 제거하고, React 마운트용 최소 엔트리(#root + module script)만 남겼다.
+[codex] 2026-03-24 추가 메모 18
+- 루트 package.json scripts에 `up` 명령을 추가했다. 한 번에 백엔드(`npm run dev`)와 프론트(`npm --prefix client run dev`)를 동시에 실행한다.
