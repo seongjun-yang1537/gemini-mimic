@@ -18,3 +18,6 @@
 [codex] 2026-03-24 추가 메모 5
 - client/index.html의 대시보드 인라인 구조를 Vite 엔트리 포맷(ko locale, #root, /src/main.tsx)으로 정리했다.
 - client/src/main.tsx에서 스타일 import를 tokens/global/animations/header/composer/tabs/task/empty 순서로 분리하고 run 상세 전용 스타일(index.css)을 별도 유지했다.
+
+[codex] 2026-03-24 추가 메모 6
+- Header 컴포넌트의 빌드 해시 읽기 경로를 window.APP_CONFIG에서 Vite 환경변수(import.meta.env.VITE_COMMIT_HASH) 기반으로 전환했다.
