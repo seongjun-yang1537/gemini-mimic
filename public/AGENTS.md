@@ -27,3 +27,6 @@
 - public/index.html의 입력 textarea를 contentEditable 기반 prompt-editor로 교체하고, @자동완성 선택 시 inline 비편집 tag-chip(span[data-tag][data-type])을 삽입하도록 갱신했다.
 - 첨부 제거 시 해당 tag-chip 자동 삭제 및 남은 첨부의 @태그 재인덱싱에 맞춰 chip 라벨/데이터 동기화를 적용했다.
 - 전송 텍스트는 contentEditable DOM에서 chip의 data-tag를 포함한 플레인 텍스트로 복원(getEditorPlainText)해 run input으로 저장한다.
+[codex] 2026-03-24 추가 메모 10
+- public/index.html 탭 영역의 프롬프트 개수 뱃지를 정적 13에서 동적 카운트로 변경하고 초기값은 0으로 설정했다.
+- 클라이언트 스크립트에 refreshPromptsCount를 추가해 /api/prompts 응답 길이를 뱃지에 반영하고, 응답 실패 시 0을 표시한다.
