@@ -1673,10 +1673,6 @@
           closeAutocomplete();
           return;
         }
-        if (event.key === 'Enter' && !event.shiftKey) {
-          event.preventDefault();
-          createTaskFromInput();
-        }
       });
 
       promptInputElement.addEventListener('click', (event) => {

@@ -30,3 +30,6 @@
 [codex] 2026-03-24 추가 메모 10
 - public/index.html 탭 영역의 프롬프트 개수 뱃지를 정적 13에서 동적 카운트로 변경하고 초기값은 0으로 설정했다.
 - 클라이언트 스크립트에 refreshPromptsCount를 추가해 /api/prompts 응답 길이를 뱃지에 반영하고, 응답 실패 시 0을 표시한다.
+[codex] 2026-03-24 추가 메모 11
+- public/index.html 입력 에디터 keydown 처리에서 Enter 단축 전송(createTaskFromInput)을 제거해 Enter 기본 동작이 줄바꿈으로만 동작하도록 변경했다.
+- 전송은 우측 전송 버튼 클릭으로만 실행되며, 자동완성 드롭다운이 열려 있을 때 Enter 후보 선택 동작은 유지된다.
