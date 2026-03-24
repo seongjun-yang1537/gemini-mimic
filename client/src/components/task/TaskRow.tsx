@@ -1,4 +1,4 @@
-import { Link } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import type { Task } from '../../types/task';
 import ExpertDots from './ExpertDots';
 import PhaseRing from './PhaseRing';
@@ -19,11 +19,28 @@ function formatUsdCost(costValue: number): string {
 }
 
 export default function TaskRow({ taskItem, dataMode }: TaskRowProps) {
-  const routePrefix = dataMode === 'debug' ? '/debug' : '';
-  const runDetailPath = `${routePrefix}/run/${taskItem.id}`;
+  const navigate = useNavigate();
+
+  const handleNavigateToRunDetail = () => {
+    const routePrefix = dataMode === 'debug' ? '/debug' : '';
+    navigate(`${routePrefix}/run/${taskItem.id}`);
+  };
+
+  const handleTaskRowKeyDown = (keyboardEvent: React.KeyboardEvent<HTMLDivElement>) => {
+    if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
+      keyboardEvent.preventDefault();
+      handleNavigateToRunDetail();
+    }
+  };
 
   return (
-    <Link className="task-row" to={runDetailPath}>
+    <div
+      className="task-row"
+      onClick={handleNavigateToRunDetail}
+      onKeyDown={handleTaskRowKeyDown}
+      role="link"
+      tabIndex={0}
+    >
       <PhaseRing phase={taskItem.currentPhase} status={taskItem.status} />
       <div className="task-main">
         <div className="task-title-line">
@@ -38,6 +55,6 @@ export default function TaskRow({ taskItem, dataMode }: TaskRowProps) {
         <div className="cost-token">{formatTokenCount(taskItem.tokenCount)}</div>
         <StatusBadge status={taskItem.status} />
       </div>
-    </Link>
+    </div>
   );
 }

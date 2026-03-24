@@ -7,3 +7,7 @@
 - `TaskRow` 루트를 버튼에서 `<Link>`로 전환해 카드 전체 클릭 시 버블링/stopPropagation 영향 없이 `/${prefix}/run/:id`로 직접 이동하도록 정리했다.
 - `TaskRow` 링크 스타일에 `pointer-events: auto`, `text-decoration: none`, `color: inherit`를 명시해 클릭 차단 가능성을 줄였다.
 - `RunDetailPage`는 `useParams().id` 기준 빈 상태 문구를 표시하고, `dataMode`에 따라 뒤로가기 경로를 `/` 또는 `/debug`로 분기한다.
+
+[codex] 2026-03-24 작업 메모 3
+- task 행 클릭 미이동 이슈 대응으로 `components/task/TaskRow.tsx`를 `useNavigate` 기반 키보드/마우스 네비게이션(`role="link"`, `tabIndex=0`, `Enter/Space`)으로 조정했다.
+- `styles/index.css`에 `.task-row:hover` 배경 전환을 추가해 클릭 가능 상태를 시각적으로 드러냈다.
