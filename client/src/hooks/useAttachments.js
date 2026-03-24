@@ -52,5 +52,15 @@ export function useAttachments() {
             return reindexAttachments(currentAttachmentItems.filter((attachmentItem) => attachmentItem.id !== attachmentId));
         });
     };
-    return { attachmentItems, attachmentTagList, addFiles, removeAttachmentById, fallbackIcon: FALLBACK_ICON };
+    const clearAttachments = () => {
+        setAttachmentItems((currentAttachmentItems) => {
+            currentAttachmentItems.forEach((attachmentItem) => {
+                if (attachmentItem.thumbnailUrl.startsWith('blob:')) {
+                    URL.revokeObjectURL(attachmentItem.thumbnailUrl);
+                }
+            });
+            return [];
+        });
+    };
+    return { attachmentItems, attachmentTagList, addFiles, removeAttachmentById, clearAttachments, fallbackIcon: FALLBACK_ICON };
 }

@@ -24,12 +24,14 @@ function createPhaseStatuses(status) {
         { phase: 4, status: 'pending' }
     ];
 }
-function createMockTask(status) {
+function createMockTask(status, promptText = '', attachments = []) {
     const uniqueValue = Date.now();
     if (status === 'completed') {
         return {
             id: `debug-completed-${uniqueValue}`,
             title: `디버그 완료 작업 ${uniqueValue}`,
+            promptText,
+            attachments,
             status,
             currentPhase: 4,
             phaseStatuses: createPhaseStatuses(status),
@@ -44,6 +46,8 @@ function createMockTask(status) {
         return {
             id: `debug-failed-${uniqueValue}`,
             title: `디버그 실패 작업 ${uniqueValue}`,
+            promptText,
+            attachments,
             status,
             currentPhase: 3,
             phaseStatuses: createPhaseStatuses(status),
@@ -57,6 +61,8 @@ function createMockTask(status) {
     return {
         id: `debug-running-${uniqueValue}`,
         title: `디버그 진행 작업 ${uniqueValue}`,
+        promptText,
+        attachments,
         status: 'running',
         currentPhase: 2,
         phaseStatuses: createPhaseStatuses('running'),
@@ -70,12 +76,19 @@ function createMockTask(status) {
 export function useTasksMock() {
     const [taskItems, setTaskItems] = useState(MOCK_TASKS);
     const taskCount = useMemo(() => taskItems.length, [taskItems.length]);
-    const prependTask = (taskTitle) => {
-        const normalizedTaskTitle = taskTitle.trim();
+    const prependTask = ({ title, promptText = '', attachments = [] }) => {
+        const normalizedTaskTitle = title.trim();
         if (!normalizedTaskTitle) {
             return;
         }
-        const createdTask = createMockTask('running');
+        const serializedAttachments = attachments.map((attachmentItem) => ({
+            id: attachmentItem.id,
+            tag: attachmentItem.tag,
+            type: attachmentItem.type,
+            name: attachmentItem.file.name,
+            thumbnailUrl: attachmentItem.thumbnailUrl
+        }));
+        const createdTask = createMockTask('running', promptText.trim(), serializedAttachments);
         setTaskItems((currentTaskItems) => [{ ...createdTask, title: normalizedTaskTitle }, ...currentTaskItems]);
     };
     const appendTaskByStatus = (status) => {

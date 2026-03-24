@@ -1,7 +1,8 @@
 import { useMemo, useState } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useLocation, useNavigate, useParams } from 'react-router-dom';
 import RunArtifacts from '../components/run/RunArtifacts';
 import RunCost from '../components/run/RunCost';
+import RunInputSummary from '../components/run/RunInputSummary';
 import RunPhases from '../components/run/RunPhases';
 import RunSummary from '../components/run/RunSummary';
 import RunTabBar from '../components/run/RunTabBar';
@@ -9,20 +10,35 @@ import RunTabContent from '../components/run/RunTabContent';
 import RunTopBar from '../components/run/RunTopBar';
 import { useRunDetail } from '../hooks/useRunDetail';
 import { useRunDetailMock } from '../hooks/useRunDetailMock';
-const TAB_LABEL_MAP = {
-    debate: '토론 로그',
-    scenario: '시나리오',
-    artifacts: '생성물',
-    logs: '로그'
-};
 export default function RunDetailPage({ dataMode }) {
+    const location = useLocation();
     const navigate = useNavigate();
     const { id: runId } = useParams();
     const backPath = dataMode === 'debug' ? '/debug' : '/';
     const productionRunDetailState = useRunDetail(runId);
     const debugRunDetailState = useRunDetailMock(runId);
     const selectedRunState = dataMode === 'debug' ? debugRunDetailState : productionRunDetailState;
-    const { runDetail, elapsedSeconds } = selectedRunState;
+    const locationTaskItem = location.state?.taskItem ?? null;
+    const runDetail = useMemo(() => {
+        if (!selectedRunState.runDetail) {
+            return null;
+        }
+        const fallbackInput = {
+            promptText: locationTaskItem?.promptText ?? '',
+            attachments: locationTaskItem?.attachments ?? []
+        };
+        const runInput = selectedRunState.runDetail.input ?? {};
+        const mergedInput = {
+            promptText: runInput.promptText?.trim() ? runInput.promptText : fallbackInput.promptText,
+            attachments: runInput.attachments?.length ? runInput.attachments : fallbackInput.attachments
+        };
+        return {
+            ...selectedRunState.runDetail,
+            title: locationTaskItem?.title ?? selectedRunState.runDetail.title,
+            input: mergedInput
+        };
+    }, [locationTaskItem, selectedRunState.runDetail]);
+    const elapsedSeconds = selectedRunState.elapsedSeconds;
     const [selectedTab, setSelectedTab] = useState('debate');
     const [isMobileSummaryOpen, setIsMobileSummaryOpen] = useState(false);
     const summaryText = useMemo(() => {
@@ -50,6 +66,7 @@ export default function RunDetailPage({ dataMode }) {
         </button>
 
         <aside className={isMobileSummaryOpen ? 'left-panel open' : 'left-panel'}>
+          <RunInputSummary input={runDetail.input}/>
           <RunSummary summaryText={summaryText}/>
           <RunPhases phases={runDetail.phases}/>
           <RunCost costInfo={runDetail.cost}/>
@@ -58,7 +75,7 @@ export default function RunDetailPage({ dataMode }) {
 
         <section className="right-panel">
           <RunTabBar selectedTab={selectedTab} onSelectTab={setSelectedTab}/>
-          <RunTabContent tabLabel={TAB_LABEL_MAP[selectedTab]}/>
+          <RunTabContent selectedTab={selectedTab} runDetail={runDetail}/>
         </section>
       </div>
     </div>);

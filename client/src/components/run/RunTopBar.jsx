@@ -15,7 +15,6 @@ export default function RunTopBar({ title, status, elapsedSeconds, errorMessage,
       <div className="run-title-wrap">
         <span className="run-title">{title}</span>
         <StatusBadge status={status}/>
-        {status === 'failed' && errorMessage ? <span className="run-error-inline">실패 원인: {errorMessage}</span> : null}
       </div>
       <span className="run-elapsed">{formatElapsedSeconds(elapsedSeconds)}</span>
       <div className="run-actions">

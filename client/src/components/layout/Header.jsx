@@ -1,4 +1,5 @@
-const buildHash = import.meta.env.VITE_COMMIT_HASH ?? 'unknown';
+const runtimeCommitHash = typeof window !== 'undefined' ? window.APP_CONFIG?.commitHash : '';
+const buildHash = runtimeCommitHash || import.meta.env.VITE_COMMIT_HASH || 'unknown';
 
 export default function Header() {
     return (<header className="page-header">

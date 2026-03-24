@@ -50,8 +50,9 @@ export function useTagChips(attachmentItems) {
         }
         const matchedQuery = prefixText.match(/(^|\s)@([^\s@]*)$/);
         if (matchedQuery) {
-            const queryLength = matchedQuery[0].length;
-            selectedRange.setStart(selectedRange.endContainer, Math.max(0, selectedRange.endOffset - queryLength + 1));
+            const boundaryLength = matchedQuery[1].length;
+            const replaceLength = matchedQuery[0].length - boundaryLength;
+            selectedRange.setStart(selectedRange.endContainer, Math.max(0, selectedRange.endOffset - replaceLength));
             selectedRange.deleteContents();
         }
         const chipElement = createTagChipElement(selectedAttachment.tag);

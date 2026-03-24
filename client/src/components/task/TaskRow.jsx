@@ -8,7 +8,7 @@ export default function TaskRow({ taskItem, dataMode }) {
     const navigate = useNavigate();
     const handleNavigateToRunDetail = () => {
         const routePrefix = dataMode === 'debug' ? '/debug' : '';
-        navigate(`${routePrefix}/run/${taskItem.id}`);
+        navigate(`${routePrefix}/run/${taskItem.id}`, { state: { taskItem } });
     };
     const handleTaskRowKeyDown = (keyboardEvent) => {
         if (keyboardEvent.key === 'Enter' || keyboardEvent.key === ' ') {
