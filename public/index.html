@@ -890,7 +890,7 @@
     <section class="tabs-bar">
       <div class="tabs" role="tablist" aria-label="대시보드 탭">
         <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab="tasks">작업 <span class="count-badge" id="tasksCountBadge">3</span></button>
-        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="prompts">프롬프트 <span class="count-badge" id="promptsCountBadge">0</span></button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="prompts">프롬프트</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="assets">에셋</button>
         <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="settings">설정</button>
       </div>
@@ -965,7 +965,6 @@
     const tagAutocompleteElement = document.getElementById('tagAutocomplete');
     const tabPanelElement = document.getElementById('tabPanel');
     const tasksCountBadgeElement = document.getElementById('tasksCountBadge');
-    const promptsCountBadgeElement = document.getElementById('promptsCountBadge');
     const buildHashElement = document.getElementById('buildHash');
 
     function renderBuildHash() {
@@ -1556,21 +1555,6 @@
       tabPanelElement.innerHTML = '<div class="sub-panel">설정 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
     }
 
-    async function refreshPromptsCount() {
-      try {
-        const promptResponse = await fetch('/api/prompts');
-        if (!promptResponse.ok) {
-          promptsCountBadgeElement.textContent = '0';
-          return;
-        }
-        const promptPayload = await promptResponse.json();
-        const promptCount = Array.isArray(promptPayload.prompts) ? promptPayload.prompts.length : 0;
-        promptsCountBadgeElement.textContent = String(promptCount);
-      } catch {
-        promptsCountBadgeElement.textContent = '0';
-      }
-    }
-
     function refreshSendButtonState() {
       const hasTextInput = getEditorPlainText().trim().length > 0;
       const hasAttachments = dashboardState.attachments.length > 0;
@@ -1754,7 +1738,6 @@
     renderAttachmentList();
     renderTabContent();
     refreshSendButtonState();
-    refreshPromptsCount();
     bindEvents();
   </script>
 </body>

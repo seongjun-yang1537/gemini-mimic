@@ -43,3 +43,6 @@
 [codex] 2026-03-24 추가 메모 12
 - public/index.html 입력 에디터 단축키를 조정해 `Enter`는 기본 줄바꿈만 수행하고, `Alt+Enter`에서만 `createTaskFromInput` 제출이 실행되도록 변경했다.
 - 자동완성 드롭다운이 열려 있을 때도 `Alt+Enter`는 후보 선택보다 제출을 우선 처리하며, 일반 `Enter`의 후보 선택 동작은 유지된다.
+[codex] 2026-03-24 추가 메모 13
+- public/index.html 탭 바에서 프롬프트 카운트 뱃지와 /api/prompts 연동 카운트 갱신 로직(refreshPromptsCount)을 제거했다.
+- 프롬프트 탭은 숫자 없이 텍스트만 표시해 실제 콘텐츠 미구현 상태에서 오해를 줄이도록 정리했다.
