@@ -62,6 +62,12 @@ export default function DashboardPage({ dataMode }: DashboardPageProps) {
   };
 
   const handleEditorKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
+    if (event.altKey && event.key === 'Enter') {
+      event.preventDefault();
+      handleSend();
+      return;
+    }
+
     if (!autocompleteState.isOpen) {
       return;
     }

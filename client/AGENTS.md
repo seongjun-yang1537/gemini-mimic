@@ -8,3 +8,6 @@
 - 작업 데이터 훅을 `useTasksFromAPI`(초기 빈 배열, 로컬 prepend)와 `useTasksFromMock`(기본 3건 + 상태별 추가/리셋)로 분리했고, 디버그 전용 툴바(`client/src/debug/DebugToolbar.tsx`)를 추가했다.
 - `client/src/debug/mockTasks.ts`에 running/completed/failed 대표 작업 3건을 정의하고, 작업 카드 타입을 `currentPhase`, `phaseStatuses`, `costUsd`, `tokenCount`, `statusLabel`, `expertDots` 구조로 정규화했다.
 - 작업 빈 상태 문구를 "아직 작업이 없습니다 / 아래 입력창에서 밈 영상을 첨부하고 실행하세요" 2줄로 고정하고 최소 높이 200px 중앙 정렬 스타일을 적용했다.
+[codex] 2026-03-24 추가 메모 3
+- 대시보드 입력창(`client/src/pages/DashboardPage.tsx`)의 키보드 동작을 조정해 `Enter`는 줄바꿈으로 유지하고, `Alt+Enter`에서만 `handleSend`를 호출해 태스크가 생성되도록 변경했다.
+- 자동완성 드롭다운이 열려 있을 때도 `Alt+Enter`는 태스크 생성 우선으로 처리하고, 일반 `Enter`는 기존처럼 자동완성 후보 선택에 사용된다.
