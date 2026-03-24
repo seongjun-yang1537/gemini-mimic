@@ -1,4 +1,4 @@
-import { useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import type { Task } from '../../types/task';
 import ExpertDots from './ExpertDots';
 import PhaseRing from './PhaseRing';
@@ -19,15 +19,11 @@ function formatUsdCost(costValue: number): string {
 }
 
 export default function TaskRow({ taskItem, dataMode }: TaskRowProps) {
-  const navigate = useNavigate();
-
-  const handleClickTaskRow = () => {
-    const basePath = dataMode === 'debug' ? '/debug/run' : '/run';
-    navigate(`${basePath}/${taskItem.id}`);
-  };
+  const routePrefix = dataMode === 'debug' ? '/debug' : '';
+  const runDetailPath = `${routePrefix}/run/${taskItem.id}`;
 
   return (
-    <button type="button" className="task-row" onClick={handleClickTaskRow}>
+    <Link className="task-row" to={runDetailPath}>
       <PhaseRing phase={taskItem.currentPhase} status={taskItem.status} />
       <div className="task-main">
         <div className="task-title-line">
@@ -42,6 +38,6 @@ export default function TaskRow({ taskItem, dataMode }: TaskRowProps) {
         <div className="cost-token">{formatTokenCount(taskItem.tokenCount)}</div>
         <StatusBadge status={taskItem.status} />
       </div>
-    </button>
+    </Link>
   );
 }
