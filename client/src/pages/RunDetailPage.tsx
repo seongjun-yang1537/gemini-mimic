@@ -25,6 +25,7 @@ const TAB_LABEL_MAP: Record<RunDetailTabKey, string> = {
 export default function RunDetailPage({ dataMode }: RunDetailPageProps) {
   const navigate = useNavigate();
   const { id: runId } = useParams<{ id: string }>();
+  const backPath = dataMode === 'debug' ? '/debug' : '/';
   const productionRunDetailState = useRunDetail(runId);
   const debugRunDetailState = useRunDetailMock(runId);
   const selectedRunState = dataMode === 'debug' ? debugRunDetailState : productionRunDetailState;
@@ -43,7 +44,12 @@ export default function RunDetailPage({ dataMode }: RunDetailPageProps) {
   if (!runDetail) {
     return (
       <main className="run-detail-empty-wrap">
-        <p className="run-tab-empty">작업 정보를 찾을 수 없습니다</p>
+        <button type="button" className="summary-toggle-button" onClick={() => navigate(backPath)}>
+          뒤로 가기
+        </button>
+        <p className="run-tab-empty">
+          {runId ? `작업 ${runId} 정보를 찾을 수 없습니다` : '작업 정보를 찾을 수 없습니다'}
+        </p>
       </main>
     );
   }
@@ -55,7 +61,7 @@ export default function RunDetailPage({ dataMode }: RunDetailPageProps) {
         status={runDetail.status}
         elapsedSeconds={elapsedSeconds}
         errorMessage={runDetail.errorMessage}
-        onBack={() => navigate(dataMode === 'debug' ? '/debug' : '/')}
+        onBack={() => navigate(backPath)}
         onCancel={() => undefined}
         onRetry={() => undefined}
       />
