@@ -11,3 +11,17 @@
 [codex] 2026-03-24 작업 메모 3
 - task 행 클릭 미이동 이슈 대응으로 `components/task/TaskRow.tsx`를 `useNavigate` 기반 키보드/마우스 네비게이션(`role="link"`, `tabIndex=0`, `Enter/Space`)으로 조정했다.
 - `styles/index.css`에 `.task-row:hover` 배경 전환을 추가해 클릭 가능 상태를 시각적으로 드러냈다.
+
+[codex] 2026-03-24 작업 메모 4
+- 대시보드 입력 영역을 Composer/PromptEditor/AttachmentStrip/AttachmentCard/TagAutocomplete/ComposerToolbar로 재조립해 기존 monolithic 입력 블록을 컴포넌트 단위로 분리했다.
+- 스타일을 tokens.css, global.css, header.css, composer.css, tabs.css, task.css, empty.css로 분리하고 main.tsx에서 순차 import하도록 반영했다.
+- 첨부/태그 훅 로직에서 thumbnail/editor/fallback/format 유틸을 utils로 분리해 재사용 경로를 명확히 했다.
+
+[codex] 2026-03-24 작업 메모 5
+- layout/Header에서 빌드 해시를 전역 window 의존성 없이 import.meta.env 기반으로 표시하도록 정리했다.
+[codex] 2026-03-24 작업 메모 6
+- src 경로의 컴포넌트/훅/상수/유틸 파일 확장자를 .ts/.tsx에서 .js/.jsx로 일괄 변환했다.
+- 타입 전용 선언(import type, interface, type alias)을 제거해 런타임 코드만 남기고 import 경로를 JS 기준으로 동작하도록 유지했다.
+- 타입 정의 전용이던 src/types 디렉터리는 JavaScript 전환 범위에서 제외하고 삭제했다.
+[codex] 2026-03-24 작업 메모 7
+- 사용자 요청으로 `client/src/components/layout/Header.jsx`에서 상단 내비게이션 텍스트(대시보드/프롬프트/에셋/설정) 버튼 4개를 제거하고 브랜드(`Mimic`)만 노출하도록 정리했다.

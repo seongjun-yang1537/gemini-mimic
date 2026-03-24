@@ -1,0 +1,16 @@
+.page-header { border-bottom: 0.5px solid var(--color-border-tertiary); height: 52px; display: flex; align-items: center; justify-content: center; background: var(--color-background-primary); }
+.header-inner { width: min(100%, 780px); margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.build-hash { font-size: 11px; color: var(--color-text-tertiary); font-family: var(--font-mono); }
+.brand-nav { display: flex; align-items: center; gap: 16px; min-width: 0; }
+.brand { display: inline-flex; align-items: center; gap: 8px; font-size: 16px; font-weight: 500; color: var(--color-text-primary); white-space: nowrap; }
+.brand-icon { width: 28px; height: 28px; border-radius: var(--border-radius-md); background: var(--purple-600); color: var(--purple-50); display: inline-flex; align-items: center; justify-content: center; font-size: 13px; font-weight: 500; }
+.nav-links { display: flex; align-items: center; gap: 12px; min-width: 0; }
+.nav-link { border: 0; background: transparent; color: var(--color-text-secondary); font-size: 14px; font-weight: 400; padding: 4px 0; cursor: pointer; }
+.nav-link.active { color: var(--color-text-primary); font-weight: 500; }
+
+@media (max-width: 640px) {
+  .header-inner {
+    padding-left: 16px;
+    padding-right: 16px;
+  }
+}

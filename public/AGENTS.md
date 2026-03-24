@@ -48,3 +48,10 @@
 - 프롬프트 탭은 숫자 없이 텍스트만 표시해 실제 콘텐츠 미구현 상태에서 오해를 줄이도록 정리했다.
 - public/run.html 모니터링 전용 화면을 복구해 `/run/:id`로 진입 시 대시보드와 다른 UI를 렌더링하도록 구성했다.
 - public/result.html 결과 전용 화면을 추가해 `/run/:id/result`에서 run 식별자 기반 결과 뷰를 분리했다.
+[codex] 2026-03-24 추가 메모 14
+- public/index.html 헤더의 상단 내비게이션 라벨(대시보드/프롬프트/에셋/설정)을 제거해 브랜드 텍스트만 노출되도록 정리했다.
+
+[codex] 2026-03-24 추가 메모 15
+- public/index.html을 인라인 구현 없이 React 마운트용 최소 엔트리 문서로 치환했다.
+[codex] 2026-03-24 추가 메모 16
+- public/index.html에서 Vite 소스 경로(/src/main.tsx) module script 참조를 제거하고, legacy 안내용 임시 엔트리 문서로 유지했다.

@@ -5,6 +5,7 @@
 - 프롬프트 파일은 prompts/<phase>/*.md 구조로 관리한다.
 - taurus/api.js 모듈을 백엔드에서 import하여 Veo 생성 로직을 재사용한다.
 - 정적 UI 파일은 public/ 아래에서 제공한다.
+- .env 파일, API 키, 기타 비밀값은 어떤 경우에도 커밋하거나 원격 저장소에 올리지 않는다.
 [codex] 2026-03-23 추가 메모 2
 - 정적 라우팅은 /run/:id, /run/:id/result, /prompts 경로를 사용하고 각각 public/run.html, public/result.html, public/prompts.html을 반환한다.
 - 대시보드 실행 목록에서 모니터링(/run/:id)과 결과(/run/:id/result) 화면으로 바로 이동할 수 있다.
@@ -777,3 +778,8 @@ range slider에는 `step` 속성 필수:
 [codex] 2026-03-24 추가 메모 25
 - 커밋 해시를 수동 수정하지 않도록 scripts/sync-build-hash.js 생성 스크립트를 추가했다.
 - package.json에 sync:build-hash, prestart, predev를 등록해 서버 실행 전에 public/config.js의 commitHash가 자동 갱신되도록 구성했다.
+
+[codex] 2026-03-24 추가 메모 26
+- 루트 정적 엔트리(public/index.html)의 인라인 CSS/JS 대시보드 코드를 제거하고, React 마운트용 최소 엔트리(#root + module script)만 남겼다.
+[codex] 2026-03-24 추가 메모 18
+- 루트 package.json scripts에 `up` 명령을 추가했다. 한 번에 백엔드(`npm run dev`)와 프론트(`npm --prefix client run dev`)를 동시에 실행한다.

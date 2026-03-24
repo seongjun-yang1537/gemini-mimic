@@ -14,3 +14,17 @@
 [codex] 2026-03-24 추가 메모 4
 - `client/src/App.tsx`에 Run 상세 라우트(`/run/:id`, `/debug/run/:id`)를 추가하고, `RunDetailPage`를 신규 도입해 Task 상세 화면 진입 경로를 연결했다.
 - `client/src/styles/index.css`에 run-detail 전용 레이아웃/섹션/탭/스테퍼/생성물 아이콘 스타일을 추가해 360px 좌측 패널 + 우측 콘텐츠 구조와 모바일 토글 동작을 반영했다.
+
+[codex] 2026-03-24 추가 메모 5
+- client/index.html의 대시보드 인라인 구조를 Vite 엔트리 포맷(ko locale, #root, /src/main.tsx)으로 정리했다.
+- client/src/main.tsx에서 스타일 import를 tokens/global/animations/header/composer/tabs/task/empty 순서로 분리하고 run 상세 전용 스타일(index.css)을 별도 유지했다.
+
+[codex] 2026-03-24 추가 메모 6
+- Header 컴포넌트의 빌드 해시 읽기 경로를 window.APP_CONFIG에서 Vite 환경변수(import.meta.env.VITE_COMMIT_HASH) 기반으로 전환했다.
+[codex] 2026-03-24 추가 메모 7
+- client/src 전체 TypeScript 파일(.ts/.tsx)을 JavaScript(.js/.jsx)로 전환했고, 런타임 코드만 남기도록 타입 구문을 제거했다.
+- client/package.json의 build 스크립트에서 `tsc -b` 단계를 제거하고 TypeScript/@types 관련 devDependencies를 정리했다.
+- client/eslint.config.js를 JS/JSX 대상 규칙으로 단순화했고 TypeScript ESLint 설정을 제거했다.
+- client/index.html 엔트리 스크립트를 `/src/main.jsx`로 변경했다.
+- client/tsconfig.json, client/tsconfig.app.json, client/tsconfig.node.json을 제거했다.
+- client/vite.config.ts, client/tailwind.config.ts를 각각 .js 파일로 전환했다.
