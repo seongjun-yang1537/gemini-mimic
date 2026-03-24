@@ -1,0 +1,5 @@
+[codex] 2026-03-24 작업 메모 1
+- Run 상세 페이지 기본 라우트를 추가해 `/run/:id`(production), `/debug/run/:id`(mock)에서 2컬럼 레이아웃을 렌더링한다.
+- 상세 페이지 구성요소를 `components/run/`로 분리해 상단 바, 좌측 요약(요약/진행/비용/생성물), 우측 탭 바/빈 슬롯 콘텐츠를 개별 컴포넌트로 조립한다.
+- 디버그 상세 데이터는 `debug/mockRunDetails.ts`, 타입은 `types/runDetail.ts`, 데이터 훅은 `hooks/useRunDetail.ts`/`hooks/useRunDetailMock.ts`에 분리했다.
+- 대시보드 작업 행 클릭 시 dataMode에 따라 `/run/:id` 또는 `/debug/run/:id`로 네비게이션하도록 `TaskList`/`TaskRow`에 모드 전달을 추가했다.
