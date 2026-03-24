@@ -1,25 +1,28 @@
-import { PHASE_LABELS } from '../../constants/phases';
-import type { Task } from '../../types/task';
+import type { PhaseInfo } from '../../types/task';
 
 interface PhaseTrackProps {
-  taskItem: Task;
+  phaseStatuses: PhaseInfo[];
 }
 
-export default function PhaseTrack({ taskItem }: PhaseTrackProps) {
+function getPhaseText(phaseInfo: PhaseInfo): string {
+  if (phaseInfo.status === 'completed') {
+    return '✓';
+  }
+
+  return String(phaseInfo.phase);
+}
+
+export default function PhaseTrack({ phaseStatuses }: PhaseTrackProps) {
   return (
     <div className="phase-track" aria-label="phase 진행">
-      {PHASE_LABELS.map((phaseLabel, phaseIndex) => {
-        const phaseNumber = phaseIndex + 1;
-        const isCompleted = taskItem.status === 'completed' || phaseNumber < taskItem.phase;
-        const isCurrentRunning = taskItem.status === 'running' && phaseNumber === taskItem.phase;
-        const isFailed = taskItem.status === 'failed' && phaseNumber === taskItem.phase;
-        const stepClassName = isFailed ? 'failed' : isCurrentRunning ? 'current' : isCompleted ? 'completed' : '';
-        const textValue = isCompleted ? '✓' : phaseLabel;
+      {phaseStatuses.map((phaseInfo, phaseIndex) => {
+        const stepClassName = phaseInfo.status;
+        const isLinkCompleted = phaseInfo.status === 'completed';
 
         return (
-          <div key={phaseLabel} className="phase-track-segment">
-            <span className={`phase-step ${stepClassName}`.trim()}>{textValue}</span>
-            {phaseNumber < 4 ? <span className={`phase-link ${isCompleted ? 'completed' : ''}`.trim()} /> : null}
+          <div key={phaseInfo.phase} className="phase-track-segment">
+            <span className={`phase-step ${stepClassName}`.trim()}>{getPhaseText(phaseInfo)}</span>
+            {phaseIndex < phaseStatuses.length - 1 ? <span className={`phase-link ${isLinkCompleted ? 'completed' : ''}`.trim()} /> : null}
           </div>
         );
       })}

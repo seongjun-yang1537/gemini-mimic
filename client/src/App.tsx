@@ -5,7 +5,8 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<DashboardPage />} />
+        <Route path="/" element={<DashboardPage dataMode="production" />} />
+        <Route path="/debug" element={<DashboardPage dataMode="debug" />} />
       </Routes>
     </BrowserRouter>
   );

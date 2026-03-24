@@ -9,6 +9,11 @@ function computeProgress(phase: number, status: TaskStatus): number {
   if (status === 'completed') {
     return 1;
   }
+
+  if (status === 'failed' || status === 'running') {
+    return Math.max(0, Math.min(1, phase / 4));
+  }
+
   return Math.max(0, Math.min(1, (phase - 1) / 4));
 }
 

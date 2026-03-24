@@ -763,3 +763,6 @@ range slider에는 `step` 속성 필수:
 - client/ 디렉터리를 Vite React TypeScript 템플릿으로 생성하고, tailwindcss + @tailwindcss/vite + react-router-dom을 설치했다.
 - public/index.html의 대시보드 단일 HTML/CSS/JS를 client/src 기준 pages/components/hooks/types/constants/styles 구조로 분할했다.
 - 대시보드 입력/첨부/@태그 자동완성/작업 리스트 UI를 DashboardPage와 하위 컴포넌트로 분리하고, 태스크/첨부/칩 로직을 useTasks/useAttachments/useTagChips로 분리했다.
+[codex] 2026-03-24 추가 메모 22
+- client 라우터에 `/debug` 경로를 추가해 디버그용 목업 작업 리스트와 디버그 툴바(상태별 항목 추가/초기화)를 분리했다.
+- `/` 경로는 production 모드로 동작하며 작업 탭 기본 상태를 빈 리스트 + 안내 문구로 표시하도록 변경했다.

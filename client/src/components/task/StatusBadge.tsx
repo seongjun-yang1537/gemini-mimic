@@ -6,9 +6,11 @@ interface StatusBadgeProps {
 }
 
 const STATUS_LABELS: Record<TaskStatus, string> = {
-  running: 'running',
-  completed: 'completed',
-  failed: 'failed'
+  pending: '대기',
+  running: '진행 중',
+  completed: '완료',
+  failed: '실패',
+  cancelled: '취소됨'
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {

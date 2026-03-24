@@ -5,18 +5,28 @@ import Tabs from '../components/layout/Tabs';
 import TaskInput from '../components/input/TaskInput';
 import TaskList from '../components/task/TaskList';
 import EmptyState from '../components/task/EmptyState';
-import { useTasks } from '../hooks/useTasks';
+import { useTasksFromAPI } from '../hooks/useTasks';
+import { useTasksFromMock } from '../hooks/useTasksMock';
 import { useAttachments } from '../hooks/useAttachments';
 import { useTagChips } from '../hooks/useTagChips';
 import { parseChipsToText } from '../utils/parseChipsToText';
 import type { AttachedFile } from '../types/attachment';
 import type { DashboardTabKey } from '../constants/phases';
+import type { TaskStatus } from '../types/task';
+import DebugToolbar from '../debug/DebugToolbar';
 
-export default function DashboardPage() {
+interface DashboardPageProps {
+  dataMode: 'production' | 'debug';
+}
+
+export default function DashboardPage({ dataMode }: DashboardPageProps) {
   const [selectedTab, setSelectedTab] = useState<DashboardTabKey>('tasks');
   const [editorPlainText, setEditorPlainText] = useState<string>('');
   const editorElementRef = useRef<HTMLDivElement>(null);
-  const { taskItems, taskCount, prependTask } = useTasks();
+  const productionTaskDataSource = useTasksFromAPI();
+  const debugTaskDataSource = useTasksFromMock();
+  const taskDataSource = dataMode === 'debug' ? debugTaskDataSource : productionTaskDataSource;
+  const { taskItems, taskCount, prependTask } = taskDataSource;
   const { attachmentItems, addFiles, removeAttachmentById, fallbackIcon } = useAttachments();
   const { autocompleteState, candidates, refreshAutocomplete, closeAutocomplete, moveSelection, insertChip } = useTagChips(attachmentItems);
 
@@ -83,11 +93,28 @@ export default function DashboardPage() {
     }
   };
 
+  const handleAddDebugTask = (status: TaskStatus) => {
+    if (dataMode !== 'debug') {
+      return;
+    }
+
+    debugTaskDataSource.appendTaskByStatus(status);
+  };
+
+  const handleResetDebugTasks = () => {
+    if (dataMode !== 'debug') {
+      return;
+    }
+
+    debugTaskDataSource.resetTaskItems();
+  };
+
   return (
     <>
       <Header />
       <main>
         <h1 className="hero-title">어떤 밈을 크리에이티브로 만들까요?</h1>
+        {dataMode === 'debug' ? <DebugToolbar onAddTask={handleAddDebugTask} onResetTasks={handleResetDebugTasks} /> : null}
         <TaskInput
           attachmentItems={attachmentItems}
           fallbackImageIcon={fallbackIcon.image}
@@ -108,7 +135,11 @@ export default function DashboardPage() {
 
         <section className="tab-panel">
           {selectedTab === 'tasks' ? (
-            taskItems.length ? <TaskList taskItems={taskItems} /> : <EmptyState title="작업 내역이 아직 없습니다." />
+            taskItems.length ? (
+              <TaskList taskItems={taskItems} />
+            ) : (
+              <EmptyState title="아직 작업이 없습니다" description="아래 입력창에서 밈 영상을 첨부하고 실행하세요" />
+            )
           ) : (
             <EmptyState title="준비 중인 화면입니다." />
           )}
