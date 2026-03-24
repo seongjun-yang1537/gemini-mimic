@@ -37,3 +37,6 @@
 
 [codex] 2026-03-24 추가 메모 12
 - public/config.js의 commitHash는 수동 수정 대신 npm prestart/predev에서 실행되는 sync-build-hash 스크립트로 자동 갱신된다.
+[codex] 2026-03-24 추가 메모 11
+- public/index.html 입력 에디터 keydown 처리에서 Enter 단축 전송(createTaskFromInput)을 제거해 Enter 기본 동작이 줄바꿈으로만 동작하도록 변경했다.
+- 전송은 우측 전송 버튼 클릭으로만 실행되며, 자동완성 드롭다운이 열려 있을 때 Enter 후보 선택 동작은 유지된다.
