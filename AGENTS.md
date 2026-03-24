@@ -777,3 +777,6 @@ range slider에는 `step` 속성 필수:
 [codex] 2026-03-24 추가 메모 25
 - 커밋 해시를 수동 수정하지 않도록 scripts/sync-build-hash.js 생성 스크립트를 추가했다.
 - package.json에 sync:build-hash, prestart, predev를 등록해 서버 실행 전에 public/config.js의 commitHash가 자동 갱신되도록 구성했다.
+
+[codex] 2026-03-24 추가 메모 26
+- 루트 정적 엔트리(public/index.html)의 인라인 CSS/JS 대시보드 코드를 제거하고, React 마운트용 최소 엔트리(#root + module script)만 남겼다.

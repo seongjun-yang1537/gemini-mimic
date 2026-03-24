@@ -16,3 +16,6 @@
 - 대시보드 입력 영역을 Composer/PromptEditor/AttachmentStrip/AttachmentCard/TagAutocomplete/ComposerToolbar로 재조립해 기존 monolithic 입력 블록을 컴포넌트 단위로 분리했다.
 - 스타일을 tokens.css, global.css, header.css, composer.css, tabs.css, task.css, empty.css로 분리하고 main.tsx에서 순차 import하도록 반영했다.
 - 첨부/태그 훅 로직에서 thumbnail/editor/fallback/format 유틸을 utils로 분리해 재사용 경로를 명확히 했다.
+
+[codex] 2026-03-24 작업 메모 5
+- layout/Header에서 빌드 해시를 전역 window 의존성 없이 import.meta.env 기반으로 표시하도록 정리했다.
