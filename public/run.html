@@ -1,0 +1,216 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mimic monitoring</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-sans: "Inter", "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f8f8f6;
+      --color-background-tertiary: #f3f2ef;
+      --color-text-primary: #1b1b19;
+      --color-text-secondary: #5f5e5a;
+      --color-border-tertiary: rgba(95, 94, 90, 0.15);
+      --purple-50: #eeedfe;
+      --purple-600: #534ab7;
+      --purple-800: #3c3489;
+      --teal-50: #e1f5ee;
+      --teal-800: #085041;
+      --coral-50: #faece7;
+      --coral-800: #712b13;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #121210;
+        --color-background-secondary: #1b1b19;
+        --color-background-tertiary: #0f0f0e;
+        --color-text-primary: #f1efe8;
+        --color-text-secondary: #d3d1c7;
+        --color-border-tertiary: rgba(211, 209, 199, 0.15);
+        --purple-50: #3c3489;
+        --purple-600: #afa9ec;
+        --purple-800: #eeedfe;
+        --teal-50: #085041;
+        --teal-800: #e1f5ee;
+        --coral-50: #712b13;
+        --coral-800: #faece7;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      font-family: var(--font-sans);
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+    }
+
+    .layout {
+      width: min(100%, 920px);
+      margin: 0 auto;
+      padding: 32px 20px 40px;
+      display: grid;
+      gap: 14px;
+    }
+
+    .panel {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-lg);
+      padding: 14px 16px;
+    }
+
+    .title-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 6px;
+    }
+
+    h1 {
+      margin: 0;
+      font-size: 22px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .run-id {
+      font-size: 13px;
+      font-weight: 500;
+      border-radius: var(--border-radius-md);
+      padding: 2px 8px;
+      background: var(--purple-50);
+      color: var(--purple-800);
+    }
+
+    p {
+      margin: 0;
+      font-size: 14px;
+      color: var(--color-text-secondary);
+    }
+
+    .status-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(0, 1fr));
+      gap: 10px;
+    }
+
+    .status-card {
+      border-radius: var(--border-radius-md);
+      padding: 10px 12px;
+      background: var(--color-background-secondary);
+    }
+
+    .status-label {
+      display: block;
+      font-size: 12px;
+      margin-bottom: 2px;
+      color: var(--color-text-secondary);
+    }
+
+    .status-value {
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+    }
+
+    .status-value.is-active {
+      background: var(--teal-50);
+      color: var(--teal-800);
+      border-radius: var(--border-radius-md);
+      display: inline-block;
+      padding: 1px 7px;
+    }
+
+    .phase-list {
+      display: grid;
+      gap: 8px;
+    }
+
+    .phase-item {
+      border-radius: var(--border-radius-md);
+      background: var(--color-background-secondary);
+      padding: 9px 11px;
+      font-size: 14px;
+      color: var(--color-text-primary);
+    }
+
+    .phase-item.current {
+      background: var(--coral-50);
+      color: var(--coral-800);
+      font-weight: 500;
+    }
+
+    .actions {
+      display: flex;
+      gap: 8px;
+      justify-content: flex-end;
+    }
+
+    .action-link {
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      color: var(--color-text-primary);
+      text-decoration: none;
+      font-size: 14px;
+      padding: 7px 12px;
+      background: transparent;
+    }
+  </style>
+</head>
+<body>
+  <main class="layout">
+    <section class="panel">
+      <div class="title-row">
+        <h1>run monitoring</h1>
+        <span class="run-id" id="runIdBadge">run</span>
+      </div>
+      <p id="subtitleText">선택된 실행의 진행 상태를 확인하는 화면입니다.</p>
+    </section>
+
+    <section class="panel status-grid">
+      <article class="status-card">
+        <span class="status-label">상태</span>
+        <span class="status-value is-active">running</span>
+      </article>
+      <article class="status-card">
+        <span class="status-label">현재 phase</span>
+        <span class="status-value">2 / 4</span>
+      </article>
+      <article class="status-card">
+        <span class="status-label">누적 토큰</span>
+        <span class="status-value">8,240</span>
+      </article>
+    </section>
+
+    <section class="panel phase-list">
+      <div class="phase-item">phase 1 · 영상 분석 및 시나리오 확정</div>
+      <div class="phase-item current">phase 2 · 레퍼런스 생성</div>
+      <div class="phase-item">phase 3 · 영상 생성 및 재평가</div>
+      <div class="phase-item">phase 4 · 최종 편집</div>
+    </section>
+
+    <section class="actions">
+      <a class="action-link" href="/">대시보드로 돌아가기</a>
+      <a class="action-link" id="resultLink" href="/run/demo/result">결과 보기</a>
+    </section>
+  </main>
+
+  <script>
+    const pathSegments = window.location.pathname.split('/').filter(Boolean);
+    const runIdentifier = pathSegments.length >= 2 ? decodeURIComponent(pathSegments[1]) : 'unknown';
+    document.getElementById('runIdBadge').textContent = runIdentifier;
+    document.getElementById('subtitleText').textContent = `${runIdentifier} 실행의 실시간 상태를 표시합니다.`;
+    document.getElementById('resultLink').setAttribute('href', `/run/${encodeURIComponent(runIdentifier)}/result`);
+  </script>
+</body>
+</html>

@@ -46,6 +46,15 @@ app.get('/api/prompts', async (_request, response, next) => {
   }
 });
 
+
+app.get('/run/:id', (_request, response) => {
+  response.sendFile(path.join(publicDirectoryPath, 'run.html'));
+});
+
+app.get('/run/:id/result', (_request, response) => {
+  response.sendFile(path.join(publicDirectoryPath, 'result.html'));
+});
+
 app.use((error, _request, response, _next) => {
   response.status(500).json({
     error: error instanceof Error ? error.message : '서버 오류',

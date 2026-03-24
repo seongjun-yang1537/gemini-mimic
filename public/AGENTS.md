@@ -46,3 +46,5 @@
 [codex] 2026-03-24 추가 메모 13
 - public/index.html 탭 바에서 프롬프트 카운트 뱃지와 /api/prompts 연동 카운트 갱신 로직(refreshPromptsCount)을 제거했다.
 - 프롬프트 탭은 숫자 없이 텍스트만 표시해 실제 콘텐츠 미구현 상태에서 오해를 줄이도록 정리했다.
+- public/run.html 모니터링 전용 화면을 복구해 `/run/:id`로 진입 시 대시보드와 다른 UI를 렌더링하도록 구성했다.
+- public/result.html 결과 전용 화면을 추가해 `/run/:id/result`에서 run 식별자 기반 결과 뷰를 분리했다.
