@@ -1,14 +1,14 @@
 import type { AttachedFile } from '../../types/attachment';
 
 interface TagAutocompleteProps {
-  isVisible: boolean;
+  isOpen: boolean;
   candidates: AttachedFile[];
   selectedIndex: number;
-  onSelectCandidate: (candidate: AttachedFile) => void;
+  onSelect: (candidate: AttachedFile) => void;
 }
 
-export default function TagAutocomplete({ isVisible, candidates, selectedIndex, onSelectCandidate }: TagAutocompleteProps) {
-  if (!isVisible || !candidates.length) {
+export default function TagAutocomplete({ isOpen, candidates, selectedIndex, onSelect }: TagAutocompleteProps) {
+  if (!isOpen || !candidates.length) {
     return <div className="tag-autocomplete" />;
   }
 
@@ -21,7 +21,7 @@ export default function TagAutocomplete({ isVisible, candidates, selectedIndex, 
           className={`tag-autocomplete-item${selectedIndex === candidateIndex ? ' active' : ''}`}
           onMouseDown={(event) => {
             event.preventDefault();
-            onSelectCandidate(candidateItem);
+            onSelect(candidateItem);
           }}
         >
           <span className="autocomplete-thumb">

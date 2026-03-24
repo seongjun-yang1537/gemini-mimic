@@ -1,0 +1,3 @@
+.empty-state { min-height: 200px; display: flex; flex-direction: column; align-items: center; justify-content: center; color: var(--color-text-tertiary); }
+.empty-state-title { margin: 0; font-size: 14px; color: var(--color-text-tertiary); }
+.empty-state-description { margin: 2px 0 0; font-size: 14px; color: var(--color-text-tertiary); }

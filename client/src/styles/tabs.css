@@ -1,0 +1,12 @@
+.tabs-bar { margin-top: 36px; display: flex; align-items: flex-end; gap: 12px; border-bottom: 0.5px solid var(--color-border-tertiary); padding-bottom: 8px; }
+.tabs { display: flex; align-items: flex-end; gap: 18px; }
+.tab-button { border: 0; background: transparent; color: var(--color-text-tertiary); font-size: 14px; font-weight: 400; padding: 0 0 8px; border-bottom: 2px solid transparent; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; }
+.tab-button.active { color: var(--color-text-primary); font-weight: 500; border-bottom-color: var(--color-text-primary); }
+.count-badge { border-radius: 99px; padding: 1px 7px; font-size: 11px; border: 0.5px solid var(--color-border-tertiary); color: var(--color-text-tertiary); background: transparent; }
+.active-count { background: var(--purple-50); border-color: var(--purple-200); color: var(--purple-800); }
+.tab-panel { min-height: 300px; }
+.sub-panel { margin-top: 16px; }
+
+@media (prefers-color-scheme: dark) {
+  .active-count { background: var(--purple-800); border-color: var(--purple-200); color: var(--purple-100); }
+}

@@ -76,7 +76,7 @@ function createMockTask(status: TaskStatus): Task {
   };
 }
 
-export function useTasksFromMock() {
+export function useTasksMock() {
   const [taskItems, setTaskItems] = useState<Task[]>(MOCK_TASKS);
   const taskCount = useMemo(() => taskItems.length, [taskItems.length]);
 

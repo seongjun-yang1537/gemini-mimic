@@ -46,10 +46,10 @@ export default function TaskInput({
         onKeyDown={onEditorKeyDown}
       />
       <TagAutocomplete
-        isVisible={autocompleteOpen}
+        isOpen={autocompleteOpen}
         candidates={autocompleteCandidates}
         selectedIndex={selectedAutocompleteIndex}
-        onSelectCandidate={onSelectAutocompleteCandidate}
+        onSelect={onSelectAutocompleteCandidate}
       />
       <AttachmentList
         attachmentItems={attachmentItems}

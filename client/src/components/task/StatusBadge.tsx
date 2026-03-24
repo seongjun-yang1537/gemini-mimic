@@ -1,4 +1,3 @@
-import Pill from '../common/Pill';
 import type { TaskStatus } from '../../types/task';
 
 interface StatusBadgeProps {
@@ -14,5 +13,5 @@ const STATUS_LABELS: Record<TaskStatus, string> = {
 };
 
 export default function StatusBadge({ status }: StatusBadgeProps) {
-  return <Pill className={`status-${status}`}>{STATUS_LABELS[status]}</Pill>;
+  return <span className="status-badge" data-status={status}>{STATUS_LABELS[status]}</span>;
 }

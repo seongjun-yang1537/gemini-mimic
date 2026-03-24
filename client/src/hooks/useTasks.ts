@@ -1,7 +1,7 @@
 import { useMemo, useState } from 'react';
 import type { Task } from '../types/task';
 
-function createNewProductionTask(taskTitle: string): Task {
+function createNewTask(taskTitle: string): Task {
   return {
     id: `run-${Date.now()}`,
     title: taskTitle,
@@ -21,7 +21,7 @@ function createNewProductionTask(taskTitle: string): Task {
   };
 }
 
-export function useTasksFromAPI() {
+export function useTasks() {
   const [taskItems, setTaskItems] = useState<Task[]>([]);
   const taskCount = useMemo(() => taskItems.length, [taskItems.length]);
 
@@ -31,7 +31,7 @@ export function useTasksFromAPI() {
       return;
     }
 
-    const createdTask = createNewProductionTask(normalizedTaskTitle);
+    const createdTask = createNewTask(normalizedTaskTitle);
     setTaskItems((currentTaskItems) => [createdTask, ...currentTaskItems]);
   };
 
