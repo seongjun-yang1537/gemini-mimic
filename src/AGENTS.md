@@ -29,3 +29,6 @@
 [codex] 2026-03-24 작업 메모 5
 - src/server.js에 /api/prompts를 추가해 prompts 디렉터리 하위 .md 파일을 재귀 수집하고 id/name 목록을 반환한다.
 - 서버 공통 에러 처리를 추가해 /api/prompts 실패 시 JSON({ error, code })으로 500 응답을 반환하도록 정리했다.
+[codex] 2026-03-24 작업 메모 6
+- src/server.js에 `/run/:id`, `/run/:id/result` 정적 라우트를 명시적으로 추가해 전용 HTML 파일(run.html/result.html)을 반환하도록 설정했다.
+- fallback 라우트(`/{*fallbackPath}`)는 마지막 순서를 유지해 전용 라우트보다 먼저 매칭되지 않도록 했다.

@@ -43,3 +43,6 @@
 [codex] 2026-03-24 추가 메모 12
 - public/index.html 입력 에디터 단축키를 조정해 `Enter`는 기본 줄바꿈만 수행하고, `Alt+Enter`에서만 `createTaskFromInput` 제출이 실행되도록 변경했다.
 - 자동완성 드롭다운이 열려 있을 때도 `Alt+Enter`는 후보 선택보다 제출을 우선 처리하며, 일반 `Enter`의 후보 선택 동작은 유지된다.
+[codex] 2026-03-24 추가 메모 13
+- public/run.html 모니터링 전용 화면을 복구해 `/run/:id`로 진입 시 대시보드와 다른 UI를 렌더링하도록 구성했다.
+- public/result.html 결과 전용 화면을 추가해 `/run/:id/result`에서 run 식별자 기반 결과 뷰를 분리했다.
