@@ -26,3 +26,6 @@
 [codex] 2026-03-23 작업 메모 4
 - src/server.js를 재생성해 npm start(node src/server.js) 기준 진입점 누락 오류(MODULE_NOT_FOUND)를 해결했다.
 - 복구 서버는 public 정적 파일 제공과 /api/health 엔드포인트, Express 5 catch-all('/{*fallbackPath}')을 포함한다.
+[codex] 2026-03-24 작업 메모 5
+- src/server.js에 /api/prompts를 추가해 prompts 디렉터리 하위 .md 파일을 재귀 수집하고 id/name 목록을 반환한다.
+- 서버 공통 에러 처리를 추가해 /api/prompts 실패 시 JSON({ error, code })으로 500 응답을 반환하도록 정리했다.
