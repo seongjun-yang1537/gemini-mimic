@@ -53,3 +53,5 @@
 
 [codex] 2026-03-24 추가 메모 15
 - public/index.html을 인라인 구현 없이 React 마운트용 최소 엔트리 문서로 치환했다.
+[codex] 2026-03-24 추가 메모 16
+- public/index.html에서 Vite 소스 경로(/src/main.tsx) module script 참조를 제거하고, legacy 안내용 임시 엔트리 문서로 유지했다.
