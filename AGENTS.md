@@ -769,3 +769,11 @@ range slider에는 `step` 속성 필수:
 [codex] 2026-03-24 추가 메모 23
 - public/index.html의 프롬프트 탭 뱃지 숫자 13 하드코딩을 제거하고 id(promptsCountBadge) 기반 동적 표시로 교체했다.
 - 서버에서 /api/prompts를 제공할 때만 실제 프롬프트 개수를 표시하고, 실패 시 0으로 폴백해 UI 숫자 오해를 줄였다.
+
+[codex] 2026-03-24 추가 메모 24
+- public/config.js에 현재 Git 커밋 해시를 window.APP_CONFIG.commitHash로 명시하고, public/index.html에서 해당 설정을 로드하도록 연결했다.
+- public/index.html 헤더 우측에 build 해시를 11px 모노 텍스트로 노출해 화면 구석에서 현재 배포 버전을 확인할 수 있게 했다.
+
+[codex] 2026-03-24 추가 메모 25
+- 커밋 해시를 수동 수정하지 않도록 scripts/sync-build-hash.js 생성 스크립트를 추가했다.
+- package.json에 sync:build-hash, prestart, predev를 등록해 서버 실행 전에 public/config.js의 commitHash가 자동 갱신되도록 구성했다.

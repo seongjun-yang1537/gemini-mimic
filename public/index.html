@@ -109,6 +109,14 @@
       gap: 12px;
     }
 
+    .build-hash {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+      font-family: var(--font-mono, var(--font-sans));
+    }
+
     .brand-nav {
       display: flex;
       align-items: center;
@@ -813,6 +821,8 @@
     }
 
     @media (max-width: 640px) {
+      .build-hash { display: none; }
+
       .phase-track,
       .cost-column { display: none; }
 
@@ -855,6 +865,7 @@
           <button class="nav-link" type="button">설정</button>
         </nav>
       </div>
+      <div class="build-hash" id="buildHash"></div>
     </div>
   </header>
 
@@ -888,6 +899,7 @@
     <section class="tab-panel" id="tabPanel"></section>
   </main>
 
+  <script src="/config.js"></script>
   <script>
     const dashboardState = {
       selectedTab: 'tasks',
@@ -954,6 +966,14 @@
     const tabPanelElement = document.getElementById('tabPanel');
     const tasksCountBadgeElement = document.getElementById('tasksCountBadge');
     const promptsCountBadgeElement = document.getElementById('promptsCountBadge');
+    const buildHashElement = document.getElementById('buildHash');
+
+    function renderBuildHash() {
+      const commitHashValue = window.APP_CONFIG?.commitHash || 'unknown';
+      buildHashElement.textContent = `build ${commitHashValue}`;
+    }
+
+    renderBuildHash();
 
     function formatTokenCount(tokenCount) {
       return `${new Intl.NumberFormat('ko-KR').format(Math.round(tokenCount))} tok`;

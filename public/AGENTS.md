@@ -30,3 +30,10 @@
 [codex] 2026-03-24 추가 메모 10
 - public/index.html 탭 영역의 프롬프트 개수 뱃지를 정적 13에서 동적 카운트로 변경하고 초기값은 0으로 설정했다.
 - 클라이언트 스크립트에 refreshPromptsCount를 추가해 /api/prompts 응답 길이를 뱃지에 반영하고, 응답 실패 시 0을 표시한다.
+
+[codex] 2026-03-24 추가 메모 11
+- public/config.js를 추가해 commitHash를 전역 설정(window.APP_CONFIG)으로 분리했다.
+- public/index.html 헤더 우측에 build 해시 라벨을 추가하고 config.js 값으로 동적 렌더링되도록 반영했다.
+
+[codex] 2026-03-24 추가 메모 12
+- public/config.js의 commitHash는 수동 수정 대신 npm prestart/predev에서 실행되는 sync-build-hash 스크립트로 자동 갱신된다.

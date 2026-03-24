@@ -18,7 +18,10 @@
     "dev": "node src/server.js",
     "lint": "eslint .",
     "test": "node --test",
-    "test:api": "node scripts/api-smoke.js"
+    "test:api": "node scripts/api-smoke.js",
+    "sync:build-hash": "node scripts/sync-build-hash.js",
+    "prestart": "npm run sync:build-hash",
+    "predev": "npm run sync:build-hash"
   },
   "repository": {
     "type": "git",
