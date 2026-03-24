@@ -1,0 +1,34 @@
+[codex] 2026-03-23 라우팅 분리 메모
+- src/server.js는 프로세스 시작과 HTTP 서버 listen, 서비스 조립만 담당하도록 단순화했다.
+- src/app/createApp.js에서 express 인스턴스 생성, 공통 미들웨어(json/static), 도메인 라우터 마운트, 에러 미들웨어 연결을 담당한다.
+- src/routes/에 run/prompt/asset/settings/web 라우터를 팩토리 함수 형태로 분리해 의존성을 외부 주입받도록 구성했다.
+[codex] 2026-03-23 비동기 저장소 전환 메모
+- src/store/runStore.js는 fs/promises 기반으로 전환했고 readyPromise + fileAccessQueue 직렬화로 create/update/get/list/delete를 모두 async 메서드로 제공한다.
+- src/services/promptService.js는 list/get/update/loadPhasePrompts를 async로 전환해 프롬프트 파일 접근을 await 기반으로 통일했다.
+- src/routes/runRoutes.js, src/routes/promptRoutes.js, src/services/pipelineOrchestrator.js, src/services/pipeline/*.js 호출부를 await로 맞춰 예외가 asyncRoute/상위 catch로 일관 전파되도록 정리했다.
+[codex] 2026-03-23 설정 운영자 오버라이드 메모
+- src/config/environment.js에 운영자 전용 env 로더(getOperatorSettingsEnvOverrides)를 추가해 video/image/ffmpeg/safety 관련 운영 강제값을 객체 형태로 반환한다.
+- src/services/settingsService.js는 readConfig에서 코드 기본값 < config.json < env 오버라이드 순서로 병합하고 getDefaultConfig도 env 오버라이드를 반영한다.
+- src/config/settingsDefaults.js의 운영자 전용 항목(video.model, video.splitModel, image.model, ffmpeg.path, safety.*)에 readOnly + hidden 플래그를 부여했다.
+- src/routes/settingsRoutes.js는 /api/settings, /api/settings/defaults, PATCH/RESET 응답에서 hidden/sensitive 정책을 적용해 운영값 노출을 제한한다.
+[codex] 2026-03-23 작업 메모 2
+- src/routes/runRoutes.js는 createRun 시 inputVideo/inputText/inputAssetId/selectedReferenceAssets를 함께 저장하도록 입력 분기를 확장했다.
+- src/store/runStore.js createRun은 문자열(기존 호환)과 객체 입력을 모두 허용하며 inputText/selectedReferenceAssets 필드를 run 레코드에 기록한다.
+- src/services/geminiClient.js는 영상 확장자 기반으로 inline_data mime_type(video/mp4, video/webm)을 동적으로 지정한다.
+[codex] 2026-03-23 취소 제어 메모
+- src/routes/runRoutes.js에 POST /api/run/:id/cancel 엔드포인트를 추가해 실행 중 run 취소 요청을 처리한다.
+- src/services/pipelineOrchestrator.js에 cancelRequestedRuns 상태와 requestCancel/run 취소 분기 처리를 추가해 취소 시 run 상태를 cancelled로 저장하고 WebSocket pipeline_cancelled 이벤트를 발행한다.
+[codex] 2026-03-23 드라이브 API 메모
+- src/routes/driveRoutes.js를 추가해 에셋 저장소를 드라이브 형식으로 매핑하는 API(/api/drive/folders/:id/contents, /api/drive/search, /api/drive/files/:id/{thumbnail,preview,stream})를 제공한다.
+- createApp에서 driveRoutes를 마운트해 로컬 업로드(/api/upload)와 프롬프트 제출(/api/generate) 요청을 runStore/pipelineOrchestrator와 연결한다.
+[codex] 2026-03-23 작업 메모 3
+- 사용자 요청으로 src 하위 .js 코드 파일을 제거해 서버 코드를 초기화했다.
+[codex] 2026-03-23 작업 메모 4
+- src/server.js를 재생성해 npm start(node src/server.js) 기준 진입점 누락 오류(MODULE_NOT_FOUND)를 해결했다.
+- 복구 서버는 public 정적 파일 제공과 /api/health 엔드포인트, Express 5 catch-all('/{*fallbackPath}')을 포함한다.
+[codex] 2026-03-24 작업 메모 5
+- src/server.js에 /api/prompts를 추가해 prompts 디렉터리 하위 .md 파일을 재귀 수집하고 id/name 목록을 반환한다.
+- 서버 공통 에러 처리를 추가해 /api/prompts 실패 시 JSON({ error, code })으로 500 응답을 반환하도록 정리했다.
+[codex] 2026-03-24 작업 메모 6
+- src/server.js에 `/run/:id`, `/run/:id/result` 정적 라우트를 명시적으로 추가해 전용 HTML 파일(run.html/result.html)을 반환하도록 설정했다.
+- fallback 라우트(`/{*fallbackPath}`)는 마지막 순서를 유지해 전용 라우트보다 먼저 매칭되지 않도록 했다.

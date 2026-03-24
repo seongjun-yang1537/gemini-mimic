@@ -1,14 +1,27 @@
 {
   "dependencies": {
+    "@google/genai": "^1.46.0",
+    "dotenv": "^17.3.1",
+    "express": "^5.2.1",
+    "multer": "^2.1.1",
     "node-fetch": "^3.3.2",
-    "sqlite3": "^6.0.1"
+    "sqlite3": "^6.0.1",
+    "uuid": "^13.0.0",
+    "ws": "^8.20.0"
   },
   "name": "gemini-mimic",
   "version": "1.0.0",
   "description": "",
-  "main": "index.js",
+  "main": "src/server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node src/server.js",
+    "dev": "node src/server.js",
+    "lint": "eslint .",
+    "test": "node --test",
+    "test:api": "node scripts/api-smoke.js",
+    "sync:build-hash": "node scripts/sync-build-hash.js",
+    "prestart": "npm run sync:build-hash",
+    "predev": "npm run sync:build-hash"
   },
   "repository": {
     "type": "git",
@@ -21,5 +34,9 @@
   "bugs": {
     "url": "https://github.com/seongjun-yang1537/gemini-mimic/issues"
   },
-  "homepage": "https://github.com/seongjun-yang1537/gemini-mimic#readme"
+  "homepage": "https://github.com/seongjun-yang1537/gemini-mimic#readme",
+  "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "eslint": "^10.1.0"
+  }
 }

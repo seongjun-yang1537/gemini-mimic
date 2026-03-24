@@ -1,0 +1,1744 @@
+<!doctype html>
+<html lang="ko">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mimic</title>
+  <style>
+    :root {
+      color-scheme: light dark;
+      --font-sans: "Inter", "Pretendard", "Noto Sans KR", -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      --border-radius-md: 8px;
+      --border-radius-lg: 12px;
+      --border-radius-xl: 16px;
+      --color-background-primary: #ffffff;
+      --color-background-secondary: #f8f8f6;
+      --color-background-tertiary: #f3f2ef;
+      --color-background-info: #e6f1fb;
+      --color-background-danger: #fcebeb;
+      --color-background-success: #e1f5ee;
+      --color-background-warning: #faeeda;
+      --color-text-primary: #1b1b19;
+      --color-text-secondary: #5f5e5a;
+      --color-text-tertiary: #888780;
+      --color-text-info: #0c447c;
+      --color-text-danger: #791f1f;
+      --color-text-success: #085041;
+      --color-text-warning: #633806;
+      --color-border-primary: rgba(95, 94, 90, 0.4);
+      --color-border-secondary: rgba(95, 94, 90, 0.3);
+      --color-border-tertiary: rgba(95, 94, 90, 0.15);
+      --color-border-info: #185fa5;
+      --color-border-danger: #a32d2d;
+      --color-border-success: #0f6e56;
+      --color-border-warning: #854f0b;
+      --purple-50: #eeedfe;
+      --purple-100: #cecbf6;
+      --purple-200: #afa9ec;
+      --purple-400: #7f77dd;
+      --purple-600: #534ab7;
+      --purple-800: #3c3489;
+      --teal-50: #e1f5ee;
+      --teal-100: #9fe1cb;
+      --teal-200: #5dcaa5;
+      --teal-600: #0f6e56;
+      --teal-800: #085041;
+      --red-50: #fcebeb;
+      --red-100: #f7c1c1;
+      --red-200: #f09595;
+      --red-600: #a32d2d;
+      --red-800: #791f1f;
+      --coral-600: #d85a30;
+      --blue-600: #185fa5;
+      --pink-600: #993556;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      :root {
+        --color-background-primary: #121210;
+        --color-background-secondary: #1b1b19;
+        --color-background-tertiary: #0f0f0e;
+        --color-background-info: #0c447c;
+        --color-background-danger: #791f1f;
+        --color-background-success: #085041;
+        --color-background-warning: #633806;
+        --color-text-primary: #f1efe8;
+        --color-text-secondary: #d3d1c7;
+        --color-text-tertiary: #b4b2a9;
+        --color-text-info: #b5d4f4;
+        --color-text-danger: #f7c1c1;
+        --color-text-success: #9fe1cb;
+        --color-text-warning: #fac775;
+        --color-border-primary: rgba(211, 209, 199, 0.4);
+        --color-border-secondary: rgba(211, 209, 199, 0.3);
+        --color-border-tertiary: rgba(211, 209, 199, 0.15);
+        --color-border-info: #85b7eb;
+        --color-border-danger: #f09595;
+        --color-border-success: #5dcaa5;
+        --color-border-warning: #ef9f27;
+      }
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: var(--font-sans);
+      background: var(--color-background-tertiary);
+      color: var(--color-text-primary);
+      font-size: 16px;
+      line-height: 1.7;
+    }
+
+    .page-header {
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+      height: 52px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: var(--color-background-primary);
+    }
+
+    .header-inner {
+      width: min(100%, 780px);
+      margin: 0 auto;
+      padding: 0 24px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+
+    .build-hash {
+      font-size: 11px;
+      font-weight: 400;
+      color: var(--color-text-tertiary);
+      white-space: nowrap;
+      font-family: var(--font-mono, var(--font-sans));
+    }
+
+    .brand-nav {
+      display: flex;
+      align-items: center;
+      gap: 16px;
+      min-width: 0;
+    }
+
+    .brand {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 16px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      white-space: nowrap;
+    }
+
+    .brand-icon {
+      width: 28px;
+      height: 28px;
+      border-radius: var(--border-radius-md);
+      background: var(--purple-600);
+      color: var(--purple-50);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 13px;
+      font-weight: 500;
+    }
+
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 12px;
+      min-width: 0;
+    }
+
+    .nav-link {
+      border: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      font-size: 14px;
+      font-weight: 400;
+      padding: 4px 0;
+      cursor: pointer;
+    }
+
+    .nav-link.active {
+      color: var(--color-text-primary);
+      font-weight: 500;
+    }
+
+    main {
+      width: min(100%, 780px);
+      margin: 0 auto;
+      padding: 52px 24px 40px;
+    }
+
+    .hero-title {
+      margin: 0 0 28px;
+      text-align: center;
+      font-size: 26px;
+      font-weight: 500;
+      letter-spacing: -0.5px;
+    }
+
+    .composer {
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-xl);
+      padding: 14px 14px 12px;
+      position: relative;
+    }
+
+    .prompt-editor {
+      width: 100%;
+      border: 0;
+      outline: 0;
+      min-height: 48px;
+      max-height: 200px;
+      overflow-y: auto;
+      background: transparent;
+      color: var(--color-text-primary);
+      font-family: inherit;
+      font-size: 15px;
+      line-height: 1.6;
+      padding: 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+
+    .prompt-editor:empty::before {
+      content: attr(data-placeholder);
+      color: var(--color-text-tertiary);
+      pointer-events: none;
+    }
+
+    .tag-chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 3px;
+      padding: 1px 6px;
+      border-radius: 4px;
+      background: var(--purple-50);
+      color: var(--purple-800);
+      font-size: 12px;
+      font-weight: 500;
+      vertical-align: baseline;
+      cursor: default;
+      user-select: all;
+    }
+
+    .tag-chip-icon {
+      width: 8px;
+      height: 8px;
+      color: var(--purple-600);
+      flex-shrink: 0;
+    }
+
+    .attachment-preview-list {
+      display: flex;
+      flex-direction: row;
+      gap: 8px;
+      overflow-x: auto;
+      overflow-y: hidden;
+      margin-top: 10px;
+      scrollbar-width: none;
+      -ms-overflow-style: none;
+    }
+
+    .attachment-preview-list::-webkit-scrollbar { display: none; }
+
+    .attachment-preview-card {
+      width: 104px;
+      height: 88px;
+      background: var(--color-background-secondary);
+      border: 0.5px solid var(--color-border-tertiary);
+      border-radius: var(--border-radius-md);
+      padding: 4px;
+      flex: 0 0 auto;
+      display: grid;
+      grid-template-rows: 52px 14px 14px;
+      row-gap: 2px;
+    }
+
+    .attachment-thumb {
+      width: 100%;
+      height: 52px;
+      border-radius: 6px;
+      overflow: hidden;
+      background: var(--color-background-tertiary);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .attachment-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+      display: block;
+    }
+
+    .attachment-thumb-fallback {
+      width: 18px;
+      height: 18px;
+      color: var(--color-text-tertiary);
+    }
+
+    .attachment-play-indicator {
+      position: absolute;
+      left: 5px;
+      top: 5px;
+      width: 14px;
+      height: 14px;
+      border-radius: 50%;
+      background: rgba(241, 239, 232, 0.8);
+      color: var(--purple-800);
+      font-size: 8px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      line-height: 1;
+    }
+
+    .attachment-tag {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--purple-600);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      line-height: 1.2;
+    }
+
+    .attachment-file-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 4px;
+      min-width: 0;
+      line-height: 1;
+    }
+
+    .attachment-filename {
+      font-size: 11px;
+      color: var(--color-text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      max-width: 80px;
+      line-height: 1.2;
+    }
+
+    .attachment-remove {
+      border: 0;
+      background: transparent;
+      color: var(--color-text-tertiary);
+      cursor: pointer;
+      font-size: 12px;
+      padding: 0;
+      line-height: 1;
+      flex-shrink: 0;
+    }
+
+    .attachment-remove:hover { color: var(--color-text-primary); }
+
+    .tag-autocomplete {
+      position: absolute;
+      left: 14px;
+      right: 14px;
+      top: 76px;
+      background: var(--color-background-primary);
+      border: 0.5px solid var(--color-border-secondary);
+      border-radius: var(--border-radius-md);
+      display: none;
+      z-index: 10;
+      max-height: 168px;
+      overflow-y: auto;
+    }
+
+    .tag-autocomplete.visible { display: block; }
+
+    .tag-autocomplete-item {
+      width: 100%;
+      border: 0;
+      background: transparent;
+      color: var(--color-text-secondary);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px;
+      cursor: pointer;
+      text-align: left;
+      font-size: 12px;
+    }
+
+    .tag-autocomplete-item:hover,
+    .tag-autocomplete-item.active {
+      background: var(--color-background-secondary);
+      color: var(--color-text-primary);
+    }
+
+    .autocomplete-thumb {
+      width: 20px;
+      height: 20px;
+      border-radius: 6px;
+      overflow: hidden;
+      flex-shrink: 0;
+      background: var(--color-background-tertiary);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .autocomplete-thumb img {
+      width: 100%;
+      height: 100%;
+      object-fit: cover;
+    }
+
+    .autocomplete-tag {
+      color: var(--purple-600);
+      font-weight: 500;
+      min-width: 54px;
+      max-width: 54px;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .autocomplete-name {
+      color: var(--color-text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+      flex: 1;
+    }
+
+    .composer-toolbar {
+      margin-top: 10px;
+      padding-top: 10px;
+      border-top: 0.5px solid var(--color-border-tertiary);
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 8px;
+    }
+
+    .toolbar-left,
+    .toolbar-right {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .attach-button {
+      height: 32px;
+      border-radius: 6px;
+      border: 0.5px solid var(--color-border-tertiary);
+      background: transparent;
+      color: var(--color-text-secondary);
+      font-size: 12px;
+      font-weight: 400;
+      padding: 0 10px;
+      cursor: pointer;
+    }
+
+    .send-button {
+      width: 34px;
+      height: 34px;
+      border-radius: 50%;
+      border: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-secondary);
+      color: var(--color-text-tertiary);
+      font-size: 16px;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      transition: transform 0.12s ease;
+    }
+
+    .send-button.active {
+      background: var(--purple-600);
+      color: var(--purple-50);
+      border-color: transparent;
+    }
+
+    .send-button:active,
+    .attach-button:active,
+    .tab-button:active,
+    .task-row:active,
+    .tag-autocomplete-item:active { transform: scale(0.98); }
+
+    .tabs-bar {
+      margin-top: 36px;
+      display: flex;
+      align-items: flex-end;
+      gap: 12px;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+      padding-bottom: 8px;
+    }
+
+    .tabs {
+      display: flex;
+      align-items: flex-end;
+      gap: 18px;
+    }
+
+    .tab-button {
+      border: 0;
+      background: transparent;
+      color: var(--color-text-tertiary);
+      font-size: 14px;
+      font-weight: 400;
+      padding: 0 0 8px;
+      border-bottom: 2px solid transparent;
+      cursor: pointer;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .tab-button.active {
+      color: var(--color-text-primary);
+      font-weight: 500;
+      border-bottom-color: var(--color-text-primary);
+    }
+
+    .count-badge {
+      border-radius: 99px;
+      padding: 1px 7px;
+      font-size: 11px;
+      border: 0.5px solid var(--color-border-tertiary);
+      color: var(--color-text-tertiary);
+      background: transparent;
+    }
+
+    .tab-button.active .count-badge {
+      background: var(--purple-50);
+      border-color: var(--purple-200);
+      color: var(--purple-800);
+    }
+
+    .status-badge {
+      border-radius: 99px;
+      padding: 3px 10px;
+      font-size: 12px;
+      font-weight: 400;
+      border: 0.5px solid transparent;
+    }
+
+    .status-badge[data-status="running"] {
+      background: var(--purple-50);
+      border-color: var(--purple-200);
+      color: var(--purple-800);
+    }
+
+    .status-badge[data-status="completed"] {
+      background: var(--teal-50);
+      border-color: var(--teal-200);
+      color: var(--teal-800);
+    }
+
+    .status-badge[data-status="failed"] {
+      background: var(--red-50);
+      border-color: var(--red-200);
+      color: var(--red-800);
+    }
+
+    .tab-panel { min-height: 300px; }
+
+    .task-list { margin-top: 0; }
+
+    .task-row {
+      width: 100%;
+      border: 0;
+      border-bottom: 0.5px solid var(--color-border-tertiary);
+      background: transparent;
+      padding: 14px 6px;
+      cursor: pointer;
+      text-align: left;
+      transition: background-color 0.15s ease;
+      display: grid;
+      grid-template-columns: 42px minmax(0, 1fr) auto minmax(72px, 88px) auto;
+      gap: 10px;
+      align-items: center;
+    }
+
+    .task-row:hover { background: var(--color-background-secondary); }
+
+    .phase-ring {
+      width: 34px;
+      height: 34px;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+    }
+
+    .phase-ring svg {
+      width: 34px;
+      height: 34px;
+      transform: rotate(-90deg);
+      position: absolute;
+      inset: 0;
+    }
+
+    .phase-ring .track {
+      fill: none;
+      stroke: var(--color-border-tertiary);
+      stroke-width: 2.6;
+    }
+
+    .phase-ring .progress {
+      fill: none;
+      stroke-width: 2.6;
+      stroke-linecap: round;
+      transition: stroke-dashoffset 0.2s ease;
+    }
+
+    .phase-ring[data-status="running"] .progress { stroke: var(--purple-600); }
+    .phase-ring[data-status="completed"] .progress { stroke: var(--teal-600); }
+    .phase-ring[data-status="failed"] .progress { stroke: var(--red-600); }
+
+    .phase-ring .icon {
+      position: relative;
+      z-index: 1;
+      color: var(--color-text-secondary);
+    }
+
+    .phase-ring[data-status="completed"] .icon { color: var(--teal-600); font-size: 13px; }
+    .phase-ring[data-status="failed"] .icon { color: var(--red-600); font-size: 13px; }
+
+    .orbit-wrap {
+      width: 34px;
+      height: 34px;
+      position: absolute;
+      inset: 0;
+      animation: orbit 2.4s linear infinite;
+      display: none;
+    }
+
+    .phase-ring[data-status="running"] .orbit-wrap { display: block; }
+
+    .orbit-dot {
+      width: 6px;
+      height: 6px;
+      border-radius: 50%;
+      background: var(--purple-600);
+      position: absolute;
+      top: -2px;
+      left: 14px;
+    }
+
+    .task-main {
+      min-width: 0;
+      display: flex;
+      flex-direction: column;
+      gap: 2px;
+    }
+
+    .task-title-line {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      min-width: 0;
+    }
+
+    .task-title {
+      font-size: 14px;
+      font-weight: 500;
+      color: var(--color-text-primary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .expert-dots {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      flex-shrink: 0;
+    }
+
+    .expert-dot {
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      animation: pulse 1.8s ease-in-out infinite;
+    }
+
+    .expert-hook { background: var(--purple-600); }
+    .expert-story { background: var(--teal-600); }
+    .expert-cta { background: var(--coral-600); }
+    .expert-action { background: var(--blue-600); }
+    .expert-character { background: var(--pink-600); }
+
+    .task-meta {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      overflow: hidden;
+      text-overflow: ellipsis;
+      white-space: nowrap;
+    }
+
+    .task-meta .detail-running { color: var(--purple-600); font-weight: 500; }
+    .task-meta .detail-failed { color: var(--red-600); }
+
+    .phase-track {
+      display: flex;
+      align-items: center;
+      gap: 4px;
+    }
+
+    .phase-step {
+      width: 20px;
+      height: 20px;
+      border-radius: 50%;
+      border: 0.5px solid var(--color-border-tertiary);
+      background: var(--color-background-secondary);
+      color: var(--color-text-tertiary);
+      font-size: 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    .phase-step.completed {
+      border-color: var(--teal-200);
+      background: var(--teal-50);
+      color: var(--teal-800);
+    }
+
+    .phase-step.current {
+      border-color: var(--purple-200);
+      background: var(--purple-50);
+      color: var(--purple-800);
+    }
+
+    .phase-step.failed {
+      border-color: var(--red-200);
+      background: var(--red-50);
+      color: var(--red-800);
+    }
+
+    .phase-link {
+      width: 12px;
+      height: 0;
+      border-top: 0.5px solid var(--color-border-tertiary);
+    }
+
+    .phase-link.completed { border-top-color: var(--teal-200); }
+
+    .cost-column {
+      text-align: right;
+      min-width: 72px;
+    }
+
+    .cost-usd {
+      font-size: 12px;
+      font-weight: 500;
+      color: var(--color-text-secondary);
+      line-height: 1.4;
+    }
+
+    .cost-token {
+      font-size: 12px;
+      color: var(--color-text-tertiary);
+      line-height: 1.4;
+    }
+
+    .empty-state {
+      text-align: center;
+      padding: 60px 0;
+      color: var(--color-text-tertiary);
+      font-size: 14px;
+    }
+
+    .sub-panel {
+      padding: 24px 4px;
+      color: var(--color-text-secondary);
+      font-size: 14px;
+    }
+
+    @keyframes orbit {
+      to { transform: rotate(360deg); }
+    }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.5; transform: scale(0.8); }
+    }
+
+    @media (prefers-color-scheme: dark) {
+      .send-button.active {
+        background: var(--purple-400);
+        color: var(--purple-100);
+      }
+
+      .tag-chip {
+        background: var(--purple-800);
+        color: var(--purple-100);
+      }
+
+      .tag-chip-icon {
+        color: var(--purple-200);
+      }
+
+      .status-badge[data-status="running"],
+      .phase-step.current,
+      .tab-button.active .count-badge {
+        background: var(--purple-800);
+        border-color: var(--purple-200);
+        color: var(--purple-100);
+      }
+
+      .status-badge[data-status="completed"],
+      .phase-step.completed {
+        background: var(--teal-800);
+        border-color: var(--teal-200);
+        color: var(--teal-100);
+      }
+
+      .status-badge[data-status="failed"],
+      .phase-step.failed {
+        background: var(--red-800);
+        border-color: var(--red-200);
+        color: var(--red-100);
+      }
+
+      .task-meta .detail-running { color: var(--purple-100); }
+      .task-meta .detail-failed { color: var(--red-100); }
+      .attachment-play-indicator { background: rgba(18, 18, 16, 0.75); color: var(--purple-100); }
+      .attachment-tag,
+      .autocomplete-tag { color: var(--purple-100); }
+    }
+
+    @media (max-width: 640px) {
+      .build-hash { display: none; }
+
+      .phase-track,
+      .cost-column { display: none; }
+
+      .task-row {
+        grid-template-columns: 42px minmax(0, 1fr) auto;
+      }
+
+      .header-inner,
+      main { padding-left: 16px; padding-right: 16px; }
+      .hero-title { font-size: 22px; }
+    }
+
+    @media (max-width: 480px) {
+      .tabs { gap: 12px; }
+      .attachment-preview-card {
+        width: 80px;
+        height: 68px;
+        grid-template-rows: 40px 12px 12px;
+      }
+      .attachment-thumb {
+        height: 40px;
+      }
+      .attachment-play-indicator {
+        width: 12px;
+        height: 12px;
+        font-size: 7px;
+      }
+    }
+  </style>
+</head>
+<body>
+  <header class="page-header">
+    <div class="header-inner">
+      <div class="brand-nav">
+        <div class="brand"><span class="brand-icon">Mi</span><span>Mimic</span></div>
+        <nav class="nav-links" aria-label="주요">
+          <button class="nav-link active" type="button">대시보드</button>
+          <button class="nav-link" type="button">프롬프트</button>
+          <button class="nav-link" type="button">에셋</button>
+          <button class="nav-link" type="button">설정</button>
+        </nav>
+      </div>
+      <div class="build-hash" id="buildHash"></div>
+    </div>
+  </header>
+
+  <main>
+    <h1 class="hero-title">어떤 밈을 크리에이티브로 만들까요?</h1>
+
+    <section class="composer" aria-label="입력 영역">
+      <div id="promptInput" class="prompt-editor" contenteditable="true" role="textbox" aria-multiline="true" data-placeholder="밈 영상을 업로드하거나, 만들고 싶은 크리에이티브를 설명해주세요"></div>
+      <div class="tag-autocomplete" id="tagAutocomplete"></div>
+      <div class="attachment-preview-list" id="attachmentList"></div>
+      <div class="composer-toolbar">
+        <div class="toolbar-left">
+          <input id="fileInput" type="file" accept="video/*,image/*" multiple hidden>
+          <button class="attach-button" id="attachButton" type="button">+ 첨부</button>
+        </div>
+        <div class="toolbar-right">
+          <button class="send-button" id="sendButton" type="button" aria-label="전송">→</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="tabs-bar">
+      <div class="tabs" role="tablist" aria-label="대시보드 탭">
+        <button class="tab-button active" type="button" role="tab" aria-selected="true" data-tab="tasks">작업 <span class="count-badge" id="tasksCountBadge">3</span></button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="prompts">프롬프트</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="assets">에셋</button>
+        <button class="tab-button" type="button" role="tab" aria-selected="false" data-tab="settings">설정</button>
+      </div>
+    </section>
+
+    <section class="tab-panel" id="tabPanel"></section>
+  </main>
+
+  <script src="/config.js"></script>
+  <script>
+    const dashboardState = {
+      selectedTab: 'tasks',
+      attachments: [],
+      nextAttachmentId: 1,
+      autocomplete: {
+        isOpen: false,
+        activeIndex: 0,
+        triggerRange: null,
+        queryText: ''
+      },
+      tasks: [
+        {
+          id: 'run-001',
+          title: '고양이 밈 — 놀란 표정 리액션',
+          input: 'cat_reaction.mp4',
+          inputType: 'video',
+          attachments: [],
+          status: 'running',
+          phase: 2,
+          phaseDetail: '토론 2라운드 진행 중',
+          activeExperts: ['hook', 'story', 'cta'],
+          createdAt: '3분 전',
+          tokens: 12482,
+          cost: 0.24
+        },
+        {
+          id: 'run-002',
+          title: 'GTA 워스텔 — 용사 등장씬',
+          input: 'gta_intro.mp4',
+          inputType: 'video',
+          attachments: [],
+          status: 'completed',
+          phase: 4,
+          phaseDetail: '완료',
+          activeExperts: [],
+          createdAt: '28분 전',
+          tokens: 78342,
+          cost: 1.42
+        },
+        {
+          id: 'run-003',
+          title: 'This is fine — 보스전 밈',
+          input: 'this_is_fine.gif',
+          inputType: 'image',
+          attachments: [],
+          status: 'failed',
+          phase: 3,
+          phaseDetail: 'Veo3 실패',
+          activeExperts: [],
+          createdAt: '2시간 전',
+          tokens: 28731,
+          cost: 0.56
+        }
+      ]
+    };
+
+    const promptInputElement = document.getElementById('promptInput');
+    const sendButtonElement = document.getElementById('sendButton');
+    const attachButtonElement = document.getElementById('attachButton');
+    const fileInputElement = document.getElementById('fileInput');
+    const attachmentListElement = document.getElementById('attachmentList');
+    const tagAutocompleteElement = document.getElementById('tagAutocomplete');
+    const tabPanelElement = document.getElementById('tabPanel');
+    const tasksCountBadgeElement = document.getElementById('tasksCountBadge');
+    const buildHashElement = document.getElementById('buildHash');
+
+    function renderBuildHash() {
+      const commitHashValue = window.APP_CONFIG?.commitHash || 'unknown';
+      buildHashElement.textContent = `build ${commitHashValue}`;
+    }
+
+    renderBuildHash();
+
+    function formatTokenCount(tokenCount) {
+      return `${new Intl.NumberFormat('ko-KR').format(Math.round(tokenCount))} tok`;
+    }
+
+    function formatUsdCost(costValue) {
+      return `$${Number(costValue).toFixed(2)}`;
+    }
+
+    function getExpertClass(expertKey) {
+      const expertClassMap = {
+        hook: 'expert-hook',
+        story: 'expert-story',
+        cta: 'expert-cta',
+        action: 'expert-action',
+        character: 'expert-character'
+      };
+      return expertClassMap[expertKey] || 'expert-hook';
+    }
+
+    function computeRingProgress(taskItem) {
+      const phaseRatio = Math.max(0, Math.min(1, (taskItem.phase - 1) / 4));
+      if (taskItem.status === 'completed') {
+        return 1;
+      }
+      return phaseRatio;
+    }
+
+    function createPhaseTrack(taskItem) {
+      const phaseMarkup = [];
+      for (let phaseIndex = 1; phaseIndex <= 4; phaseIndex += 1) {
+        let phaseClassName = '';
+        let phaseLabel = String(phaseIndex);
+        if (phaseIndex < taskItem.phase || taskItem.status === 'completed') {
+          phaseClassName = 'completed';
+          phaseLabel = '✓';
+        }
+        if (taskItem.status === 'running' && phaseIndex === taskItem.phase) {
+          phaseClassName = 'current';
+          phaseLabel = String(phaseIndex);
+        }
+        if (taskItem.status === 'failed' && phaseIndex === taskItem.phase) {
+          phaseClassName = 'failed';
+          phaseLabel = String(phaseIndex);
+        }
+        if (taskItem.status === 'failed' && phaseIndex < taskItem.phase) {
+          phaseClassName = 'completed';
+          phaseLabel = '✓';
+        }
+        phaseMarkup.push(`<span class="phase-step ${phaseClassName}">${phaseLabel}</span>`);
+        if (phaseIndex < 4) {
+          const isCompletedLink = taskItem.status === 'completed' || phaseIndex < taskItem.phase;
+          phaseMarkup.push(`<span class="phase-link ${isCompletedLink ? 'completed' : ''}"></span>`);
+        }
+      }
+      return phaseMarkup.join('');
+    }
+
+    function createFallbackSvg(fileType) {
+      const svgFill = encodeURIComponent('currentColor');
+      const iconPath = fileType === 'video'
+        ? '<path d="M7 6h6.2c1.1 0 2 .9 2 2v8c0 1.1-.9 2-2 2H7c-1.1 0-2-.9-2-2V8c0-1.1.9-2 2-2Zm2.2 3.2 4.3 2.8-4.3 2.8V9.2Z" fill="' + svgFill + '"/>'
+        : '<path d="M6.5 5h9A1.5 1.5 0 0 1 17 6.5v9a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 5 15.5v-9A1.5 1.5 0 0 1 6.5 5Zm.7 8.8h7.6l-1.9-2.4a.9.9 0 0 0-1.4 0l-1.3 1.7-.8-.9a.9.9 0 0 0-1.4.1l-.8 1.1Zm6.6-5.9a1.2 1.2 0 1 0 0 2.4 1.2 1.2 0 0 0 0-2.4Z" fill="' + svgFill + '"/>';
+      return `data:image/svg+xml;charset=UTF-8,<svg xmlns='http://www.w3.org/2000/svg' width='20' height='20' viewBox='0 0 22 22'>${iconPath}</svg>`;
+    }
+
+    function detectAttachmentType(fileObject) {
+      if (fileObject.type.startsWith('video/')) {
+        return 'video';
+      }
+      return 'image';
+    }
+
+    function createImageThumbnail(fileObject) {
+      return Promise.resolve(URL.createObjectURL(fileObject));
+    }
+
+    function createVideoThumbnail(fileObject) {
+      return new Promise((resolve) => {
+        const videoElement = document.createElement('video');
+        const objectUrl = URL.createObjectURL(fileObject);
+        let hasResolved = false;
+
+        const finalizeResolve = (thumbnailValue) => {
+          if (hasResolved) {
+            return;
+          }
+          hasResolved = true;
+          videoElement.removeAttribute('src');
+          videoElement.load();
+          URL.revokeObjectURL(objectUrl);
+          resolve(thumbnailValue);
+        };
+
+        videoElement.preload = 'metadata';
+        videoElement.muted = true;
+        videoElement.playsInline = true;
+        videoElement.src = objectUrl;
+
+        videoElement.addEventListener('loadeddata', () => {
+          try {
+            const canvasElement = document.createElement('canvas');
+            canvasElement.width = 104;
+            canvasElement.height = 52;
+            const canvasContext = canvasElement.getContext('2d');
+            if (!canvasContext) {
+              finalizeResolve(createFallbackSvg('video'));
+              return;
+            }
+            canvasContext.drawImage(videoElement, 0, 0, 104, 52);
+            const thumbnailDataUrl = canvasElement.toDataURL('image/jpeg', 0.82);
+            finalizeResolve(thumbnailDataUrl);
+          } catch {
+            finalizeResolve(createFallbackSvg('video'));
+          }
+        }, { once: true });
+
+        videoElement.addEventListener('error', () => {
+          finalizeResolve(createFallbackSvg('video'));
+        }, { once: true });
+
+        setTimeout(() => {
+          finalizeResolve(createFallbackSvg('video'));
+        }, 2000);
+      });
+    }
+
+    function generateThumbnailForFile(fileObject, attachmentType) {
+      if (attachmentType === 'video') {
+        return createVideoThumbnail(fileObject);
+      }
+      return createImageThumbnail(fileObject);
+    }
+
+    function normalizeEditableText(textValue) {
+      return textValue.replace(/ /g, ' ');
+    }
+
+    function getEditorSelectionRange() {
+      const selection = window.getSelection();
+      if (!selection || selection.rangeCount === 0) {
+        return null;
+      }
+      const selectedRange = selection.getRangeAt(0);
+      if (!promptInputElement.contains(selectedRange.startContainer) || !promptInputElement.contains(selectedRange.endContainer)) {
+        return null;
+      }
+      return selectedRange;
+    }
+
+    function getTextBeforeCaret() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange) {
+        return normalizeEditableText(promptInputElement.textContent || '');
+      }
+      const prefixRange = selectedRange.cloneRange();
+      prefixRange.selectNodeContents(promptInputElement);
+      prefixRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      return normalizeEditableText(prefixRange.toString());
+    }
+
+    function getEditorPlainText() {
+      return normalizeEditableText(promptInputElement.textContent || '');
+    }
+
+    function focusEditor() {
+      promptInputElement.focus();
+    }
+
+    function placeCaretAfterNode(node) {
+      const caretRange = document.createRange();
+      const selection = window.getSelection();
+      caretRange.setStartAfter(node);
+      caretRange.setEndAfter(node);
+      selection.removeAllRanges();
+      selection.addRange(caretRange);
+      focusEditor();
+    }
+
+    function createTagChipElement(attachmentItem) {
+      const chipElement = document.createElement('span');
+      chipElement.className = 'tag-chip';
+      chipElement.setAttribute('contenteditable', 'false');
+      chipElement.dataset.tag = attachmentItem.tag;
+      chipElement.dataset.type = attachmentItem.type;
+
+      const iconElement = document.createElementNS('http://www.w3.org/2000/svg', 'svg');
+      iconElement.setAttribute('viewBox', '0 0 8 8');
+      iconElement.setAttribute('aria-hidden', 'true');
+      iconElement.classList.add('tag-chip-icon');
+
+      const iconPath = document.createElementNS('http://www.w3.org/2000/svg', 'path');
+      if (attachmentItem.type === 'video') {
+        iconPath.setAttribute('d', 'M2 1.2 6.5 4 2 6.8V1.2Z');
+      } else {
+        iconPath.setAttribute('d', 'M1.2 1.2h5.6a.8.8 0 0 1 .8.8v4a.8.8 0 0 1-.8.8H1.2a.8.8 0 0 1-.8-.8V2a.8.8 0 0 1 .8-.8Zm.7 4h4.2L4.9 3.8a.45.45 0 0 0-.7 0l-.8 1-.5-.6a.45.45 0 0 0-.7 0l-.3.4Zm3.8-2.5a.55.55 0 1 0 0 1.1.55.55 0 0 0 0-1.1Z');
+      }
+      iconPath.setAttribute('fill', 'currentColor');
+      iconElement.append(iconPath);
+
+      const labelElement = document.createElement('span');
+      labelElement.textContent = attachmentItem.tag;
+
+      chipElement.append(iconElement, labelElement);
+      return chipElement;
+    }
+
+    function selectChipElement(chipElement) {
+      const selectionRange = document.createRange();
+      const selection = window.getSelection();
+      selectionRange.selectNode(chipElement);
+      selection.removeAllRanges();
+      selection.addRange(selectionRange);
+      focusEditor();
+    }
+
+    function removeChipNode(chipElement) {
+      const previousSibling = chipElement.previousSibling;
+      const nextSibling = chipElement.nextSibling;
+      chipElement.remove();
+
+      if (previousSibling && previousSibling.nodeType === Node.TEXT_NODE && nextSibling && nextSibling.nodeType === Node.TEXT_NODE) {
+        previousSibling.textContent = `${previousSibling.textContent}${nextSibling.textContent}`;
+        nextSibling.remove();
+      }
+
+      if (previousSibling && previousSibling.nodeType === Node.TEXT_NODE && /\s$/.test(previousSibling.textContent) && nextSibling && nextSibling.nodeType === Node.TEXT_NODE && /^\s/.test(nextSibling.textContent || '')) {
+        nextSibling.textContent = (nextSibling.textContent || '').replace(/^\s+/, ' ');
+      }
+
+      if (nextSibling) {
+        placeCaretAfterNode(nextSibling);
+        return;
+      }
+      if (previousSibling) {
+        placeCaretAfterNode(previousSibling);
+        return;
+      }
+      promptInputElement.textContent = '';
+      focusEditor();
+    }
+
+    function removeChipByTag(tagText) {
+      promptInputElement.querySelectorAll('.tag-chip').forEach((chipElement) => {
+        if (chipElement.dataset.tag === tagText) {
+          removeChipNode(chipElement);
+        }
+      });
+    }
+
+    function updateChipTag(oldTag, newTag) {
+      promptInputElement.querySelectorAll('.tag-chip').forEach((chipElement) => {
+        if (chipElement.dataset.tag === oldTag) {
+          chipElement.dataset.tag = newTag;
+          const labelElement = chipElement.querySelector('span');
+          if (labelElement) {
+            labelElement.textContent = newTag;
+          }
+        }
+      });
+    }
+
+    function syncChipsWithAttachments(removedTags, changedTags) {
+      removedTags.forEach((removedTag) => {
+        removeChipByTag(removedTag);
+      });
+      changedTags.forEach((changedTagPair) => {
+        updateChipTag(changedTagPair.oldTag, changedTagPair.newTag);
+      });
+      refreshSendButtonState();
+    }
+
+    function reindexAttachments() {
+      let videoOrder = 0;
+      let imageOrder = 0;
+      dashboardState.attachments.forEach((attachmentItem) => {
+        if (attachmentItem.type === 'video') {
+          videoOrder += 1;
+          attachmentItem.index = videoOrder;
+          attachmentItem.tag = `@영상${videoOrder}`;
+        } else {
+          imageOrder += 1;
+          attachmentItem.index = imageOrder;
+          attachmentItem.tag = `@이미지${imageOrder}`;
+        }
+      });
+    }
+
+    function buildAttachmentCard(attachmentItem, attachmentIndex) {
+      const thumbContent = attachmentItem.thumbnailUrl
+        ? `<img src="${attachmentItem.thumbnailUrl}" alt="${attachmentItem.file.name}">`
+        : `<img class="attachment-thumb-fallback" src="${createFallbackSvg(attachmentItem.type)}" alt="파일">`;
+      return `
+        <article class="attachment-preview-card">
+          <div class="attachment-thumb">
+            ${thumbContent}
+            ${attachmentItem.type === 'video' ? '<span class="attachment-play-indicator">▶</span>' : ''}
+          </div>
+          <div class="attachment-tag">${attachmentItem.tag}</div>
+          <div class="attachment-file-row">
+            <span class="attachment-filename" title="${attachmentItem.file.name}">${attachmentItem.file.name}</span>
+            <button class="attachment-remove" type="button" data-remove-index="${attachmentIndex}" aria-label="첨부 제거">×</button>
+          </div>
+        </article>
+      `;
+    }
+
+    function renderAttachmentList() {
+      attachmentListElement.innerHTML = dashboardState.attachments.map((attachmentItem, attachmentIndex) => buildAttachmentCard(attachmentItem, attachmentIndex)).join('');
+
+      attachmentListElement.querySelectorAll('[data-remove-index]').forEach((removeButtonElement) => {
+        removeButtonElement.addEventListener('click', () => {
+          const removeIndexValue = Number(removeButtonElement.dataset.removeIndex);
+          const previousAttachmentState = dashboardState.attachments.map((attachmentItem) => ({ id: attachmentItem.id, tag: attachmentItem.tag }));
+          const removedAttachment = dashboardState.attachments[removeIndexValue];
+          if (!removedAttachment) {
+            return;
+          }
+          if (removedAttachment.thumbnailUrl.startsWith('blob:')) {
+            URL.revokeObjectURL(removedAttachment.thumbnailUrl);
+          }
+          dashboardState.attachments.splice(removeIndexValue, 1);
+          reindexAttachments();
+          const removedTags = [removedAttachment.tag];
+          const changedTags = [];
+          previousAttachmentState.forEach((previousAttachment) => {
+            const nextAttachment = dashboardState.attachments.find((attachmentItem) => attachmentItem.id === previousAttachment.id);
+            if (nextAttachment && nextAttachment.tag !== previousAttachment.tag) {
+              changedTags.push({ oldTag: previousAttachment.tag, newTag: nextAttachment.tag });
+            }
+          });
+          syncChipsWithAttachments(removedTags, changedTags);
+          renderAttachmentList();
+          updateAutocompleteForInput();
+          refreshSendButtonState();
+        });
+      });
+    }
+
+    function closeAutocomplete() {
+      dashboardState.autocomplete.isOpen = false;
+      dashboardState.autocomplete.activeIndex = 0;
+      dashboardState.autocomplete.queryText = '';
+      dashboardState.autocomplete.triggerRange = null;
+      tagAutocompleteElement.classList.remove('visible');
+      tagAutocompleteElement.innerHTML = '';
+    }
+
+    function getAutocompleteCandidates() {
+      const normalizedQuery = dashboardState.autocomplete.queryText.trim();
+      if (!normalizedQuery) {
+        return dashboardState.attachments;
+      }
+      return dashboardState.attachments.filter((attachmentItem) => {
+        return attachmentItem.tag.includes(normalizedQuery) || attachmentItem.file.name.toLowerCase().includes(normalizedQuery.toLowerCase());
+      });
+    }
+
+    function renderAutocomplete() {
+      const candidates = getAutocompleteCandidates();
+      if (!dashboardState.autocomplete.isOpen || !candidates.length) {
+        closeAutocomplete();
+        return;
+      }
+
+      if (dashboardState.autocomplete.activeIndex > candidates.length - 1) {
+        dashboardState.autocomplete.activeIndex = 0;
+      }
+
+      tagAutocompleteElement.innerHTML = candidates.map((attachmentItem, candidateIndex) => {
+        const candidateClass = candidateIndex === dashboardState.autocomplete.activeIndex ? 'tag-autocomplete-item active' : 'tag-autocomplete-item';
+        const thumbMarkup = attachmentItem.thumbnailUrl
+          ? `<img src="${attachmentItem.thumbnailUrl}" alt="${attachmentItem.file.name}">`
+          : `<img src="${createFallbackSvg(attachmentItem.type)}" alt="파일">`;
+        return `
+          <button type="button" class="${candidateClass}" data-candidate-index="${candidateIndex}">
+            <span class="autocomplete-thumb">${thumbMarkup}</span>
+            <span class="autocomplete-tag">${attachmentItem.tag}</span>
+            <span class="autocomplete-name">${attachmentItem.file.name}</span>
+          </button>
+        `;
+      }).join('');
+
+      tagAutocompleteElement.classList.add('visible');
+
+      tagAutocompleteElement.querySelectorAll('[data-candidate-index]').forEach((candidateButtonElement) => {
+        candidateButtonElement.addEventListener('mousedown', (event) => {
+          event.preventDefault();
+          const candidateIndex = Number(candidateButtonElement.dataset.candidateIndex);
+          selectAutocompleteCandidate(candidateIndex);
+        });
+      });
+    }
+
+    function selectAutocompleteCandidate(candidateIndex) {
+      const candidates = getAutocompleteCandidates();
+      const selectedAttachment = candidates[candidateIndex];
+      const triggerRange = dashboardState.autocomplete.triggerRange;
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedAttachment || !triggerRange || !selectedRange) {
+        closeAutocomplete();
+        return;
+      }
+
+      const insertRange = document.createRange();
+      insertRange.setStart(triggerRange.startContainer, triggerRange.startOffset);
+      insertRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      insertRange.deleteContents();
+
+      const tagChipElement = createTagChipElement(selectedAttachment);
+      const trailingSpaceNode = document.createTextNode(' ');
+      insertRange.insertNode(trailingSpaceNode);
+      insertRange.insertNode(tagChipElement);
+      placeCaretAfterNode(trailingSpaceNode);
+      closeAutocomplete();
+      refreshSendButtonState();
+    }
+
+    function updateAutocompleteForInput() {
+      const textBeforeCaret = getTextBeforeCaret();
+      const atIndex = textBeforeCaret.lastIndexOf('@');
+      if (atIndex < 0 || dashboardState.attachments.length === 0) {
+        closeAutocomplete();
+        return;
+      }
+
+      const rawQuery = textBeforeCaret.slice(atIndex + 1);
+      if (rawQuery.includes(' ') || rawQuery.includes('\n')) {
+        closeAutocomplete();
+        return;
+      }
+
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange) {
+        closeAutocomplete();
+        return;
+      }
+
+      const triggerRange = selectedRange.cloneRange();
+      const prefixRange = selectedRange.cloneRange();
+      prefixRange.selectNodeContents(promptInputElement);
+      prefixRange.setEnd(selectedRange.endContainer, selectedRange.endOffset);
+      const textLengthBeforeCaret = normalizeEditableText(prefixRange.toString()).length;
+      const triggerOffsetFromCaret = rawQuery.length + 1;
+      const triggerCharacterOffset = textLengthBeforeCaret - triggerOffsetFromCaret;
+
+      const walker = document.createTreeWalker(promptInputElement, NodeFilter.SHOW_TEXT, null);
+      let traversedTextLength = 0;
+      let triggerNode = null;
+      let triggerNodeOffset = 0;
+      while (walker.nextNode()) {
+        const currentNode = walker.currentNode;
+        const nodeTextLength = normalizeEditableText(currentNode.textContent || '').length;
+        if (triggerCharacterOffset <= traversedTextLength + nodeTextLength) {
+          triggerNode = currentNode;
+          triggerNodeOffset = Math.max(0, triggerCharacterOffset - traversedTextLength);
+          break;
+        }
+        traversedTextLength += nodeTextLength;
+      }
+
+      if (!triggerNode) {
+        closeAutocomplete();
+        return;
+      }
+
+      triggerRange.setStart(triggerNode, triggerNodeOffset);
+      triggerRange.setEnd(triggerNode, triggerNodeOffset);
+      dashboardState.autocomplete.isOpen = true;
+      dashboardState.autocomplete.triggerRange = triggerRange;
+      dashboardState.autocomplete.queryText = rawQuery;
+      renderAutocomplete();
+    }
+    function removeSelectedChipFromSelection() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange || selectedRange.collapsed) {
+        return false;
+      }
+      if (selectedRange.startContainer === promptInputElement && selectedRange.endContainer === promptInputElement && selectedRange.endOffset === selectedRange.startOffset + 1) {
+        const selectedNode = promptInputElement.childNodes[selectedRange.startOffset];
+        if (selectedNode && selectedNode.classList && selectedNode.classList.contains('tag-chip')) {
+          removeChipNode(selectedNode);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    function removeChipBeforeCaret() {
+      const selectedRange = getEditorSelectionRange();
+      if (!selectedRange || !selectedRange.collapsed) {
+        return false;
+      }
+      let previousNode = null;
+      if (selectedRange.startContainer.nodeType === Node.TEXT_NODE && selectedRange.startOffset === 0) {
+        previousNode = selectedRange.startContainer.previousSibling;
+      } else if (selectedRange.startContainer === promptInputElement && selectedRange.startOffset > 0) {
+        previousNode = promptInputElement.childNodes[selectedRange.startOffset - 1];
+      }
+      if (previousNode && previousNode.classList && previousNode.classList.contains('tag-chip')) {
+        removeChipNode(previousNode);
+        return true;
+      }
+      return false;
+    }
+
+    function normalizeEditorIfEmpty() {
+      if (getEditorPlainText().trim().length === 0 && promptInputElement.querySelectorAll('.tag-chip').length === 0) {
+        promptInputElement.textContent = '';
+      }
+    }
+
+    function buildTaskRow(taskItem) {
+      const ringRadius = 15;
+      const ringCircumference = 2 * Math.PI * ringRadius;
+      const ringProgress = computeRingProgress(taskItem);
+      const ringOffset = ringCircumference * (1 - ringProgress);
+      const ringLabel = taskItem.status === 'completed' ? '✓' : taskItem.status === 'failed' ? '!' : String(taskItem.phase);
+      const detailClass = taskItem.status === 'running' ? 'detail-running' : taskItem.status === 'failed' ? 'detail-failed' : '';
+      const expertsMarkup = taskItem.activeExperts.map((expertKey) => `<span class="expert-dot ${getExpertClass(expertKey)}"></span>`).join('');
+
+      return `
+        <button class="task-row" type="button" data-run-id="${taskItem.id}">
+          <span class="phase-ring" data-status="${taskItem.status}">
+            <svg viewBox="0 0 36 36" aria-hidden="true">
+              <circle class="track" cx="18" cy="18" r="${ringRadius}"></circle>
+              <circle class="progress" cx="18" cy="18" r="${ringRadius}" stroke-dasharray="${ringCircumference}" stroke-dashoffset="${ringOffset}"></circle>
+            </svg>
+            <span class="icon">${ringLabel}</span>
+            <span class="orbit-wrap"><span class="orbit-dot"></span></span>
+          </span>
+          <span class="task-main">
+            <span class="task-title-line">
+              <span class="task-title">${taskItem.title}</span>
+              <span class="expert-dots">${expertsMarkup}</span>
+            </span>
+            <span class="task-meta">${taskItem.createdAt} · <span class="${detailClass}">${taskItem.phaseDetail}</span></span>
+          </span>
+          <span class="phase-track">${createPhaseTrack(taskItem)}</span>
+          <span class="cost-column"><span class="cost-usd">${formatUsdCost(taskItem.cost)}</span><br><span class="cost-token">${formatTokenCount(taskItem.tokens)}</span></span>
+          <span class="status-badge" data-status="${taskItem.status}">${taskItem.status === 'running' ? '진행 중' : taskItem.status === 'completed' ? '완료' : '실패'}</span>
+        </button>
+      `;
+    }
+
+    function renderTasksTab() {
+      tasksCountBadgeElement.textContent = String(dashboardState.tasks.length);
+      if (!dashboardState.tasks.length) {
+        tabPanelElement.innerHTML = `
+          <div class="empty-state">
+            <div>아직 실행된 작업이 없습니다.</div>
+            <div>밈 영상을 업로드하거나 설명을 입력해 시작하세요.</div>
+          </div>
+        `;
+        return;
+      }
+
+      tabPanelElement.innerHTML = `<div class="task-list">${dashboardState.tasks.map((taskItem) => buildTaskRow(taskItem)).join('')}</div>`;
+      tabPanelElement.querySelectorAll('.task-row').forEach((taskRowElement) => {
+        taskRowElement.addEventListener('click', () => {
+          const runIdentifier = taskRowElement.dataset.runId;
+          window.location.href = `/run/${runIdentifier}`;
+        });
+      });
+    }
+
+    function renderTabContent() {
+      if (dashboardState.selectedTab === 'tasks') {
+        renderTasksTab();
+        return;
+      }
+      if (dashboardState.selectedTab === 'prompts') {
+        tabPanelElement.innerHTML = '<div class="sub-panel">프롬프트 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
+        return;
+      }
+      if (dashboardState.selectedTab === 'assets') {
+        tabPanelElement.innerHTML = '<div class="sub-panel">에셋 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
+        return;
+      }
+      tabPanelElement.innerHTML = '<div class="sub-panel">설정 탭 콘텐츠는 추후 명세에 따라 확장됩니다.</div>';
+    }
+
+    function refreshSendButtonState() {
+      const hasTextInput = getEditorPlainText().trim().length > 0;
+      const hasAttachments = dashboardState.attachments.length > 0;
+      sendButtonElement.classList.toggle('active', hasTextInput || hasAttachments);
+    }
+
+    function createTaskFromInput() {
+      const trimmedInputText = getEditorPlainText().trim();
+      if (!trimmedInputText && !dashboardState.attachments.length) {
+        return;
+      }
+
+      const latestAttachment = dashboardState.attachments[0] || null;
+      const nowIdentifier = Date.now();
+      const createdTask = {
+        id: `run-${nowIdentifier}`,
+        title: trimmedInputText || `${latestAttachment.file.name} 기반 크리에이티브`,
+        input: trimmedInputText || latestAttachment.file.name,
+        inputType: latestAttachment ? latestAttachment.type : 'text',
+        attachments: dashboardState.attachments.map((attachmentItem) => {
+          return {
+            tag: attachmentItem.tag,
+            filename: attachmentItem.file.name,
+            type: attachmentItem.type,
+            thumbnailUrl: attachmentItem.thumbnailUrl
+          };
+        }),
+        status: 'running',
+        phase: 1,
+        phaseDetail: '분석 준비 중',
+        activeExperts: ['hook', 'story', 'cta', 'action', 'character'],
+        createdAt: '방금 전',
+        tokens: 0,
+        cost: 0
+      };
+
+      dashboardState.tasks.unshift(createdTask);
+      promptInputElement.textContent = '';
+      dashboardState.attachments.forEach((attachmentItem) => {
+        if (attachmentItem.thumbnailUrl.startsWith('blob:')) {
+          URL.revokeObjectURL(attachmentItem.thumbnailUrl);
+        }
+      });
+      dashboardState.attachments = [];
+      closeAutocomplete();
+      renderAttachmentList();
+      renderTabContent();
+      refreshSendButtonState();
+    }
+
+    async function attachSelectedFiles(selectedFileList) {
+      const availableSlots = Math.max(0, 3 - dashboardState.attachments.length);
+      const filesToAdd = selectedFileList.slice(0, availableSlots);
+      if (!filesToAdd.length) {
+        return;
+      }
+
+      const createdAttachmentItems = await Promise.all(filesToAdd.map(async (selectedFile, fileIndex) => {
+        const attachmentType = detectAttachmentType(selectedFile);
+        const thumbnailValue = await generateThumbnailForFile(selectedFile, attachmentType);
+        return {
+          id: dashboardState.nextAttachmentId + fileIndex,
+          file: selectedFile,
+          tag: '',
+          type: attachmentType,
+          thumbnailUrl: thumbnailValue,
+          index: 0
+        };
+      }));
+
+      dashboardState.nextAttachmentId += createdAttachmentItems.length;
+      dashboardState.attachments.push(...createdAttachmentItems);
+      reindexAttachments();
+      renderAttachmentList();
+      updateAutocompleteForInput();
+      refreshSendButtonState();
+    }
+
+    function bindEvents() {
+      promptInputElement.addEventListener('input', () => {
+        normalizeEditorIfEmpty();
+        refreshSendButtonState();
+        updateAutocompleteForInput();
+      });
+
+      promptInputElement.addEventListener('keydown', (event) => {
+        if (event.key === 'Backspace' && removeSelectedChipFromSelection()) {
+          event.preventDefault();
+          closeAutocomplete();
+          refreshSendButtonState();
+          return;
+        }
+        if (event.key === 'Backspace' && removeChipBeforeCaret()) {
+          event.preventDefault();
+          closeAutocomplete();
+          refreshSendButtonState();
+          return;
+        }
+        if (event.key === 'ArrowDown' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          const candidates = getAutocompleteCandidates();
+          dashboardState.autocomplete.activeIndex = (dashboardState.autocomplete.activeIndex + 1) % candidates.length;
+          renderAutocomplete();
+          return;
+        }
+        if (event.key === 'ArrowUp' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          const candidates = getAutocompleteCandidates();
+          dashboardState.autocomplete.activeIndex = (dashboardState.autocomplete.activeIndex - 1 + candidates.length) % candidates.length;
+          renderAutocomplete();
+          return;
+        }
+        if (event.key === 'Enter' && event.altKey) {
+          event.preventDefault();
+          closeAutocomplete();
+          createTaskFromInput();
+          return;
+        }
+        if (event.key === 'Enter' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          selectAutocompleteCandidate(dashboardState.autocomplete.activeIndex);
+          return;
+        }
+        if (event.key === 'Escape' && dashboardState.autocomplete.isOpen) {
+          event.preventDefault();
+          closeAutocomplete();
+          return;
+        }
+      });
+
+      promptInputElement.addEventListener('click', (event) => {
+        const clickedChipElement = event.target.closest('.tag-chip');
+        if (clickedChipElement) {
+          event.preventDefault();
+          selectChipElement(clickedChipElement);
+          closeAutocomplete();
+          return;
+        }
+        updateAutocompleteForInput();
+      });
+      promptInputElement.addEventListener('keyup', updateAutocompleteForInput);
+      promptInputElement.addEventListener('blur', () => {
+        setTimeout(() => {
+          closeAutocomplete();
+        }, 120);
+      });
+
+      sendButtonElement.addEventListener('click', createTaskFromInput);
+
+      attachButtonElement.addEventListener('click', () => {
+        fileInputElement.click();
+      });
+
+      fileInputElement.addEventListener('change', async () => {
+        const selectedFiles = Array.from(fileInputElement.files || []);
+        await attachSelectedFiles(selectedFiles);
+        fileInputElement.value = '';
+      });
+
+      document.addEventListener('click', (event) => {
+        const targetElement = event.target;
+        if (!targetElement.closest('.composer')) {
+          closeAutocomplete();
+        }
+      });
+
+      document.querySelectorAll('.tab-button').forEach((tabButtonElement) => {
+        tabButtonElement.addEventListener('click', () => {
+          const nextTabName = tabButtonElement.dataset.tab;
+          dashboardState.selectedTab = nextTabName;
+          document.querySelectorAll('.tab-button').forEach((candidateButtonElement) => {
+            const isActiveTab = candidateButtonElement === tabButtonElement;
+            candidateButtonElement.classList.toggle('active', isActiveTab);
+            candidateButtonElement.setAttribute('aria-selected', String(isActiveTab));
+          });
+          renderTabContent();
+        });
+      });
+    }
+
+    renderAttachmentList();
+    renderTabContent();
+    refreshSendButtonState();
+    bindEvents();
+  </script>
+</body>
+</html>

@@ -1,0 +1,34 @@
+.orbit-wrap {
+  animation: orbit 2.4s linear infinite;
+}
+
+.expert-dot {
+  animation: pulse 1.8s ease-in-out infinite;
+}
+
+.send-button:active,
+.attach-button:active,
+.tab-button:active,
+.task-row:active,
+.tag-autocomplete-item:active {
+  transform: scale(0.98);
+}
+
+@keyframes orbit {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@keyframes pulse {
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: 0.5;
+    transform: scale(0.8);
+  }
+}

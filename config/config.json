@@ -1,0 +1,47 @@
+{
+  "gemini": {
+    "model": "gemini-3.1-pro-preview",
+    "temperature": 0.7,
+    "maxOutputTokens": 8192
+  },
+  "debate": {
+    "rounds": 3,
+    "parallelExperts": true
+  },
+  "video": {
+    "model": "veo-3.1-generate-preview",
+    "defaultDuration": 8,
+    "aspectRatio": "16:9",
+    "resolution": "720p",
+    "maxIterations": 3,
+    "extensionSeconds": 7,
+    "maxTotalSeconds": 148,
+    "postProcessingWait": 30000,
+    "pollInterval": 10000,
+    "splitModel": "gemini-3-flash-preview"
+  },
+  "image": {
+    "model": "imagen-4.0-generate-001",
+    "maxReferenceSheets": 3
+  },
+  "ffmpeg": {
+    "path": "ffmpeg",
+    "defaultCodec": "libx264",
+    "defaultCrf": 23,
+    "defaultPreset": "medium"
+  },
+  "experts": {
+    "phase1": {
+      "hook": true,
+      "story": true,
+      "cta": true,
+      "actionDesc": true,
+      "characterDesc": true
+    },
+    "phase3": {
+      "actionEval": true,
+      "characterEval": true,
+      "scenarioEval": true
+    }
+  }
+}
