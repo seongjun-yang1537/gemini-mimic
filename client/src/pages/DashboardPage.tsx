@@ -142,7 +142,7 @@ export default function DashboardPage({ dataMode }: DashboardPageProps) {
         <section className="tab-panel">
           {selectedTab === 'tasks' ? (
             taskItems.length ? (
-              <TaskList taskItems={taskItems} />
+              <TaskList taskItems={taskItems} dataMode={dataMode} />
             ) : (
               <EmptyState title="아직 작업이 없습니다" description="아래 입력창에서 밈 영상을 첨부하고 실행하세요" />
             )

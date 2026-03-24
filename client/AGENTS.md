@@ -11,3 +11,6 @@
 [codex] 2026-03-24 추가 메모 3
 - 대시보드 입력창(`client/src/pages/DashboardPage.tsx`)의 키보드 동작을 조정해 `Enter`는 줄바꿈으로 유지하고, `Alt+Enter`에서만 `handleSend`를 호출해 태스크가 생성되도록 변경했다.
 - 자동완성 드롭다운이 열려 있을 때도 `Alt+Enter`는 태스크 생성 우선으로 처리하고, 일반 `Enter`는 기존처럼 자동완성 후보 선택에 사용된다.
+[codex] 2026-03-24 추가 메모 4
+- `client/src/App.tsx`에 Run 상세 라우트(`/run/:id`, `/debug/run/:id`)를 추가하고, `RunDetailPage`를 신규 도입해 Task 상세 화면 진입 경로를 연결했다.
+- `client/src/styles/index.css`에 run-detail 전용 레이아웃/섹션/탭/스테퍼/생성물 아이콘 스타일을 추가해 360px 좌측 패널 + 우측 콘텐츠 구조와 모바일 토글 동작을 반영했다.
