@@ -19,19 +19,19 @@ function formatUsdCost(costValue: number): string {
 export default function TaskRow({ taskItem }: TaskRowProps) {
   return (
     <button type="button" className="task-row">
-      <PhaseRing phase={taskItem.phase} status={taskItem.status} />
+      <PhaseRing phase={taskItem.currentPhase} status={taskItem.status} />
       <div className="task-main">
         <div className="task-title-line">
           <span className="task-title">{taskItem.title}</span>
-          <ExpertDots activeExperts={taskItem.activeExperts} />
+          <ExpertDots expertDots={taskItem.expertDots} />
         </div>
-        <span className="task-meta">{taskItem.createdAt} · {taskItem.phaseDetail}</span>
+        <span className="task-meta">{taskItem.createdAt} · {taskItem.statusLabel}</span>
       </div>
-      <StatusBadge status={taskItem.status} />
-      <PhaseTrack taskItem={taskItem} />
+      <PhaseTrack phaseStatuses={taskItem.phaseStatuses} />
       <div className="cost-column">
-        <div className="cost-usd">{formatUsdCost(taskItem.cost)}</div>
-        <div className="cost-token">{formatTokenCount(taskItem.tokens)}</div>
+        <div className="cost-usd">{formatUsdCost(taskItem.costUsd)}</div>
+        <div className="cost-token">{formatTokenCount(taskItem.tokenCount)}</div>
+        <StatusBadge status={taskItem.status} />
       </div>
     </button>
   );

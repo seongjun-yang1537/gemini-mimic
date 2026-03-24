@@ -1,24 +1,19 @@
-import { EXPERTS } from '../../constants/experts';
-import type { ExpertKey } from '../../types/expert';
+import type { ExpertDotColor } from '../../types/task';
 
 interface ExpertDotsProps {
-  activeExperts: ExpertKey[];
+  expertDots?: ExpertDotColor[];
 }
 
-export default function ExpertDots({ activeExperts }: ExpertDotsProps) {
-  if (!activeExperts.length) {
+export default function ExpertDots({ expertDots = [] }: ExpertDotsProps) {
+  if (!expertDots.length) {
     return null;
   }
 
   return (
     <span className="expert-dots" aria-label="활성 전문가">
-      {activeExperts.map((expertKey) => {
-        const matchedExpert = EXPERTS.find((expertDescriptor) => expertDescriptor.key === expertKey);
-        if (!matchedExpert) {
-          return null;
-        }
-        return <span key={expertKey} className={`expert-dot ${matchedExpert.dotClassName}`} title={matchedExpert.label} />;
-      })}
+      {expertDots.map((dotColor, dotIndex) => (
+        <span key={`${dotColor}-${dotIndex}`} className={`expert-dot expert-${dotColor}`} />
+      ))}
     </span>
   );
 }
