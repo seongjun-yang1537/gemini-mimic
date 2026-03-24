@@ -23,3 +23,5 @@
 - src 경로의 컴포넌트/훅/상수/유틸 파일 확장자를 .ts/.tsx에서 .js/.jsx로 일괄 변환했다.
 - 타입 전용 선언(import type, interface, type alias)을 제거해 런타임 코드만 남기고 import 경로를 JS 기준으로 동작하도록 유지했다.
 - 타입 정의 전용이던 src/types 디렉터리는 JavaScript 전환 범위에서 제외하고 삭제했다.
+[codex] 2026-03-24 작업 메모 7
+- 사용자 요청으로 `client/src/components/layout/Header.jsx`에서 상단 내비게이션 텍스트(대시보드/프롬프트/에셋/설정) 버튼 4개를 제거하고 브랜드(`Mimic`)만 노출하도록 정리했다.
