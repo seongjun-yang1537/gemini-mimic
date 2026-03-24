@@ -1663,6 +1663,12 @@
           renderAutocomplete();
           return;
         }
+        if (event.key === 'Enter' && event.altKey) {
+          event.preventDefault();
+          closeAutocomplete();
+          createTaskFromInput();
+          return;
+        }
         if (event.key === 'Enter' && dashboardState.autocomplete.isOpen) {
           event.preventDefault();
           selectAutocompleteCandidate(dashboardState.autocomplete.activeIndex);

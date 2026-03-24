@@ -33,3 +33,6 @@
 [codex] 2026-03-24 추가 메모 11
 - public/index.html 입력 에디터 keydown 처리에서 Enter 단축 전송(createTaskFromInput)을 제거해 Enter 기본 동작이 줄바꿈으로만 동작하도록 변경했다.
 - 전송은 우측 전송 버튼 클릭으로만 실행되며, 자동완성 드롭다운이 열려 있을 때 Enter 후보 선택 동작은 유지된다.
+[codex] 2026-03-24 추가 메모 12
+- public/index.html 입력 에디터 단축키를 조정해 `Enter`는 기본 줄바꿈만 수행하고, `Alt+Enter`에서만 `createTaskFromInput` 제출이 실행되도록 변경했다.
+- 자동완성 드롭다운이 열려 있을 때도 `Alt+Enter`는 후보 선택보다 제출을 우선 처리하며, 일반 `Enter`의 후보 선택 동작은 유지된다.
